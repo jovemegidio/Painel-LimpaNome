@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Universidade</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Universidade MI2</h2><p>Treinamentos e materiais de apoio</p></div>
+        <div class="grid-3" id="videoGrid"></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'universidade', title: 'Universidade' });
+
+        const videos = [
+            { title: 'Primeiros Passos na MI2', desc: 'Aprenda a configurar sua conta', duration: '12:30', icon: 'fa-play-circle' },
+            { title: 'Como Indicar e Ganhar', desc: 'Estratégias de indicação eficazes', duration: '18:45', icon: 'fa-users' },
+            { title: 'Entendendo o Sistema de Pontos', desc: 'Graduação e benefícios por nível', duration: '15:20', icon: 'fa-star' },
+            { title: 'Usando o Limpa Nome', desc: 'Passo a passo do serviço', duration: '10:15', icon: 'fa-broom' },
+            { title: 'Marketing Digital para Rede', desc: 'Atraia clientes pelas redes sociais', duration: '22:00', icon: 'fa-bullhorn' },
+            { title: 'Gestão Financeira', desc: 'Controle seus ganhos e saques', duration: '14:10', icon: 'fa-wallet' }
+        ];
+
+        document.getElementById('videoGrid').innerHTML = videos.map(v => `
+            <div class="video-card">
+                <div class="video-thumb"><i class="fas ${v.icon}"></i><span class="duration">${v.duration}</span></div>
+                <div class="video-info"><h4>${v.title}</h4><p>${v.desc}</p></div>
+            </div>
+        `).join('');
+    </script>
+</body>
+</html>

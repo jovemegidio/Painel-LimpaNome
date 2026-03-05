@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Consultas</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Consultas</h2><p>Serviços de consulta disponíveis</p></div>
+        <div class="grid-3">
+            <div class="consult-card">
+                <div class="consult-icon stat-icon blue"><i class="fas fa-user-shield"></i></div>
+                <h4>Consulta CPF</h4>
+                <p>Verifique a situação do CPF nos órgãos de crédito</p>
+                <a href="limpa-nome-consulta.html" class="btn btn-primary"><i class="fas fa-search"></i> Consultar</a>
+            </div>
+            <div class="consult-card">
+                <div class="consult-icon stat-icon green"><i class="fas fa-university"></i></div>
+                <h4>Consulta Bacen</h4>
+                <p>Verifique valores a receber no Banco Central</p>
+                <a href="bacen-consulta.html" class="btn btn-primary"><i class="fas fa-search"></i> Consultar</a>
+            </div>
+            <div class="consult-card">
+                <div class="consult-icon stat-icon purple"><i class="fas fa-building"></i></div>
+                <h4>Consulta CNPJ</h4>
+                <p>Informações cadastrais de empresas</p>
+                <button class="btn btn-outline" disabled><i class="fas fa-lock"></i> Em breve</button>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>Layout.init({ basePath: '../', page: 'consultas', title: 'Consultas' });</script>
+</body>
+</html>

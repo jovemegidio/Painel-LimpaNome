@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Eventos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2>Gerenciar Eventos</h2><p>Crie e gerencie eventos para a comunidade</p></div>
+            <button class="btn btn-primary" onclick="openEvModal()"><i class="fas fa-plus"></i> Novo Evento</button>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="evTable"><thead><tr>
+                    <th>ID</th><th>Título</th><th>Data</th><th>Local</th><th>Tipo</th><th style="width:120px">Ações</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="evModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:12px;width:540px;max-width:95vw;padding:24px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                    <h3 id="evModalTitle">Novo Evento</h3>
+                    <button onclick="closeEvModal()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+                <form id="evForm" onsubmit="saveEv(event)">
+                    <input type="hidden" id="evEditId">
+                    <div class="form-group"><label>Título</label><input type="text" id="evTitle" class="form-control" required></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Data</label><input type="date" id="evDate" class="form-control" required></div>
+                        <div class="form-group"><label>Horário</label><input type="time" id="evTime" class="form-control" required></div>
+                    </div>
+                    <div class="form-group"><label>Local</label><input type="text" id="evLocation" class="form-control" required></div>
+                    <div class="form-group"><label>Tipo</label>
+                        <select id="evType" class="form-control">
+                            <option value="presencial">Presencial</option><option value="online">Online</option><option value="hibrido">Híbrido</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Descrição</label><textarea id="evDesc" class="form-control" rows="3"></textarea></div>
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px">
+                        <button type="button" class="btn btn-outline" onclick="closeEvModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-events', title: 'Eventos', admin: true });
+
+        function renderTable() {
+            const evs = DB.get('events') || [];
+            const typeMap = { presencial: 'success', online: 'primary', hibrido: 'warning' };
+            const tbody = document.querySelector('#evTable tbody');
+            tbody.innerHTML = evs.length ? evs.map(e => `<tr>
+                <td>${e.id}</td>
+                <td>${e.title}</td>
+                <td>${new Date(e.date + 'T' + e.time).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                <td>${e.location}</td>
+                <td><span class="badge badge-${typeMap[e.type] || 'secondary'}">${e.type}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="editEv(${e.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteEv(${e.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b">Nenhum evento</td></tr>';
+        }
+        renderTable();
+
+        function openEvModal() {
+            document.getElementById('evModal').style.display = 'flex';
+            document.getElementById('evForm').reset();
+            document.getElementById('evEditId').value = '';
+            document.getElementById('evModalTitle').textContent = 'Novo Evento';
+        }
+        function closeEvModal() { document.getElementById('evModal').style.display = 'none'; }
+
+        function editEv(id) {
+            const e = (DB.get('events')||[]).find(x => x.id === id);
+            if (!e) return;
+            document.getElementById('evModal').style.display = 'flex';
+            document.getElementById('evModalTitle').textContent = 'Editar Evento';
+            document.getElementById('evEditId').value = e.id;
+            document.getElementById('evTitle').value = e.title;
+            document.getElementById('evDate').value = e.date;
+            document.getElementById('evTime').value = e.time;
+            document.getElementById('evLocation').value = e.location;
+            document.getElementById('evType').value = e.type;
+            document.getElementById('evDesc').value = e.description || '';
+        }
+
+        function saveEv(ev) {
+            ev.preventDefault();
+            const evs = DB.get('events') || [];
+            const id = document.getElementById('evEditId').value;
+            const obj = {
+                title: document.getElementById('evTitle').value.trim(),
+                date: document.getElementById('evDate').value,
+                time: document.getElementById('evTime').value,
+                location: document.getElementById('evLocation').value.trim(),
+                type: document.getElementById('evType').value,
+                description: document.getElementById('evDesc').value.trim()
+            };
+            if (id) {
+                const idx = evs.findIndex(x => x.id === parseInt(id));
+                if (idx !== -1) evs[idx] = { ...evs[idx], ...obj };
+            } else {
+                obj.id = Date.now();
+                evs.push(obj);
+            }
+            DB.set('events', evs);
+            closeEvModal();
+            renderTable();
+            Layout.toast('Evento salvo!', 'success');
+        }
+
+        function deleteEv(id) {
+            if (!confirm('Excluir este evento?')) return;
+            const evs = (DB.get('events')||[]).filter(x => x.id !== id);
+            DB.set('events', evs);
+            renderTable();
+            Layout.toast('Evento excluído', 'success');
+        }
+    </script>
+</body>
+</html>

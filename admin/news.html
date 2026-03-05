@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Informativos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2>Gerenciar Informativos</h2><p>Publique notícias e comunicados para os usuários</p></div>
+            <button class="btn btn-primary" onclick="openNewsModal()"><i class="fas fa-plus"></i> Novo Informativo</button>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="newsTable"><thead><tr>
+                    <th>ID</th><th>Título</th><th>Categoria</th><th>Data</th><th style="width:120px">Ações</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="newsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:12px;width:540px;max-width:95vw;padding:24px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                    <h3 id="newsModalTitle">Novo Informativo</h3>
+                    <button onclick="closeNewsModal()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+                <form id="newsForm" onsubmit="saveNews(event)">
+                    <input type="hidden" id="newsEditId">
+                    <div class="form-group"><label>Título</label><input type="text" id="newsTitle" class="form-control" required></div>
+                    <div class="form-group"><label>Categoria</label>
+                        <select id="newsCat" class="form-control">
+                            <option value="Novidade">Novidade</option>
+                            <option value="Atualização">Atualização</option>
+                            <option value="Promoção">Promoção</option>
+                            <option value="Comunicado">Comunicado</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Conteúdo</label><textarea id="newsContent" class="form-control" rows="5" required></textarea></div>
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px">
+                        <button type="button" class="btn btn-outline" onclick="closeNewsModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-news', title: 'Informativos', admin: true });
+
+        function renderTable() {
+            const news = DB.get('news') || [];
+            const catColors = { Novidade: 'primary', novidade: 'primary', Atualização: 'info', sistema: 'info', Promoção: 'success', promocao: 'success', Comunicado: 'warning', evento: 'warning' };
+            const tbody = document.querySelector('#newsTable tbody');
+            tbody.innerHTML = news.length ? news.map(n => `<tr>
+                <td>${n.id}</td>
+                <td>${n.title}</td>
+                <td><span class="badge badge-${catColors[n.category] || 'secondary'}">${n.category}</span></td>
+                <td>${new Date(n.date).toLocaleDateString('pt-BR')}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="editNews(${n.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteNews(${n.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#64748b">Nenhum informativo</td></tr>';
+        }
+        renderTable();
+
+        function openNewsModal() {
+            document.getElementById('newsModal').style.display = 'flex';
+            document.getElementById('newsForm').reset();
+            document.getElementById('newsEditId').value = '';
+            document.getElementById('newsModalTitle').textContent = 'Novo Informativo';
+        }
+        function closeNewsModal() { document.getElementById('newsModal').style.display = 'none'; }
+
+        function editNews(id) {
+            const n = (DB.get('news')||[]).find(x => x.id === id);
+            if (!n) return;
+            document.getElementById('newsModal').style.display = 'flex';
+            document.getElementById('newsModalTitle').textContent = 'Editar Informativo';
+            document.getElementById('newsEditId').value = n.id;
+            document.getElementById('newsTitle').value = n.title;
+            document.getElementById('newsCat').value = n.category;
+            document.getElementById('newsContent').value = n.content;
+        }
+
+        function saveNews(e) {
+            e.preventDefault();
+            const news = DB.get('news') || [];
+            const id = document.getElementById('newsEditId').value;
+            const obj = {
+                title: document.getElementById('newsTitle').value.trim(),
+                category: document.getElementById('newsCat').value,
+                content: document.getElementById('newsContent').value.trim(),
+                date: new Date().toISOString()
+            };
+            if (id) {
+                const idx = news.findIndex(x => x.id === parseInt(id));
+                if (idx !== -1) news[idx] = { ...news[idx], ...obj };
+            } else {
+                obj.id = Date.now();
+                news.push(obj);
+            }
+            DB.set('news', news);
+            closeNewsModal();
+            renderTable();
+            Layout.toast('Informativo salvo!', 'success');
+        }
+
+        function deleteNews(id) {
+            if (!confirm('Excluir este informativo?')) return;
+            const news = (DB.get('news')||[]).filter(x => x.id !== id);
+            DB.set('news', news);
+            renderTable();
+            Layout.toast('Informativo excluído', 'success');
+        }
+    </script>
+</body>
+</html>

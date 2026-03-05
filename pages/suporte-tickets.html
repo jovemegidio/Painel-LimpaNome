@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Tickets de Suporte</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header-row">
+            <div class="page-header" style="margin-bottom:0"><h2>Tickets de Suporte</h2><p>Envie e acompanhe seus chamados</p></div>
+            <button class="btn btn-primary" onclick="openNewTicket()"><i class="fas fa-plus"></i> Novo Ticket</button>
+        </div>
+        <div class="card" style="margin-top:24px"><div class="card-body"><div class="table-wrap" id="ticketsTable"></div></div></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'suporte-tickets', title: 'Suporte' });
+        const user = Layout.user;
+
+        function render() {
+            const tickets = DB.getTickets(user.id);
+            const statusBadge = { aberto: 'badge-yellow', respondido: 'badge-green', fechado: 'badge-gray' };
+
+            document.getElementById('ticketsTable').innerHTML = tickets.length ? `<table>
+                <thead><tr><th>#</th><th>Assunto</th><th>Prioridade</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+                <tbody>${tickets.map(t => `<tr>
+                    <td>${t.id}</td><td style="font-weight:500">${t.subject}</td>
+                    <td><span class="badge badge-${t.priority==='alta'?'red':t.priority==='media'?'yellow':'gray'}">${t.priority}</span></td>
+                    <td><span class="badge ${statusBadge[t.status]}">${t.status}</span></td>
+                    <td>${t.createdAt}</td>
+                    <td><button class="btn btn-sm btn-outline" onclick="viewTicket(${t.id})"><i class="fas fa-eye"></i> Ver</button></td>
+                </tr>`).join('')}</tbody>
+            </table>` : '<div class="table-empty"><i class="fas fa-headset"></i><p>Nenhum ticket</p><small>Clique em "Novo Ticket" para abrir um chamado</small></div>';
+        }
+        render();
+
+        function openNewTicket() {
+            Layout.openModal('Novo Ticket', `
+                <div class="form-group"><label>Assunto</label><input class="form-control" id="tkSubject" placeholder="Resumo do problema"></div>
+                <div class="form-group"><label>Prioridade</label><select class="form-control" id="tkPriority"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option></select></div>
+                <div class="form-group"><label>Mensagem</label><textarea class="form-control" id="tkMessage" placeholder="Descreva sua dúvida ou problema..."></textarea></div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveTicket()">Enviar</button>`);
+        }
+
+        function saveTicket() {
+            const subject = document.getElementById('tkSubject').value;
+            const message = document.getElementById('tkMessage').value;
+            if (!subject || !message) { Layout.toast('Preencha todos os campos', 'error'); return; }
+            DB.addTicket({ userId: user.id, subject, message, priority: document.getElementById('tkPriority').value });
+            Layout.closeModal();
+            Layout.toast('Ticket enviado!', 'success');
+            render();
+        }
+
+        function viewTicket(id) {
+            const tickets = DB.getTickets(user.id);
+            const t = tickets.find(x => x.id === id);
+            if (!t) return;
+            Layout.openModal(`Ticket #${t.id}: ${t.subject}`, `
+                <div style="background:var(--bg);padding:14px;border-radius:var(--radius);margin-bottom:16px">
+                    <p style="font-size:.85rem">${t.message}</p>
+                    <p style="font-size:.75rem;color:var(--text3);margin-top:6px">${t.createdAt}</p>
+                </div>
+                ${t.responses.map(r => `<div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><strong style="font-size:.82rem;color:${r.from==='admin'?'var(--accent)':'var(--text)'}">${r.from==='admin'?'Suporte':'Você'}</strong><span style="font-size:.72rem;color:var(--text3)">${r.date}</span></div>
+                    <p style="font-size:.85rem">${r.message}</p>
+                </div>`).join('')}
+                <div class="form-group" style="margin-top:12px"><label>Responder</label><textarea class="form-control" id="tkReply" placeholder="Sua resposta..."></textarea></div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button><button class="btn btn-primary" onclick="replyTicket(${id})">Enviar</button>`);
+        }
+
+        function replyTicket(id) {
+            const msg = document.getElementById('tkReply').value;
+            if (!msg) return;
+            DB.respondTicket(id, { from: 'user', message: msg });
+            Layout.closeModal();
+            Layout.toast('Resposta enviada!', 'success');
+            render();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Meus Processos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <template id="page-content">
+        <div class="page-header-row">
+            <div class="page-header" style="margin-bottom:0">
+                <h2>Meus Processos</h2>
+                <p>Acompanhe seus processos de limpeza de nome</p>
+            </div>
+            <button class="btn btn-primary" onclick="openNewProcess()"><i class="fas fa-plus"></i> Novo Processo</button>
+        </div>
+
+        <div class="stats-grid" style="margin-top:24px" id="processStats"></div>
+
+        <div class="card" style="margin-top:24px">
+            <div class="card-body">
+                <div class="table-wrap" id="processTable"></div>
+            </div>
+        </div>
+    </template>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'limpa-nome-processos', title: 'Meus Processos' });
+        const user = Layout.user;
+
+        function render() {
+            const proc = DB.getProcesses(user.id);
+            const statusMap = { pendente: 'badge-yellow', em_andamento: 'badge-blue', concluido: 'badge-green', cancelado: 'badge-red' };
+            const statusLabel = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+
+            document.getElementById('processStats').innerHTML = `
+                <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-file-alt"></i></div><div class="stat-info"><h3>${proc.length}</h3><p>Total Processos</p></div></div>
+                <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-clock"></i></div><div class="stat-info"><h3>${proc.filter(p=>p.status==='pendente'||p.status==='em_andamento').length}</h3><p>Em Aberto</p></div></div>
+                <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check"></i></div><div class="stat-info"><h3>${proc.filter(p=>p.status==='concluido').length}</h3><p>Concluídos</p></div></div>
+            `;
+
+            document.getElementById('processTable').innerHTML = proc.length ? `<table>
+                <thead><tr><th>#</th><th>CPF</th><th>Tipo</th><th>Instituição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
+                <tbody>${proc.map(p => `<tr>
+                    <td>${p.id}</td><td>${p.cpf}</td>
+                    <td>${p.type === 'negativacao' ? 'Negativação' : 'Dívida'}</td>
+                    <td>${p.institution}</td>
+                    <td style="font-weight:600">R$ ${fmt(p.value)}</td>
+                    <td><span class="badge ${statusMap[p.status]}">${statusLabel[p.status]}</span></td>
+                    <td>${p.createdAt}</td>
+                </tr>`).join('')}</tbody>
+            </table>` : '<div class="table-empty"><i class="fas fa-folder-open"></i><p>Nenhum processo</p><small>Clique em "Novo Processo" para começar</small></div>';
+        }
+        render();
+
+        function openNewProcess() {
+            Layout.openModal('Novo Processo', `
+                <div class="form-group"><label>CPF</label><input class="form-control" id="npCpf" value="${user.cpf}" maxlength="14"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Tipo</label><select class="form-control" id="npType"><option value="negativacao">Negativação</option><option value="divida">Dívida</option></select></div>
+                    <div class="form-group"><label>Instituição</label><select class="form-control" id="npInst"><option>Serasa</option><option>SPC</option><option>Boa Vista</option><option>Outro</option></select></div>
+                </div>
+                <div class="form-group"><label>Valor (R$)</label><input type="number" class="form-control" id="npValue" placeholder="0.00"></div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProcess()">Abrir Processo</button>`);
+        }
+
+        function saveProcess() {
+            const cpf = document.getElementById('npCpf').value;
+            const value = parseFloat(document.getElementById('npValue').value);
+            if (!cpf || !value) { Layout.toast('Preencha todos os campos', 'error'); return; }
+            DB.addProcess({ userId: user.id, cpf, name: user.name, status: 'pendente', type: document.getElementById('npType').value, value, institution: document.getElementById('npInst').value });
+            Layout.closeModal();
+            Layout.toast('Processo aberto!', 'success');
+            render();
+        }
+    </script>
+</body>
+</html>

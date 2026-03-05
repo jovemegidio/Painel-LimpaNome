@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Transações</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Transações</h2><p>Histórico completo de movimentações financeiras</p></div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="card" style="margin-top:24px">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+                <h3>Todas as Transações</h3>
+                <div style="display:flex;gap:12px">
+                    <select id="filterType" class="form-control" style="max-width:180px" onchange="renderTable()">
+                        <option value="">Todos os Tipos</option>
+                        <option value="compra">Compra</option>
+                        <option value="bonus">Bônus</option>
+                        <option value="comissao">Comissão</option>
+                        <option value="saque">Saque</option>
+                    </select>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar usuário..." style="max-width:200px" oninput="renderTable()">
+                </div>
+            </div>
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="txTable"><thead><tr>
+                    <th>ID</th><th>Data</th><th>Usuário</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-transactions', title: 'Transações', admin: true });
+
+        function renderStats() {
+            const txs = DB.getTransactions();
+            const compras = txs.filter(t => t.type === 'compra').reduce((s, t) => s + t.amount, 0);
+            const saques = txs.filter(t => t.type === 'saque').reduce((s, t) => s + t.amount, 0);
+            const comissoes = txs.filter(t => t.type === 'comissao').reduce((s, t) => s + t.amount, 0);
+            const bonus = txs.filter(t => t.type === 'bonus').reduce((s, t) => s + t.amount, 0);
+            const items = [
+                { icon: 'fa-shopping-cart', color: '#007bff', label: 'Total Compras', value: fmt(compras) },
+                { icon: 'fa-hand-holding-usd', color: '#dc3545', label: 'Total Saques', value: fmt(saques) },
+                { icon: 'fa-percentage', color: '#28a745', label: 'Total Comissões', value: fmt(comissoes) },
+                { icon: 'fa-gift', color: '#f59e0b', label: 'Total Bônus', value: fmt(bonus) }
+            ];
+            document.getElementById('statsGrid').innerHTML = items.map(s => `
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:${s.color}20;color:${s.color}"><i class="fas ${s.icon}"></i></div>
+                    <div class="stat-info"><span class="stat-value">${s.value}</span><span class="stat-label">${s.label}</span></div>
+                </div>`).join('');
+        }
+
+        function renderTable() {
+            const typeFilter = document.getElementById('filterType').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            let txs = DB.getTransactions();
+            if (typeFilter) txs = txs.filter(t => t.type === typeFilter);
+            if (search) txs = txs.filter(t => {
+                const u = DB.getUser(t.userId);
+                return u && u.name.toLowerCase().includes(search);
+            });
+            txs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const typeMap = { compra: 'primary', bonus: 'warning', comissao: 'success', saque: 'danger' };
+            const tbody = document.querySelector('#txTable tbody');
+            tbody.innerHTML = txs.length ? txs.map(t => {
+                const u = DB.getUser(t.userId);
+                return `<tr>
+                    <td>#${t.id}</td>
+                    <td>${new Date(t.date).toLocaleDateString('pt-BR')}</td>
+                    <td>${u ? u.name : '—'}</td>
+                    <td><span class="badge badge-${typeMap[t.type] || 'secondary'}">${t.type}</span></td>
+                    <td>${t.description}</td>
+                    <td style="font-weight:600;color:${t.type==='saque'?'#dc3545':'#28a745'}">${t.type==='saque'?'- ':'+ '}${fmt(t.amount)}</td>
+                    <td><span class="badge badge-${t.status==='aprovado'?'success':t.status==='pendente'?'warning':'danger'}">${t.status}</span></td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b">Nenhuma transação encontrada</td></tr>';
+        }
+
+        renderStats();
+        renderTable();
+    </script>
+</body>
+</html>

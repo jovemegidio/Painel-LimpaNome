@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Pacotes Disponíveis</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Pacotes Disponíveis</h2><p>Adquira pacotes para acelerar seu crescimento</p></div>
+        <div class="grid-4" id="pkgCards"></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'pacotes-disponiveis', title: 'Pacotes' });
+        const user = Layout.user;
+        const pkgs = DB.get('packages') || [];
+        const colors = ['blue', 'purple', 'orange', 'cyan'];
+
+        document.getElementById('pkgCards').innerHTML = pkgs.map((p, i) => `
+            <div class="pkg-card">
+                <div class="pkg-name">${p.name}</div>
+                <div class="pkg-desc">${p.description}</div>
+                <div class="pkg-points"><i class="fas fa-star"></i> ${p.points} pontos</div>
+                <div class="pkg-price">R$ ${fmt(p.price)}</div>
+                <button class="btn btn-primary w-full" onclick="buyPackage(${p.id})"><i class="fas fa-shopping-cart"></i> Adquirir</button>
+            </div>
+        `).join('');
+
+        function buyPackage(id) {
+            const pkg = pkgs.find(p => p.id === id);
+            if (!pkg) return;
+            Layout.openModal('Confirmar Compra', `
+                <div style="text-align:center;padding:16px">
+                    <div style="font-size:2.5rem;margin-bottom:12px"><i class="fas fa-cube" style="color:var(--accent)"></i></div>
+                    <h3 style="margin-bottom:4px">${pkg.name}</h3>
+                    <p style="color:var(--text3);font-size:.85rem;margin-bottom:16px">${pkg.description}</p>
+                    <p style="font-size:1.8rem;font-weight:700;color:var(--accent)">R$ ${fmt(pkg.price)}</p>
+                    <p style="font-size:.85rem;color:var(--success);margin-top:6px"><i class="fas fa-star"></i> +${pkg.points} pontos</p>
+                </div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-success" onclick="confirmBuy(${id})"><i class="fas fa-check"></i> Confirmar</button>`);
+        }
+
+        function confirmBuy(id) {
+            const pkg = pkgs.find(p => p.id === id);
+            DB.updateUser(user.id, { points: user.points + pkg.points, balance: user.balance - pkg.price });
+            DB.addTransaction({ userId: user.id, type: 'compra', amount: pkg.price, description: 'Compra: ' + pkg.name, status: 'concluido' });
+            user.points += pkg.points;
+            Layout.closeModal();
+            Layout.toast('Pacote adquirido! +' + pkg.points + ' pontos', 'success');
+        }
+    </script>
+</body>
+</html>

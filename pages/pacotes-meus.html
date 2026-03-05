@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Meus Pacotes</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Meus Pacotes</h2><p>Pacotes que você adquiriu</p></div>
+        <div id="myPkgList"></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'pacotes-meus', title: 'Meus Pacotes' });
+        const user = Layout.user;
+        const txs = DB.getTransactions(user.id).filter(t => t.type === 'compra');
+        if (txs.length) {
+            document.getElementById('myPkgList').innerHTML = txs.map(t => `
+                <div class="card" style="margin-bottom:12px">
+                    <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+                        <div>
+                            <h4 style="margin-bottom:4px"><i class="fas fa-cube" style="color:var(--accent);margin-right:6px"></i>${t.description.replace('Compra: ','')}</h4>
+                            <span style="font-size:.82rem;color:var(--text3)">Adquirido em ${new Date(t.date).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-size:1.1rem;font-weight:700;color:var(--accent)">R$ ${fmt(Math.abs(t.amount))}</div>
+                            <span class="badge badge-${t.status==='concluido'?'success':'warning'}" style="font-size:.75rem">${t.status}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            document.getElementById('myPkgList').innerHTML = '<div class="card"><div class="card-body"><div class="empty-state"><i class="fas fa-cube"></i><p>Nenhum pacote adquirido</p><small><a href="pacotes-disponiveis.html">Ver pacotes disponíveis</a></small></div></div></div>';
+        }
+    </script>
+</body>
+</html>

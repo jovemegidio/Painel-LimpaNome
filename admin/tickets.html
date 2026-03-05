@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Tickets</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Gerenciar Tickets</h2><p>Responda e gerencie os chamados de suporte</p></div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="card" style="margin-top:24px">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+                <h3>Todos os Tickets</h3>
+                <select id="filterStatus" class="form-control" style="max-width:180px" onchange="renderTable()">
+                    <option value="">Todos</option>
+                    <option value="aberto">Aberto</option>
+                    <option value="respondido">Respondido</option>
+                    <option value="fechado">Fechado</option>
+                </select>
+            </div>
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="ticketTable"><thead><tr>
+                    <th>ID</th><th>Assunto</th><th>Usuário</th><th>Data</th><th>Status</th><th style="width:160px">Ações</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <!-- Reply Modal -->
+        <div id="replyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:12px;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:24px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <h3 id="replyTitle">Ticket</h3>
+                    <button onclick="closeReply()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+                <div id="replyThread" style="margin-bottom:16px"></div>
+                <form onsubmit="sendReply(event)">
+                    <input type="hidden" id="replyTicketId">
+                    <div class="form-group"><label>Resposta do Admin</label><textarea id="replyText" class="form-control" rows="4" required></textarea></div>
+                    <div style="display:flex;gap:12px;justify-content:flex-end">
+                        <button type="button" class="btn btn-success" onclick="closeTicket()">Fechar Ticket</button>
+                        <button type="submit" class="btn btn-primary">Enviar Resposta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-tickets', title: 'Tickets', admin: true });
+
+        function renderStats() {
+            const tks = DB.getTickets();
+            const aberto = tks.filter(t => t.status === 'aberto').length;
+            const respondido = tks.filter(t => t.status === 'respondido').length;
+            const fechado = tks.filter(t => t.status === 'fechado').length;
+            const items = [
+                { icon: 'fa-envelope-open', color: '#dc3545', label: 'Abertos', value: aberto },
+                { icon: 'fa-reply', color: '#007bff', label: 'Respondidos', value: respondido },
+                { icon: 'fa-check-double', color: '#28a745', label: 'Fechados', value: fechado },
+                { icon: 'fa-ticket', color: '#6366f1', label: 'Total', value: tks.length }
+            ];
+            document.getElementById('statsGrid').innerHTML = items.map(s => `
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:${s.color}20;color:${s.color}"><i class="fas ${s.icon}"></i></div>
+                    <div class="stat-info"><span class="stat-value">${s.value}</span><span class="stat-label">${s.label}</span></div>
+                </div>`).join('');
+        }
+
+        function renderTable() {
+            const filter = document.getElementById('filterStatus').value;
+            let tks = DB.getTickets();
+            if (filter) tks = tks.filter(t => t.status === filter);
+            const stMap = { aberto: 'danger', respondido: 'info', fechado: 'success' };
+            const tbody = document.querySelector('#ticketTable tbody');
+            tbody.innerHTML = tks.length ? tks.map(t => {
+                const u = DB.getUser(t.userId);
+                return `<tr>
+                    <td>#${t.id}</td>
+                    <td>${t.subject}</td>
+                    <td>${u ? u.name : '—'}</td>
+                    <td>${new Date(t.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td><span class="badge badge-${stMap[t.status] || 'secondary'}">${t.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="openReply(${t.id})"><i class="fas fa-reply"></i> Responder</button>
+                    </td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b">Nenhum ticket encontrado</td></tr>';
+        }
+
+        function openReply(id) {
+            const t = DB.getTickets().find(x => x.id === Number(id));
+            if (!t) return;
+            document.getElementById('replyModal').style.display = 'flex';
+            document.getElementById('replyTicketId').value = id;
+            document.getElementById('replyTitle').textContent = '#' + t.id + ' — ' + t.subject;
+            document.getElementById('replyText').value = '';
+
+            const u = DB.getUser(t.userId);
+            let html = `<div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:8px">
+                <strong>${u ? u.name : 'Usuário'}</strong> <span style="color:#64748b;font-size:13px">${new Date(t.createdAt).toLocaleString('pt-BR')}</span>
+                <p style="margin-top:6px">${t.message}</p>
+            </div>`;
+            if (t.responses && t.responses.length) {
+                t.responses.forEach(r => {
+                    html += `<div style="background:${r.from==='admin'?'#e8f4fd':'#f8fafc'};border-radius:8px;padding:12px;margin-bottom:8px;${r.from==='admin'?'border-left:3px solid #007bff':''}">
+                        <strong>${r.from === 'admin' ? '🛡️ Admin' : (u ? u.name : 'Usuário')}</strong> <span style="color:#64748b;font-size:13px">${new Date(r.date).toLocaleString('pt-BR')}</span>
+                        <p style="margin-top:6px">${r.message}</p>
+                    </div>`;
+                });
+            }
+            document.getElementById('replyThread').innerHTML = html;
+        }
+        function closeReply() { document.getElementById('replyModal').style.display = 'none'; }
+
+        function sendReply(e) {
+            e.preventDefault();
+            const id = Number(document.getElementById('replyTicketId').value);
+            const msg = document.getElementById('replyText').value.trim();
+            if (!msg) return;
+            DB.respondTicket(id, { from: 'admin', message: msg });
+            Layout.toast('Resposta enviada!', 'success');
+            closeReply();
+            renderStats();
+            renderTable();
+        }
+
+        function closeTicket() {
+            const id = Number(document.getElementById('replyTicketId').value);
+            const tickets = DB.get('tickets') || [];
+            const t = tickets.find(x => x.id === id);
+            if (t) { t.status = 'fechado'; DB.set('tickets', tickets); }
+            Layout.toast('Ticket fechado', 'success');
+            closeReply();
+            renderStats();
+            renderTable();
+        }
+
+        renderStats();
+        renderTable();
+    </script>
+</body>
+</html>

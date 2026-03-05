@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Entrar</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div class="login-page">
+    <div class="login-card">
+        <!-- Brand -->
+        <div class="login-brand">
+            <div class="brand-icon">MI2</div>
+            <h2>Bem-vindo de volta</h2>
+            <p>Acesse seu escritório virtual</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('user')">Usuário</button>
+            <button class="auth-tab" onclick="switchTab('admin')">Administrador</button>
+        </div>
+
+        <!-- User Login -->
+        <form id="userForm" onsubmit="doLogin(event,'user')">
+            <div class="form-group">
+                <label><i class="fas fa-user" style="margin-right:6px;opacity:.4"></i>Usuário</label>
+                <input type="text" class="form-control" id="userUsername" placeholder="Seu nome de usuário" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock" style="margin-right:6px;opacity:.4"></i>Senha</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="userPassword" placeholder="Sua senha" required autocomplete="current-password">
+                    <button type="button" class="input-group-btn" onclick="togglePass('userPassword',this)"><i class="fas fa-eye"></i></button>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-full" id="userBtn" style="padding:12px;font-size:.95rem">
+                <span class="btn-text">Entrar</span>
+                <i class="fas fa-spinner fa-spin" style="display:none"></i>
+            </button>
+        </form>
+
+        <!-- Admin Login (hidden) -->
+        <form id="adminForm" onsubmit="doLogin(event,'admin')" style="display:none">
+            <div class="form-group">
+                <label><i class="fas fa-shield-halved" style="margin-right:6px;opacity:.4"></i>Usuário Admin</label>
+                <input type="text" class="form-control" id="adminUsername" placeholder="admin" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock" style="margin-right:6px;opacity:.4"></i>Senha</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="adminPassword" placeholder="Senha do administrador" required>
+                    <button type="button" class="input-group-btn" onclick="togglePass('adminPassword',this)"><i class="fas fa-eye"></i></button>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-full" id="adminBtn" style="padding:12px;font-size:.95rem;background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 14px rgba(239,68,68,.25)">
+                <span class="btn-text">Entrar como Admin</span>
+                <i class="fas fa-spinner fa-spin" style="display:none"></i>
+            </button>
+        </form>
+
+        <!-- Footer links -->
+        <div class="login-footer">
+            <a href="password-forgot.html">Esqueceu sua senha?</a>
+            <span style="margin:0 8px;color:var(--border)">•</span>
+            <a href="register.html">Cadastre-se</a>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/data.js"></script>
+<script>
+    // Check if already logged
+    DB.init();
+    const cur = DB.getCurrentUser();
+    if (cur) window.location.href = cur.role === 'admin' ? 'admin/index.html' : 'pages/dashboard.html';
+
+    // Apply dynamic branding
+    const _s = DB.getSettings();
+    document.title = _s.siteTitle || 'MI2 — Entrar';
+    const brandIcon = document.querySelector('.login-brand .brand-icon');
+    if (brandIcon) brandIcon.textContent = _s.logoText || 'MI2';
+
+    function switchTab(tab) {
+        document.querySelectorAll('.auth-tab').forEach((t, i) => {
+            t.classList.toggle('active', (tab === 'user' && i === 0) || (tab === 'admin' && i === 1));
+        });
+        document.getElementById('userForm').style.display = tab === 'user' ? 'block' : 'none';
+        document.getElementById('adminForm').style.display = tab === 'admin' ? 'block' : 'none';
+    }
+
+    function togglePass(id, btn) {
+        const inp = document.getElementById(id);
+        const show = inp.type === 'password';
+        inp.type = show ? 'text' : 'password';
+        btn.querySelector('i').className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+    }
+
+    function doLogin(e, type) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type=submit]');
+        const text = btn.querySelector('.btn-text');
+        const spin = btn.querySelector('.fa-spin');
+        text.style.display = 'none';
+        spin.style.display = 'inline-block';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            let result;
+            if (type === 'user') {
+                const u = document.getElementById('userUsername').value.toLowerCase().trim();
+                const p = document.getElementById('userPassword').value;
+                result = DB.login(u, p);
+            } else {
+                const u = document.getElementById('adminUsername').value.toLowerCase().trim();
+                const p = document.getElementById('adminPassword').value;
+                result = DB.adminLogin(u, p);
+            }
+
+            if (result.success) {
+                showToast('Login realizado com sucesso!', 'success');
+                setTimeout(() => {
+                    window.location.href = type === 'admin' ? 'admin/index.html' : 'pages/dashboard.html';
+                }, 600);
+            } else {
+                showToast('Usuário ou senha inválidos.', 'error');
+                text.style.display = 'inline';
+                spin.style.display = 'none';
+                btn.disabled = false;
+            }
+        }, 800);
+    }
+
+    function showToast(msg, type) {
+        const c = document.getElementById('toastContainer');
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const el = document.createElement('div');
+        el.className = 'toast ' + type;
+        el.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span>${msg}</span>`;
+        c.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
+    }
+</script>
+</body>
+</html>

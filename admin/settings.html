@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Configurações</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .settings-tabs{display:flex;gap:4px;background:var(--bg);border-radius:var(--radius);padding:4px;margin-bottom:24px;flex-wrap:wrap}
+        .settings-tab{padding:10px 18px;border-radius:var(--radius);cursor:pointer;font-size:.85rem;font-weight:600;border:none;background:transparent;color:var(--text2);transition:all .2s}
+        .settings-tab.active{background:var(--primary);color:#fff;box-shadow:var(--shadow-primary)}
+        .settings-tab:hover:not(.active){background:var(--bg-hover)}
+        .settings-section{display:none}.settings-section.active{display:block}
+        .color-field{display:flex;align-items:center;gap:12px}
+        .color-field input[type=color]{width:48px;height:40px;border:none;border-radius:var(--radius);cursor:pointer;padding:2px}
+        .level-card{display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg);border-radius:var(--radius);margin-bottom:12px;border:1px solid var(--border)}
+        .level-card .level-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
+        .level-card .level-fields{flex:1;display:grid;grid-template-columns:1fr 100px 100px 100px;gap:10px;align-items:center}
+        .level-card .level-fields label{font-size:.75rem;color:var(--text3);margin-bottom:2px;display:block}
+        .level-card .level-fields input{font-size:.85rem;padding:6px 10px}
+        .plan-card{padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px}
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header">
+            <h2><i class="fas fa-cogs" style="margin-right:8px;opacity:.6"></i>Configurações do Sistema</h2>
+            <p>Centro operacional — Gerencie aparência, níveis, comissões, planos e dados</p>
+        </div>
+        <div class="settings-tabs">
+            <button class="settings-tab active" onclick="switchTab('appearance',this)"><i class="fas fa-palette"></i> Aparência</button>
+            <button class="settings-tab" onclick="switchTab('general',this)"><i class="fas fa-cog"></i> Geral</button>
+            <button class="settings-tab" onclick="switchTab('levels',this)"><i class="fas fa-layer-group"></i> Níveis MLM</button>
+            <button class="settings-tab" onclick="switchTab('commissions',this)"><i class="fas fa-percentage"></i> Comissões</button>
+            <button class="settings-tab" onclick="switchTab('plans',this)"><i class="fas fa-id-card"></i> Planos</button>
+            <button class="settings-tab" onclick="switchTab('data',this)"><i class="fas fa-database"></i> Dados</button>
+        </div>
+
+        <!-- APPEARANCE -->
+        <div class="settings-section active" id="sec-appearance">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+                <div class="card"><div class="card-header"><h3><i class="fas fa-tag"></i> Identidade</h3></div><div class="card-body">
+                    <div class="form-group"><label>Nome do Sistema</label><input type="text" id="siteName" class="form-control" placeholder="Ex: MI2"><div class="form-hint">Aparece na sidebar, header e footer</div></div>
+                    <div class="form-group"><label>Título da Aba (Browser)</label><input type="text" id="siteTitle" class="form-control" placeholder="Ex: MI2 — Escritório Virtual"></div>
+                    <div class="form-group"><label>Texto do Logo</label><input type="text" id="logoText" class="form-control" placeholder="Ex: MI2" maxlength="5"><div class="form-hint">Texto curto exibido no ícone do sidebar</div></div>
+                    <div class="form-group"><label>Favicon (Emoji)</label><input type="text" id="faviconEmoji" class="form-control" placeholder="Ex: 💎" maxlength="4" style="font-size:1.2rem"><div class="form-hint">Emoji na aba do navegador</div></div>
+                </div></div>
+                <div class="card"><div class="card-header"><h3><i class="fas fa-swatchbook"></i> Cores & Visual</h3></div><div class="card-body">
+                    <div class="form-group"><label>Cor Primária</label><div class="color-field"><input type="color" id="primaryColor" value="#6366f1"><input type="text" id="primaryColorText" class="form-control" style="max-width:120px;font-family:monospace"></div></div>
+                    <div class="form-group"><label>Cor de Destaque</label><div class="color-field"><input type="color" id="accentColor" value="#10b981"><input type="text" id="accentColorText" class="form-control" style="max-width:120px;font-family:monospace"></div></div>
+                    <div class="form-group"><label>Texto do Rodapé</label><input type="text" id="footerText" class="form-control" placeholder="Ex: © 2026 MI2"></div>
+                    <div class="form-group"><label>Imagem de Fundo do Login</label><input type="text" id="loginBg" class="form-control" placeholder="Ex: css/Fundo/Fundo.jpg"><div class="form-hint">Caminho relativo à raiz do projeto</div></div>
+                </div></div>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:12px;justify-content:flex-end">
+                <button class="btn btn-outline" onclick="loadSettings()"><i class="fas fa-undo"></i> Descartar</button>
+                <button class="btn btn-primary" onclick="saveAppearance()"><i class="fas fa-save"></i> Salvar Aparência</button>
+            </div>
+            <div class="card" style="margin-top:24px"><div class="card-header"><h3><i class="fas fa-eye"></i> Pré-visualização</h3></div><div class="card-body" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap"><div id="previewBrand"></div><div id="previewFooter" style="color:var(--text3);font-size:.85rem"></div></div></div>
+        </div>
+
+        <!-- GENERAL -->
+        <div class="settings-section" id="sec-general">
+            <div class="card" style="max-width:600px"><div class="card-header"><h3><i class="fas fa-cog"></i> Configurações Gerais</h3></div><div class="card-body">
+                <div class="form-group"><label>Saque Mínimo (R$)</label><input type="number" id="minWithdraw" class="form-control" min="0" step="0.01"></div>
+                <div class="form-group" style="display:flex;align-items:center;gap:16px">
+                    <label style="margin:0;font-weight:600">Modo Manutenção</label>
+                    <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0"><input type="checkbox" id="maintenance" style="opacity:0;width:0;height:0"><span id="switchTrack" style="position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:26px;transition:.3s"></span></label>
+                </div>
+                <div style="margin-top:20px"><button class="btn btn-primary" onclick="saveGeneral()"><i class="fas fa-save"></i> Salvar Geral</button></div>
+            </div></div>
+        </div>
+
+        <!-- LEVELS -->
+        <div class="settings-section" id="sec-levels">
+            <div class="card"><div class="card-header"><h3><i class="fas fa-layer-group"></i> Níveis do Sistema MLM</h3></div><div class="card-body" id="levelsContainer"></div></div>
+        </div>
+
+        <!-- COMMISSIONS -->
+        <div class="settings-section" id="sec-commissions">
+            <div class="card" style="max-width:600px"><div class="card-header"><h3><i class="fas fa-percentage"></i> Comissões por Nível de Rede</h3></div><div class="card-body">
+                <div class="form-group"><label>Nível 1 (Direto) — %</label><input type="number" id="comm1" class="form-control" min="0" max="100" step="0.5"></div>
+                <div class="form-group"><label>Nível 2 (Indireto) — %</label><input type="number" id="comm2" class="form-control" min="0" max="100" step="0.5"></div>
+                <div class="form-group"><label>Nível 3 (Profundidade) — %</label><input type="number" id="comm3" class="form-control" min="0" max="100" step="0.5"></div>
+                <button class="btn btn-primary" onclick="saveCommissions()"><i class="fas fa-save"></i> Salvar Comissões</button>
+            </div></div>
+        </div>
+
+        <!-- PLANS -->
+        <div class="settings-section" id="sec-plans">
+            <div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-id-card"></i> Planos</h3><button class="btn btn-sm btn-primary" onclick="addPlan()"><i class="fas fa-plus"></i> Novo Plano</button></div><div class="card-body" id="plansContainer"></div></div>
+        </div>
+
+        <!-- DATA -->
+        <div class="settings-section" id="sec-data">
+            <div class="card" style="max-width:600px"><div class="card-header"><h3><i class="fas fa-database"></i> Gerenciamento de Dados</h3></div><div class="card-body">
+                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+                    <button class="btn btn-outline" onclick="exportData()"><i class="fas fa-download"></i> Exportar JSON</button>
+                    <button class="btn btn-warning" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> Importar JSON</button>
+                    <button class="btn btn-danger" onclick="resetData()"><i class="fas fa-redo"></i> Resetar Dados</button>
+                </div>
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+                <div style="padding:16px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)"><h4 style="font-size:.9rem;margin-bottom:8px"><i class="fas fa-info-circle" style="color:var(--primary)"></i> Informações do Banco</h4><div id="dbInfo" style="font-size:.82rem;color:var(--text3)"></div></div>
+            </div></div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-settings', title: 'Configurações', admin: true });
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('sec-' + tab).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function loadSettings() {
+            const s = DB.getSettings();
+            document.getElementById('siteName').value = s.siteName || '';
+            document.getElementById('siteTitle').value = s.siteTitle || '';
+            document.getElementById('logoText').value = s.logoText || '';
+            document.getElementById('faviconEmoji').value = s.faviconEmoji || '';
+            document.getElementById('primaryColor').value = s.primaryColor || '#6366f1';
+            document.getElementById('primaryColorText').value = s.primaryColor || '#6366f1';
+            document.getElementById('accentColor').value = s.accentColor || '#10b981';
+            document.getElementById('accentColorText').value = s.accentColor || '#10b981';
+            document.getElementById('footerText').value = s.footerText || '';
+            document.getElementById('loginBg').value = s.loginBg || '';
+            document.getElementById('minWithdraw').value = s.minWithdraw || 50;
+            document.getElementById('maintenance').checked = s.maintenanceMode || false;
+            updateSwitch();
+            document.getElementById('comm1').value = s.commissionLevel1 || 10;
+            document.getElementById('comm2').value = s.commissionLevel2 || 5;
+            document.getElementById('comm3').value = s.commissionLevel3 || 3;
+            loadLevels(); loadPlans(); updatePreview(); loadDbInfo();
+        }
+
+        document.getElementById('primaryColor').addEventListener('input', function(){ document.getElementById('primaryColorText').value = this.value; updatePreview(); });
+        document.getElementById('primaryColorText').addEventListener('input', function(){ if(/^#[0-9A-Fa-f]{6}$/.test(this.value)) document.getElementById('primaryColor').value = this.value; updatePreview(); });
+        document.getElementById('accentColor').addEventListener('input', function(){ document.getElementById('accentColorText').value = this.value; updatePreview(); });
+        document.getElementById('accentColorText').addEventListener('input', function(){ if(/^#[0-9A-Fa-f]{6}$/.test(this.value)) document.getElementById('accentColor').value = this.value; updatePreview(); });
+        ['siteName','logoText','faviconEmoji','footerText'].forEach(id => document.getElementById(id).addEventListener('input', updatePreview));
+
+        function updatePreview() {
+            const name = document.getElementById('siteName').value || 'MI2';
+            const logo = document.getElementById('logoText').value || name;
+            const color = document.getElementById('primaryColor').value;
+            const footer = document.getElementById('footerText').value || '\u00a9 2026 ' + name;
+            const emoji = document.getElementById('faviconEmoji').value || '\ud83d\udc8e';
+            document.getElementById('previewBrand').innerHTML = '<div style="display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;background:linear-gradient(135deg,'+color+','+color+'cc);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff;letter-spacing:-1px">'+logo+'</div><div><strong style="font-size:1.1rem">'+name+'</strong><br><span style="font-size:.82rem;color:var(--text3)">Favicon: '+emoji+'</span></div></div>';
+            document.getElementById('previewFooter').textContent = footer + ' — Escritório Virtual';
+        }
+
+        function saveAppearance() {
+            DB.saveSettings({ siteName: document.getElementById('siteName').value.trim()||'MI2', siteTitle: document.getElementById('siteTitle').value.trim(), logoText: document.getElementById('logoText').value.trim(), faviconEmoji: document.getElementById('faviconEmoji').value.trim(), primaryColor: document.getElementById('primaryColor').value, accentColor: document.getElementById('accentColor').value, footerText: document.getElementById('footerText').value.trim(), loginBg: document.getElementById('loginBg').value.trim() });
+            Layout.toast('Aparência salva! Recarregue as páginas para aplicar.', 'success');
+        }
+
+        function updateSwitch() {
+            const sw = document.getElementById('maintenance');
+            const tr = document.getElementById('switchTrack');
+            tr.style.background = sw.checked ? 'var(--primary)' : '#cbd5e1';
+            tr.innerHTML = '<span style="position:absolute;top:3px;'+(sw.checked?'right:3px':'left:3px')+';width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>';
+        }
+        document.getElementById('maintenance').addEventListener('change', updateSwitch);
+
+        function saveGeneral() {
+            DB.saveSettings({ minWithdraw: parseFloat(document.getElementById('minWithdraw').value)||50, maintenanceMode: document.getElementById('maintenance').checked });
+            Layout.toast('Configurações gerais salvas!', 'success');
+        }
+
+        function loadLevels() {
+            const levels = DB.get('levels') || {};
+            const iconMap = { prata:'fa-medal', ouro:'fa-crown', diamante:'fa-gem' };
+            document.getElementById('levelsContainer').innerHTML = Object.entries(levels).map(([key, l]) => '<div class="level-card"><div class="level-icon" style="background:'+l.color+'"><i class="fas '+(iconMap[key]||'fa-star')+'"></i></div><div class="level-fields"><div><label>Nome</label><input type="text" class="form-control" value="'+l.name+'" readonly style="font-weight:700"></div><div><label>Pts Mínimos</label><input type="number" class="form-control" value="'+l.minPoints+'" id="lvlPts_'+key+'" min="0"></div><div><label>Bônus %</label><input type="number" class="form-control" value="'+l.bonus+'" id="lvlBonus_'+key+'" min="0" max="100"></div><div><label>Comissão %</label><input type="number" class="form-control" value="'+l.comission+'" id="lvlComm_'+key+'" min="0" max="100"></div></div></div>').join('') + '<button class="btn btn-primary" style="margin-top:12px" onclick="saveLevels()"><i class="fas fa-save"></i> Salvar Níveis</button>';
+        }
+
+        function saveLevels() {
+            const levels = DB.get('levels') || {};
+            Object.keys(levels).forEach(key => { levels[key].minPoints = parseInt(document.getElementById('lvlPts_'+key).value)||0; levels[key].bonus = parseInt(document.getElementById('lvlBonus_'+key).value)||0; levels[key].comission = parseInt(document.getElementById('lvlComm_'+key).value)||0; });
+            DB.set('levels', levels); Layout.toast('Níveis atualizados!', 'success'); loadLevels();
+        }
+
+        function saveCommissions() {
+            DB.saveSettings({ commissionLevel1: parseFloat(document.getElementById('comm1').value)||10, commissionLevel2: parseFloat(document.getElementById('comm2').value)||5, commissionLevel3: parseFloat(document.getElementById('comm3').value)||3 });
+            Layout.toast('Comissões salvas!', 'success');
+        }
+
+        function loadPlans() {
+            const plans = DB.get('plans') || [];
+            document.getElementById('plansContainer').innerHTML = plans.length ? plans.map((p,i) => '<div class="plan-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h4><i class="fas fa-id-card" style="color:var(--primary);margin-right:6px"></i> '+p.name+'</h4><div style="display:flex;gap:8px"><button class="btn btn-sm btn-outline" onclick="editPlan('+i+')"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-danger" onclick="deletePlan('+i+')"><i class="fas fa-trash"></i></button></div></div><div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;font-size:.85rem"><div><strong>ID:</strong> '+p.id+'</div><div><strong>Preço:</strong> R$ '+fmt(p.price)+'</div><div><strong>Recursos:</strong> '+(p.features||[]).join(', ')+'</div></div></div>').join('') : '<p style="color:var(--text3);text-align:center">Nenhum plano cadastrado</p>';
+        }
+
+        function addPlan() {
+            Layout.openModal('Novo Plano','<div class="form-group"><label>ID (slug)</label><input type="text" id="planId" class="form-control" placeholder="ex: basico"></div><div class="form-group"><label>Nome</label><input type="text" id="planName" class="form-control"></div><div class="form-group"><label>Preço (R$)</label><input type="number" id="planPrice" class="form-control" min="0" step="0.01"></div><div class="form-group"><label>Recursos (vírgula)</label><textarea id="planFeatures" class="form-control" rows="3"></textarea></div>','<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="savePlanModal(-1)"><i class="fas fa-save"></i> Salvar</button>');
+        }
+        function editPlan(idx) {
+            const p = (DB.get('plans')||[])[idx]; if(!p) return;
+            Layout.openModal('Editar Plano','<div class="form-group"><label>ID</label><input type="text" id="planId" class="form-control" value="'+p.id+'"></div><div class="form-group"><label>Nome</label><input type="text" id="planName" class="form-control" value="'+p.name+'"></div><div class="form-group"><label>Preço</label><input type="number" id="planPrice" class="form-control" value="'+p.price+'" min="0" step="0.01"></div><div class="form-group"><label>Recursos (vírgula)</label><textarea id="planFeatures" class="form-control" rows="3">'+(p.features||[]).join(', ')+'</textarea></div>','<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="savePlanModal('+idx+')"><i class="fas fa-save"></i> Salvar</button>');
+        }
+        function savePlanModal(idx) {
+            const plans = DB.get('plans')||[];
+            const plan = { id: document.getElementById('planId').value.trim(), name: document.getElementById('planName').value.trim(), price: parseFloat(document.getElementById('planPrice').value)||0, features: document.getElementById('planFeatures').value.split(',').map(f=>f.trim()).filter(Boolean) };
+            if(!plan.id||!plan.name){ Layout.toast('Preencha ID e Nome','error'); return; }
+            if(idx>=0) plans[idx]=plan; else plans.push(plan);
+            DB.set('plans', plans); Layout.closeModal(); loadPlans(); Layout.toast('Plano salvo!','success');
+        }
+        function deletePlan(idx) { if(!confirm('Excluir?')) return; const p=DB.get('plans')||[]; p.splice(idx,1); DB.set('plans',p); loadPlans(); Layout.toast('Plano excluído','success'); }
+
+        function loadDbInfo() {
+            const u=(DB.get('users')||[]).length,pk=(DB.get('packages')||[]).length,tx=(DB.get('transactions')||[]).length,pr=(DB.get('limpanome_processes')||[]).length,tk=(DB.get('tickets')||[]).length;
+            document.getElementById('dbInfo').innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><span>Usuários: '+u+'</span><span>Pacotes: '+pk+'</span><span>Transações: '+tx+'</span><span>Processos: '+pr+'</span><span>Tickets: '+tk+'</span><span>Tamanho: ~'+(JSON.stringify(DB.exportAll()).length/1024).toFixed(1)+' KB</span></div>';
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(DB.exportAll(),null,2)],{type:'application/json'});
+            const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mi2_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+            Layout.toast('Dados exportados!','success');
+        }
+        function handleImport(e) {
+            const file=e.target.files[0]; if(!file) return;
+            const r=new FileReader();
+            r.onload=function(ev){ try{ const d=JSON.parse(ev.target.result); DB.importAll(d); Layout.toast('Importado! Recarregando...','success'); setTimeout(function(){location.reload()},1200); }catch(err){ Layout.toast('JSON inválido','error'); } };
+            r.readAsText(file); e.target.value='';
+        }
+        function resetData() { if(!confirm('ATENÇÃO: Todos os dados serão perdidos!\nContinuar?')) return; DB.resetAll(); Layout.toast('Dados resetados!','success'); setTimeout(function(){location.reload()},1200); }
+
+        loadSettings();
+    </script>
+</body>
+</html>

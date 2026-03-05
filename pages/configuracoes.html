@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Configurações</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div id="app"></div>
+
+<template id="page-content">
+    <div class="page-header">
+        <h2><i class="fas fa-cog" style="color:var(--text3);margin-right:8px"></i>Configurações</h2>
+        <p>Gerencie suas informações pessoais e preferências</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('perfil',this)">Dados Pessoais</div>
+        <div class="tab" onclick="switchTab('senha',this)">Alterar Senha</div>
+        <div class="tab" onclick="switchTab('notif',this)">Notificações</div>
+    </div>
+
+    <!-- Tab: Perfil -->
+    <div class="tab-content active" id="tab-perfil">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-user-edit"></i> Informações Pessoais</h3>
+            </div>
+            <div class="card-body">
+                <form id="profileForm" onsubmit="saveProfile(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nome Completo</label>
+                            <input type="text" class="form-control" id="cfgName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nome de Usuário</label>
+                            <input type="text" class="form-control" id="cfgUsername" disabled style="opacity:.6">
+                            <div class="form-hint">O nome de usuário não pode ser alterado</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>E-mail</label>
+                            <input type="email" class="form-control" id="cfgEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Telefone</label>
+                            <input type="text" class="form-control" id="cfgPhone">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>CPF</label>
+                            <input type="text" class="form-control" id="cfgCpf" disabled style="opacity:.6">
+                            <div class="form-hint">O CPF não pode ser alterado</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Plano Atual</label>
+                            <input type="text" class="form-control" id="cfgPlan" disabled style="opacity:.6">
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Senha -->
+    <div class="tab-content" id="tab-senha">
+        <div class="card" style="max-width:500px">
+            <div class="card-header">
+                <h3><i class="fas fa-key"></i> Alterar Senha</h3>
+            </div>
+            <div class="card-body">
+                <form id="passForm" onsubmit="changePassword(event)">
+                    <div class="form-group">
+                        <label>Senha Atual</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="cfgCurPass" required>
+                            <button type="button" class="input-group-btn" onclick="tgl('cfgCurPass',this)"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Nova Senha</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="cfgNewPass" required minlength="6">
+                            <button type="button" class="input-group-btn" onclick="tgl('cfgNewPass',this)"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="form-hint">Mínimo 6 caracteres</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmar Nova Senha</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="cfgNewPass2" required minlength="6">
+                            <button type="button" class="input-group-btn" onclick="tgl('cfgNewPass2',this)"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-lock"></i> Alterar Senha</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Notificações -->
+    <div class="tab-content" id="tab-notif">
+        <div class="card" style="max-width:500px">
+            <div class="card-header">
+                <h3><i class="fas fa-bell"></i> Preferências de Notificação</h3>
+            </div>
+            <div class="card-body">
+                <div style="display:flex;flex-direction:column;gap:16px">
+                    <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
+                        <div>
+                            <div style="font-weight:550;font-size:.9rem">E-mail de novas transações</div>
+                            <div style="font-size:.78rem;color:var(--text3)">Receba um e-mail quando houver créditos ou saques</div>
+                        </div>
+                        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)">
+                    </label>
+                    <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
+                        <div>
+                            <div style="font-weight:550;font-size:.9rem">Novos indicados</div>
+                            <div style="font-size:.78rem;color:var(--text3)">Seja notificado quando um novo indicado se cadastrar</div>
+                        </div>
+                        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)">
+                    </label>
+                    <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
+                        <div>
+                            <div style="font-weight:550;font-size:.9rem">Atualizações do sistema</div>
+                            <div style="font-size:.78rem;color:var(--text3)">Receba novidades e atualizações da plataforma</div>
+                        </div>
+                        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)">
+                    </label>
+                    <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
+                        <div>
+                            <div style="font-weight:550;font-size:.9rem">Processos Limpa Nome</div>
+                            <div style="font-size:.78rem;color:var(--text3)">Notificações sobre status dos seus processos</div>
+                        </div>
+                        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)">
+                    </label>
+                    <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;cursor:pointer">
+                        <div>
+                            <div style="font-weight:550;font-size:.9rem">Newsletter semanal</div>
+                            <div style="font-size:.78rem;color:var(--text3)">Resumo semanal das suas atividades e rede</div>
+                        </div>
+                        <input type="checkbox" style="width:18px;height:18px;accent-color:var(--primary)">
+                    </label>
+                </div>
+                <div style="margin-top:20px">
+                    <button class="btn btn-primary" onclick="Layout.toast('Preferências salvas!','success')"><i class="fas fa-save"></i> Salvar Preferências</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script src="../js/data.js"></script>
+<script src="../js/components.js"></script>
+<script>
+    Layout.init({ basePath: '../', page: 'configuracoes', title: 'Configurações' });
+
+    const user = DB.getCurrentUser();
+    if (user) {
+        document.getElementById('cfgName').value = user.name || '';
+        document.getElementById('cfgUsername').value = user.username || '';
+        document.getElementById('cfgEmail').value = user.email || '';
+        document.getElementById('cfgPhone').value = user.phone || '';
+        document.getElementById('cfgCpf').value = user.cpf || '';
+        const plans = DB.get('plans') || [];
+        const plan = plans.find(p => p.id === user.plan);
+        document.getElementById('cfgPlan').value = plan ? plan.name + ' — R$ ' + fmt(plan.price) + '/mês' : user.plan;
+    }
+
+    function switchTab(tab, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    function saveProfile(e) {
+        e.preventDefault();
+        DB.updateUser(user.id, {
+            name: document.getElementById('cfgName').value.trim(),
+            email: document.getElementById('cfgEmail').value.trim(),
+            phone: document.getElementById('cfgPhone').value.trim()
+        });
+        Layout.toast('Dados atualizados com sucesso!', 'success');
+    }
+
+    function changePassword(e) {
+        e.preventDefault();
+        const cur = document.getElementById('cfgCurPass').value;
+        const nw = document.getElementById('cfgNewPass').value;
+        const nw2 = document.getElementById('cfgNewPass2').value;
+
+        if (nw !== nw2) { Layout.toast('As senhas não conferem.', 'error'); return; }
+
+        const result = DB.updatePassword(user.id, cur, nw);
+        if (result.success) {
+            Layout.toast('Senha alterada com sucesso!', 'success');
+            document.getElementById('passForm').reset();
+        } else {
+            Layout.toast(result.error, 'error');
+        }
+    }
+
+    function tgl(id, btn) {
+        const inp = document.getElementById(id);
+        const show = inp.type === 'password';
+        inp.type = show ? 'text' : 'password';
+        btn.querySelector('i').className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+    }
+</script>
+</body>
+</html>

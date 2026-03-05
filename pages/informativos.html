@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Informativos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Informativos</h2><p>Notícias e comunicados do sistema</p></div>
+        <div class="card"><div class="card-body" id="newsList"></div></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'informativos', title: 'Informativos' });
+        const news = DB.get('news') || [];
+        const catBadge = { novidade: 'badge-blue', evento: 'badge-purple', sistema: 'badge-gray', promocao: 'badge-orange' };
+
+        document.getElementById('newsList').innerHTML = news.length ? news.map(n => `
+            <div class="news-item">
+                <div class="news-meta"><span class="badge ${catBadge[n.category] || 'badge-gray'}">${n.category}</span><span style="font-size:.78rem;color:var(--text3)">${n.date}</span></div>
+                <h4>${n.title}</h4>
+                <p>${n.content}</p>
+            </div>
+        `).join('') : '<div class="empty-state"><i class="fas fa-newspaper"></i><p>Nenhum informativo</p></div>';
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Cadastro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div class="login-page">
+    <div class="login-card" style="max-width:520px">
+        <!-- Brand -->
+        <div class="login-brand">
+            <div class="brand-icon">MI2</div>
+            <h2>Criar sua conta</h2>
+            <p>Preencha os dados para começar</p>
+        </div>
+
+        <form id="registerForm" onsubmit="doRegister(event)">
+            <!-- Sponsor -->
+            <div class="form-group">
+                <label><i class="fas fa-user-plus" style="margin-right:6px;opacity:.4"></i>Patrocinador <span style="font-weight:400;color:var(--text3)">(opcional)</span></label>
+                <input type="text" class="form-control" id="regSponsor" placeholder="Username do patrocinador">
+                <div class="form-hint">Informe o nome de usuário de quem indicou você</div>
+            </div>
+
+            <!-- Person type -->
+            <div class="form-group">
+                <label>Tipo de Pessoa</label>
+                <div style="display:flex;gap:8px">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 16px;border:1.5px solid var(--border);border-radius:var(--radius);flex:1;font-weight:500;transition:all .15s" id="lblPF" onclick="setPersonType('pf')">
+                        <input type="radio" name="personType" value="pf" checked style="accent-color:var(--primary)"> Pessoa Física
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 16px;border:1.5px solid var(--border);border-radius:var(--radius);flex:1;font-weight:500;transition:all .15s" id="lblPJ" onclick="setPersonType('pj')">
+                        <input type="radio" name="personType" value="pj" style="accent-color:var(--primary)"> Pessoa Jurídica
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nome completo *</label>
+                    <input type="text" class="form-control" id="regName" placeholder="Seu nome" required>
+                </div>
+                <div class="form-group">
+                    <label>Usuário *</label>
+                    <input type="text" class="form-control" id="regUsername" placeholder="nome.sobrenome" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>E-mail *</label>
+                <input type="email" class="form-control" id="regEmail" placeholder="seu@email.com" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label id="docLabel">CPF *</label>
+                    <input type="text" class="form-control" id="regCpf" placeholder="000.000.000-00" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" class="form-control" id="regPhone" placeholder="(00) 00000-0000">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Senha *</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="regPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
+                        <button type="button" class="input-group-btn" onclick="togglePass('regPassword',this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Senha *</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="regPassword2" placeholder="Repita a senha" required minlength="6">
+                        <button type="button" class="input-group-btn" onclick="togglePass('regPassword2',this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px">
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:.82rem;color:var(--text2)">
+                    <input type="checkbox" id="regTerms" required style="margin-top:3px;accent-color:var(--primary)">
+                    Li e aceito os <a href="#" style="margin-left:4px">Termos de Uso</a> <span style="margin:0 2px">&</span> <a href="#">Política de Privacidade</a>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" id="regBtn" style="padding:12px;font-size:.95rem">
+                <span class="btn-text">Criar Conta</span>
+                <i class="fas fa-spinner fa-spin" style="display:none"></i>
+            </button>
+        </form>
+
+        <div class="login-footer">
+            Já tem uma conta? <a href="login.html">Faça login</a>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/data.js"></script>
+<script>
+    DB.init();
+    const _s = DB.getSettings();
+    document.title = (_s.siteName||'MI2') + ' — Cadastro';
+    const _bi = document.querySelector('.login-brand .brand-icon');
+    if (_bi) _bi.textContent = _s.logoText || 'MI2';
+
+    function setPersonType(type) {
+        document.getElementById('docLabel').textContent = type === 'pf' ? 'CPF *' : 'CNPJ *';
+        document.getElementById('regCpf').placeholder = type === 'pf' ? '000.000.000-00' : '00.000.000/0000-00';
+        document.getElementById('lblPF').style.borderColor = type === 'pf' ? 'var(--primary)' : 'var(--border)';
+        document.getElementById('lblPF').style.background = type === 'pf' ? 'var(--primary-light)' : '';
+        document.getElementById('lblPJ').style.borderColor = type === 'pj' ? 'var(--primary)' : 'var(--border)';
+        document.getElementById('lblPJ').style.background = type === 'pj' ? 'var(--primary-light)' : '';
+    }
+    setPersonType('pf');
+
+    function togglePass(id, btn) {
+        const inp = document.getElementById(id);
+        const show = inp.type === 'password';
+        inp.type = show ? 'text' : 'password';
+        btn.querySelector('i').className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+    }
+
+    function doRegister(e) {
+        e.preventDefault();
+        const pass = document.getElementById('regPassword').value;
+        const pass2 = document.getElementById('regPassword2').value;
+        if (pass !== pass2) { showToast('As senhas não conferem.', 'error'); return; }
+
+        const btn = document.getElementById('regBtn');
+        btn.querySelector('.btn-text').style.display = 'none';
+        btn.querySelector('.fa-spin').style.display = 'inline-block';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            const result = DB.register({
+                sponsor: document.getElementById('regSponsor').value.trim(),
+                name: document.getElementById('regName').value.trim(),
+                username: document.getElementById('regUsername').value.toLowerCase().trim(),
+                email: document.getElementById('regEmail').value.trim(),
+                cpf: document.getElementById('regCpf').value.trim(),
+                phone: document.getElementById('regPhone').value.trim(),
+                password: pass
+            });
+
+            if (result.success) {
+                showToast('Conta criada com sucesso! Redirecionando...', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1200);
+            } else {
+                showToast(result.error, 'error');
+                btn.querySelector('.btn-text').style.display = 'inline';
+                btn.querySelector('.fa-spin').style.display = 'none';
+                btn.disabled = false;
+            }
+        }, 800);
+    }
+
+    function showToast(msg, type) {
+        const c = document.getElementById('toastContainer');
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const el = document.createElement('div');
+        el.className = 'toast ' + type;
+        el.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span>${msg}</span>`;
+        c.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
+    }
+</script>
+</body>
+</html>

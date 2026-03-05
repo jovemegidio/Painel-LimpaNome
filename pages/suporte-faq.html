@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — FAQ</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Perguntas Frequentes</h2><p>Tire suas dúvidas sobre o sistema</p></div>
+        <div class="card"><div class="card-body" id="faqList"></div></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'suporte-faq', title: 'FAQ' });
+
+        const faqs = [
+            { q: 'Como funciona o sistema de indicação?', a: 'Você recebe um link de indicação exclusivo. Cada pessoa que se cadastra através do seu link se torna seu indicado direto. Você ganha bônus e comissões pelas atividades da sua rede.' },
+            { q: 'Quais são os níveis do sistema?', a: 'Existem 3 níveis: Prata (0+ pontos, 5% bônus), Ouro (1000+ pontos, 10% bônus) e Diamante (2000+ pontos, 15% bônus). Quanto mais pontos, maior seu nível e benefícios.' },
+            { q: 'Como solicitar um saque?', a: 'Acesse a página Financeiro, informe o valor desejado (mínimo R$ 50,00) e sua chave PIX. O saque é processado em até 3 dias úteis.' },
+            { q: 'O que é o Limpa Nome?', a: 'É nosso serviço de regularização de CPF. Consultamos os principais órgãos de proteção ao crédito (Serasa, SPC, Boa Vista) e abrimos processos de contestação para limpar negativações indevidas.' },
+            { q: 'Como ganhar mais pontos?', a: 'Indicando novos membros, adquirindo pacotes, e com as atividades da sua rede. Cada ação gera pontos que contam para sua graduação.' },
+            { q: 'Posso ter mais de um plano?', a: 'Não, cada usuário pode ter apenas um plano ativo. Mas você pode fazer upgrade a qualquer momento pela página "Meu Plano".' }
+        ];
+
+        document.getElementById('faqList').innerHTML = faqs.map((f, i) => `
+            <div class="faq-item ${i === 0 ? 'open' : ''}" onclick="this.classList.toggle('open')">
+                <div class="faq-q">${f.q}<i class="fas fa-chevron-down"></i></div>
+                <div class="faq-a">${f.a}</div>
+            </div>
+        `).join('');
+    </script>
+</body>
+</html>

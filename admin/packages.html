@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Pacotes</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2>Gerenciar Pacotes</h2><p>Configure os pacotes disponíveis para venda</p></div>
+            <button class="btn btn-primary" onclick="openPkgModal()"><i class="fas fa-plus"></i> Novo Pacote</button>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="pkgTable"><thead><tr>
+                    <th>ID</th><th>Nome</th><th>Preço</th><th>Pontos</th><th>Descrição</th><th style="width:120px">Ações</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="pkgModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:12px;width:480px;max-width:95vw;padding:24px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                    <h3 id="pkgModalTitle">Novo Pacote</h3>
+                    <button onclick="closePkgModal()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+                <form id="pkgForm" onsubmit="savePkg(event)">
+                    <input type="hidden" id="pkgEditId">
+                    <div class="form-group"><label>Nome</label><input type="text" id="pkgName" class="form-control" required></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Preço (R$)</label><input type="number" id="pkgPrice" class="form-control" min="0" step="0.01" required></div>
+                        <div class="form-group"><label>Pontos</label><input type="number" id="pkgPoints" class="form-control" min="0" required></div>
+                    </div>
+                    <div class="form-group"><label>Descrição</label><textarea id="pkgDesc" class="form-control" rows="3"></textarea></div>
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px">
+                        <button type="button" class="btn btn-outline" onclick="closePkgModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-packages', title: 'Pacotes', admin: true });
+
+        function renderTable() {
+            const pkgs = DB.get('packages') || [];
+            const tbody = document.querySelector('#pkgTable tbody');
+            tbody.innerHTML = pkgs.length ? pkgs.map(p => `<tr>
+                <td>${p.id}</td>
+                <td><strong>${p.name}</strong></td>
+                <td>${fmt(p.price)}</td>
+                <td>${p.points} pts</td>
+                <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.description || '—'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="editPkg(${p.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deletePkg(${p.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b">Nenhum pacote cadastrado</td></tr>';
+        }
+        renderTable();
+
+        function openPkgModal() {
+            document.getElementById('pkgModal').style.display = 'flex';
+            document.getElementById('pkgForm').reset();
+            document.getElementById('pkgEditId').value = '';
+            document.getElementById('pkgModalTitle').textContent = 'Novo Pacote';
+        }
+        function closePkgModal() { document.getElementById('pkgModal').style.display = 'none'; }
+
+        function editPkg(id) {
+            const pkgs = DB.get('packages') || [];
+            const p = pkgs.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('pkgModal').style.display = 'flex';
+            document.getElementById('pkgModalTitle').textContent = 'Editar Pacote';
+            document.getElementById('pkgEditId').value = p.id;
+            document.getElementById('pkgName').value = p.name;
+            document.getElementById('pkgPrice').value = p.price;
+            document.getElementById('pkgPoints').value = p.points;
+            document.getElementById('pkgDesc').value = p.description || '';
+        }
+
+        function savePkg(e) {
+            e.preventDefault();
+            const pkgs = DB.get('packages') || [];
+            const id = document.getElementById('pkgEditId').value;
+            const pkg = {
+                name: document.getElementById('pkgName').value.trim(),
+                price: parseFloat(document.getElementById('pkgPrice').value),
+                points: parseInt(document.getElementById('pkgPoints').value),
+                description: document.getElementById('pkgDesc').value.trim()
+            };
+            if (id) {
+                const idx = pkgs.findIndex(x => x.id === parseInt(id));
+                if (idx !== -1) { pkgs[idx] = { ...pkgs[idx], ...pkg }; }
+            } else {
+                pkg.id = Date.now();
+                pkgs.push(pkg);
+            }
+            DB.set('packages', pkgs);
+            closePkgModal();
+            renderTable();
+            Layout.toast('Pacote salvo com sucesso!', 'success');
+        }
+
+        function deletePkg(id) {
+            if (!confirm('Excluir este pacote?')) return;
+            const pkgs = (DB.get('packages') || []).filter(x => x.id !== id);
+            DB.set('packages', pkgs);
+            renderTable();
+            Layout.toast('Pacote excluído', 'success');
+        }
+    </script>
+</body>
+</html>

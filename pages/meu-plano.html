@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Meu Plano</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <template id="page-content">
+        <div class="page-header">
+            <h2>Meu Plano</h2>
+            <p>Seu perfil e informações de plano</p>
+        </div>
+
+        <!-- Profile Card -->
+        <div class="card mb-24">
+            <div class="card-body" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+                <img id="userAvatar" src="" alt="" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--border)">
+                <div style="flex:1;min-width:200px">
+                    <h3 id="userName" style="font-size:1.2rem"></h3>
+                    <p id="userEmail" style="color:var(--text3);font-size:.85rem"></p>
+                    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                        <span class="badge badge-blue" id="userLevel"></span>
+                        <span class="badge badge-green" id="userPlan"></span>
+                    </div>
+                </div>
+                <button class="btn btn-outline" onclick="openEditProfile()"><i class="fas fa-edit"></i> Editar Perfil</button>
+            </div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="grid-2 mb-24">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-info-circle"></i> Informações Pessoais</h3></div>
+                <div class="card-body" id="personalInfo"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-chart-line"></i> Resumo</h3></div>
+                <div class="card-body" id="summaryInfo"></div>
+            </div>
+        </div>
+
+        <!-- Plans -->
+        <div class="page-header"><h2>Planos Disponíveis</h2><p>Escolha o plano ideal para você</p></div>
+        <div class="grid-3" id="planCards"></div>
+    </template>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'meu-plano', title: 'Meu Plano' });
+        const user = Layout.user;
+        const levels = DB.get('levels');
+        const plans = DB.get('plans');
+
+        document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3b82f6&color=fff&size=80&rounded=true&bold=true`;
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('userLevel').innerHTML = `${levels[user.level].icon} ${levels[user.level].name}`;
+        document.getElementById('userPlan').textContent = `Plano ${(plans.find(p => p.id === user.plan) || {}).name || 'Básico'}`;
+
+        document.getElementById('personalInfo').innerHTML = `
+            <div style="display:grid;gap:12px">
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Username</span><strong style="font-size:.85rem">${user.username}</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Email</span><strong style="font-size:.85rem">${user.email}</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Telefone</span><strong style="font-size:.85rem">${user.phone}</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">CPF</span><strong style="font-size:.85rem">${user.cpf}</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text3);font-size:.85rem">Cadastro</span><strong style="font-size:.85rem">${user.createdAt}</strong></div>
+            </div>`;
+
+        document.getElementById('summaryInfo').innerHTML = `
+            <div style="display:grid;gap:12px">
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Pontos</span><strong style="font-size:.85rem;color:var(--accent)">${user.points}</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Bônus Total</span><strong style="font-size:.85rem;color:var(--success)">R$ ${fmt(user.bonus)}</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Saldo</span><strong style="font-size:.85rem">R$ ${fmt(user.balance)}</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Indicados</span><strong style="font-size:.85rem">${user.referrals.length}</strong></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text3);font-size:.85rem">Status</span><span class="badge ${user.active ? 'badge-green' : 'badge-red'}">${user.active ? 'Ativo' : 'Inativo'}</span></div>
+            </div>`;
+
+        document.getElementById('planCards').innerHTML = plans.map(p => `
+            <div class="plan-card ${user.plan === p.id ? 'featured' : ''}">
+                ${p.id === 'plus' ? '<div class="plan-recommended">Recomendado</div>' : ''}
+                <div class="plan-name">${p.name}</div>
+                <div class="plan-price">R$ ${fmt(p.price)}<small>/mês</small></div>
+                <ul class="plan-features">${p.features.map(f => `<li><i class="fas fa-check"></i>${f}</li>`).join('')}</ul>
+                <button class="btn ${user.plan === p.id ? 'btn-outline' : 'btn-primary'} w-full" ${user.plan === p.id ? 'disabled' : `onclick="changePlan('${p.id}')"`}>
+                    ${user.plan === p.id ? '<i class="fas fa-check"></i> Plano Atual' : 'Selecionar'}
+                </button>
+            </div>
+        `).join('');
+
+        function openEditProfile() {
+            Layout.openModal('Editar Perfil', `
+                <div class="form-group"><label>Nome</label><input class="form-control" id="editName" value="${user.name}"></div>
+                <div class="form-row"><div class="form-group"><label>Email</label><input class="form-control" id="editEmail" value="${user.email}"></div><div class="form-group"><label>Telefone</label><input class="form-control" id="editPhone" value="${user.phone}"></div></div>
+                <div class="form-group"><label>Nova Senha (vazio = manter)</label><input type="password" class="form-control" id="editPw" placeholder="Nova senha"></div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProfile()">Salvar</button>`);
+        }
+
+        function saveProfile() {
+            const data = { name: document.getElementById('editName').value, email: document.getElementById('editEmail').value, phone: document.getElementById('editPhone').value };
+            const pw = document.getElementById('editPw').value;
+            if (pw) data.password = pw;
+            DB.updateUser(user.id, data);
+            Layout.closeModal();
+            Layout.toast('Perfil atualizado!', 'success');
+            setTimeout(() => location.reload(), 500);
+        }
+
+        function changePlan(planId) {
+            if (confirm('Deseja alterar seu plano?')) {
+                DB.updateUser(user.id, { plan: planId });
+                Layout.toast('Plano alterado!', 'success');
+                setTimeout(() => location.reload(), 500);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Painel Administrativo</h2><p>Visão geral do sistema</p></div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px">
+            <div class="card">
+                <div class="card-header"><h3>Usuários por Nível</h3></div>
+                <div class="card-body"><canvas id="levelChart" height="260"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>Cadastros — Últimos 6 meses</h3></div>
+                <div class="card-body"><canvas id="growthChart" height="260"></canvas></div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px">
+            <div class="card">
+                <div class="card-header"><h3>Tickets Abertos</h3></div>
+                <div class="card-body" id="openTickets"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>Processos Recentes</h3></div>
+                <div class="card-body" id="recentProcesses"></div>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-dashboard', title: 'Dashboard', admin: true });
+
+        const users = DB.getAllUsers();
+        const transactions = DB.getTransactions();
+        const processes = DB.getProcesses();
+        const tickets = DB.getTickets();
+
+        /* ── Stats ─────────────────────── */
+        const totalRevenue = transactions.filter(t => t.type === 'compra').reduce((s, t) => s + t.amount, 0);
+        const openTk = tickets.filter(t => t.status === 'aberto' || t.status === 'respondido').length;
+        const pendingProc = processes.filter(p => p.status === 'em_andamento' || p.status === 'pendente').length;
+        const stats = [
+            { icon: 'fa-users', color: '#007bff', label: 'Total Usuários', value: users.length },
+            { icon: 'fa-dollar-sign', color: '#28a745', label: 'Receita Total', value: fmt(totalRevenue) },
+            { icon: 'fa-ticket', color: '#ffc107', label: 'Tickets Abertos', value: openTk },
+            { icon: 'fa-file-alt', color: '#dc3545', label: 'Processos Pendentes', value: pendingProc }
+        ];
+        document.getElementById('statsGrid').innerHTML = stats.map(s => `
+            <div class="stat-card">
+                <div class="stat-icon" style="background:${s.color}20;color:${s.color}"><i class="fas ${s.icon}"></i></div>
+                <div class="stat-info"><span class="stat-value">${s.value}</span><span class="stat-label">${s.label}</span></div>
+            </div>`).join('');
+
+        /* ── Level Pie Chart ───────────── */
+        const levels = { prata: 0, ouro: 0, diamante: 0 };
+        users.forEach(u => { levels[u.level] = (levels[u.level] || 0) + 1; });
+        new Chart(document.getElementById('levelChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Prata', 'Ouro', 'Diamante'],
+                datasets: [{ data: [levels.prata, levels.ouro, levels.diamante], backgroundColor: ['#94a3b8','#f59e0b','#6366f1'], borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        /* ── Growth Bar Chart ──────────── */
+        const months = [];
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push(d.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }));
+        }
+        new Chart(document.getElementById('growthChart'), {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{ label: 'Novos Cadastros', data: [3, 5, 4, 8, 6, users.length], backgroundColor: '#007bff', borderRadius: 6 }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+        });
+
+        /* ── Open Tickets ──────────────── */
+        const open = tickets.filter(t => t.status !== 'fechado').slice(0, 5);
+        document.getElementById('openTickets').innerHTML = open.length ? `
+            <table class="table"><thead><tr><th>ID</th><th>Assunto</th><th>Usuário</th><th>Status</th></tr></thead><tbody>
+            ${open.map(t => {
+                const u = DB.getUser(t.userId);
+                return `<tr><td>#${t.id}</td><td>${t.subject}</td><td>${u ? u.name : '—'}</td><td><span class="badge badge-${t.status === 'aberto' ? 'warning' : 'info'}">${t.status}</span></td></tr>`;
+            }).join('')}</tbody></table>` : '<p style="color:#64748b">Nenhum ticket aberto</p>';
+
+        /* ── Recent Processes ──────────── */
+        const recent = processes.slice(-5).reverse();
+        document.getElementById('recentProcesses').innerHTML = recent.length ? `
+            <table class="table"><thead><tr><th>ID</th><th>Tipo</th><th>Usuário</th><th>Status</th></tr></thead><tbody>
+            ${recent.map(p => {
+                const u = DB.getUser(p.userId);
+                const st = { pendente:'warning', em_andamento:'info', concluido:'success', cancelado:'danger' };
+                return `<tr><td>#${p.id}</td><td>${p.type}</td><td>${u ? u.name : '—'}</td><td><span class="badge badge-${st[p.status] || 'secondary'}">${p.status.replace('_',' ')}</span></td></tr>`;
+            }).join('')}</tbody></table>` : '<p style="color:#64748b">Nenhum processo</p>';
+    </script>
+</body>
+</html>

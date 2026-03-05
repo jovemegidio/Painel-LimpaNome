@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div id="app"></div>
+
+    <template id="page-content">
+        <div class="page-header">
+            <h2>Dashboard</h2>
+            <p>Visão geral da sua conta e desempenho</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- Charts + Levels -->
+        <div class="grid-2 mb-24">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-chart-bar"></i> Pontuação Mensal</h3></div>
+                <div class="card-body"><div style="height:260px"><canvas id="pointsChart"></canvas></div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-trophy"></i> Graduação</h3></div>
+                <div class="card-body" id="graduationCard"></div>
+            </div>
+        </div>
+
+        <!-- Levels -->
+        <div class="grid-3 mb-24" id="levelCards"></div>
+
+        <!-- Activities + Goals -->
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-clock"></i> Atividades Recentes</h3></div>
+                <div class="card-body" id="recentActivities"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-bullseye"></i> Metas</h3></div>
+                <div class="card-body" id="goalsCard"></div>
+            </div>
+        </div>
+
+        <!-- Referral Link -->
+        <div class="card" style="margin-top:24px">
+            <div class="card-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                <div style="flex:1;min-width:200px">
+                    <h4 style="font-size:.9rem;margin-bottom:4px"><i class="fas fa-link"></i> Link de Indicação</h4>
+                    <p style="font-size:.78rem;color:var(--text3)">Compartilhe para ganhar pontos e bônus</p>
+                </div>
+                <input class="form-control" id="refLink" readonly style="max-width:360px;font-size:.8rem;background:var(--bg)">
+                <button class="btn btn-sm btn-outline" onclick="copyLink()"><i class="fas fa-copy"></i> Copiar</button>
+                <button class="btn btn-sm btn-success" onclick="shareWpp()"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+            </div>
+        </div>
+    </template>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'dashboard', title: 'Dashboard' });
+
+        const user = Layout.user;
+        const stats = DB.getDashboardStats(user.id);
+        const levels = DB.get('levels');
+
+        // Stats
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-info"><h3>${stats.indicados}</h3><p>Indicados Diretos</p></div></div>
+            <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-user-group"></i></div><div class="stat-info"><h3>${stats.equipe}</h3><p>Total Equipe</p></div></div>
+            <div class="stat-card"><div class="stat-icon green"><i class="fas fa-gift"></i></div><div class="stat-info"><h3>R$ ${fmt(stats.bonus)}</h3><p>Bônus Total</p></div></div>
+            <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-wallet"></i></div><div class="stat-info"><h3>R$ ${fmt(stats.saldo)}</h3><p>Saldo Disponível</p></div></div>
+        `;
+
+        // Graduation
+        const nextLabel = stats.nextLevel ? `Próximo: ${stats.nextLevel.name} (${stats.nextLevel.minPoints} pts)` : 'Nível máximo atingido!';
+        document.getElementById('graduationCard').innerHTML = `
+            <div style="text-align:center;padding:20px 0">
+                <div style="font-size:3.5rem;margin-bottom:8px">${stats.level.icon}</div>
+                <h3 style="font-size:1.3rem;margin-bottom:4px">${stats.level.name}</h3>
+                <p style="font-size:.85rem;color:var(--text3)">${user.points} pontos</p>
+                <div style="margin:20px auto;max-width:280px">
+                    <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${stats.progressToNext}%"></div></div>
+                    <p style="font-size:.78rem;color:var(--text3);margin-top:6px">${nextLabel}</p>
+                </div>
+            </div>`;
+
+        // Levels
+        document.getElementById('levelCards').innerHTML = Object.entries(levels).map(([key, l]) => `
+            <div class="level-card ${user.level === key ? 'current' : ''}">
+                ${user.level === key ? '<span class="level-badge badge badge-blue">Atual</span>' : ''}
+                <div class="level-icon">${l.icon}</div>
+                <h4>${l.name}</h4>
+                <p>${l.minPoints}+ pontos</p>
+                <p style="font-size:.78rem;color:var(--success);margin-top:4px">Bônus: ${l.bonus}%</p>
+            </div>
+        `).join('');
+
+        // Activities
+        const tx = DB.getTransactions(user.id).slice(0, 5);
+        document.getElementById('recentActivities').innerHTML = tx.length ? `<ul class="activity-list">${tx.map(t => `
+            <li class="activity-item">
+                <div class="activity-icon ${t.amount >= 0 ? 'stat-icon green' : 'stat-icon red'}">
+                    <i class="fas ${t.amount >= 0 ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                </div>
+                <div class="activity-info">
+                    <div class="title">${t.description}</div>
+                    <div class="time">${t.date}</div>
+                </div>
+                <div style="font-weight:700;font-size:.9rem;color:${t.amount >= 0 ? 'var(--success)' : 'var(--danger)'}">${t.amount >= 0 ? '+' : ''}R$ ${fmt(Math.abs(t.amount))}</div>
+            </li>
+        `).join('')}</ul>` : '<div class="table-empty"><i class="fas fa-inbox"></i><p>Nenhuma atividade</p></div>';
+
+        // Goals
+        document.getElementById('goalsCard').innerHTML = `
+            <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Indicados este mês</span><strong>${stats.indicados}/10</strong></div><div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, stats.indicados * 10)}%"></div></div></div>
+            <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Pontos para próximo nível</span><strong>${user.points}/${stats.nextLevel ? stats.nextLevel.minPoints : user.points}</strong></div><div class="progress-bar"><div class="progress-fill green" style="width:${stats.progressToNext}%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Vendas do mês</span><strong>3/5</strong></div><div class="progress-bar"><div class="progress-fill orange" style="width:60%"></div></div></div>
+        `;
+
+        // Referral Link
+        document.getElementById('refLink').value = `https://mi2.com.br/ref/${user.username}`;
+
+        // Points Chart
+        new Chart(document.getElementById('pointsChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Out', 'Nov', 'Dez', 'Jan', 'Fev', 'Mar'],
+                datasets: [{ label: 'Pontos', data: [180, 250, 320, 400, 380, user.points > 400 ? user.points : 450], backgroundColor: '#3b82f6', borderRadius: 6, barThickness: 32 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f1f5f9' }, beginAtZero: true } } }
+        });
+
+        // Helpers
+        function copyLink() { navigator.clipboard.writeText(document.getElementById('refLink').value); Layout.toast('Link copiado!', 'success'); }
+        function shareWpp() { window.open('https://wa.me/?text=' + encodeURIComponent('Conheça a MI2! ' + document.getElementById('refLink').value)); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Usuários</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2>Gerenciar Usuários</h2><p>Adicione, edite ou remova usuários do sistema</p></div>
+            <button class="btn btn-primary" onclick="openModal('add')"><i class="fas fa-plus"></i> Novo Usuário</button>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nome, email ou CPF..." style="max-width:320px" oninput="renderTable()">
+                <select id="filterLevel" class="form-control" style="max-width:160px" onchange="renderTable()">
+                    <option value="">Todos os Níveis</option>
+                    <option value="prata">Prata</option>
+                    <option value="ouro">Ouro</option>
+                    <option value="diamante">Diamante</option>
+                </select>
+                <select id="filterStatus" class="form-control" style="max-width:160px" onchange="renderTable()">
+                    <option value="">Todos os Status</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="inativo">Inativo</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="usersTable"><thead><tr>
+                    <th>ID</th><th>Nome</th><th>Email</th><th>CPF</th><th>Plano</th><th>Nível</th><th>Pontos</th><th>Status</th><th style="width:120px">Ações</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="userModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:12px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:24px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                    <h3 id="modalTitle">Novo Usuário</h3>
+                    <button onclick="closeUserModal()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+                <form id="userForm" onsubmit="saveUser(event)">
+                    <input type="hidden" id="editId">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Nome completo</label><input type="text" id="fName" class="form-control" required></div>
+                        <div class="form-group"><label>Email</label><input type="email" id="fEmail" class="form-control" required></div>
+                        <div class="form-group"><label>CPF</label><input type="text" id="fCpf" class="form-control" placeholder="000.000.000-00" required></div>
+                        <div class="form-group"><label>Telefone</label><input type="text" id="fPhone" class="form-control" placeholder="(00) 00000-0000"></div>
+                        <div class="form-group"><label>Senha</label><input type="text" id="fPass" class="form-control" placeholder="Mín. 4 caracteres"></div>
+                        <div class="form-group"><label>Plano</label>
+                            <select id="fPlan" class="form-control">
+                                <option value="basico">Básico</option><option value="plus">Plus</option><option value="premium">Premium</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Nível</label>
+                            <select id="fLevel" class="form-control">
+                                <option value="prata">Prata</option><option value="ouro">Ouro</option><option value="diamante">Diamante</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Pontos</label><input type="number" id="fPoints" class="form-control" value="0" min="0"></div>
+                        <div class="form-group"><label>Saldo (R$)</label><input type="number" id="fBalance" class="form-control" value="0" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Status</label>
+                            <select id="fStatus" class="form-control"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
+                        </div>
+                        <div class="form-group"><label>Sponsor ID</label><input type="text" id="fSponsor" class="form-control" placeholder="ID do patrocinador"></div>
+                    </div>
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px">
+                        <button type="button" class="btn btn-outline" onclick="closeUserModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-users', title: 'Usuários', admin: true });
+
+        function renderTable() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const level = document.getElementById('filterLevel').value;
+            const status = document.getElementById('filterStatus').value;
+            let users = DB.getAllUsers();
+            if (search) users = users.filter(u => u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search) || (u.cpf || '').includes(search));
+            if (level) users = users.filter(u => u.level === level);
+            if (status) users = users.filter(u => status === 'ativo' ? u.active === true : u.active === false);
+
+            const levels = DB.get('levels') || {};
+            const tbody = document.querySelector('#usersTable tbody');
+            tbody.innerHTML = users.length ? users.map(u => {
+                const lvl = levels[u.level] || {};
+                const st = u.active ? 'ativo' : 'inativo';
+                return `<tr>
+                <td>${u.id}</td>
+                <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar-sm" style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:#475569">${u.name.charAt(0)}</div>${u.name}</div></td>
+                <td>${u.email}</td>
+                <td>${u.cpf || '—'}</td>
+                <td><span class="badge badge-primary">${u.plan}</span></td>
+                <td><span class="badge badge-${u.level === 'diamante' ? 'purple' : u.level === 'ouro' ? 'warning' : 'secondary'}">${lvl.name || u.level}</span></td>
+                <td>${u.points}</td>
+                <td><span class="badge badge-${u.active ? 'success' : 'danger'}">${st}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="openModal('edit',${u.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+            }).join('') : '<tr><td colspan="9" style="text-align:center;color:#64748b">Nenhum usuário encontrado</td></tr>';
+        }
+        renderTable();
+
+        function openModal(mode, id) {
+            document.getElementById('userModal').style.display = 'flex';
+            document.getElementById('userForm').reset();
+            document.getElementById('editId').value = '';
+            if (mode === 'edit' && id) {
+                const u = DB.getUser(Number(id));
+                if (!u) return;
+                document.getElementById('modalTitle').textContent = 'Editar Usuário';
+                document.getElementById('editId').value = u.id;
+                document.getElementById('fName').value = u.name;
+                document.getElementById('fEmail').value = u.email;
+                document.getElementById('fCpf').value = u.cpf || '';
+                document.getElementById('fPhone').value = u.phone || '';
+                document.getElementById('fPlan').value = u.plan;
+                document.getElementById('fLevel').value = u.level;
+                document.getElementById('fPoints').value = u.points;
+                document.getElementById('fBalance').value = u.balance;
+                document.getElementById('fStatus').value = u.active ? 'ativo' : 'inativo';
+                document.getElementById('fSponsor').value = u.sponsor || '';
+            } else {
+                document.getElementById('modalTitle').textContent = 'Novo Usuário';
+            }
+        }
+        function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
+
+        function saveUser(e) {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const sponsorVal = document.getElementById('fSponsor').value.trim();
+            const data = {
+                name: document.getElementById('fName').value.trim(),
+                email: document.getElementById('fEmail').value.trim(),
+                cpf: document.getElementById('fCpf').value.trim(),
+                phone: document.getElementById('fPhone').value.trim(),
+                plan: document.getElementById('fPlan').value,
+                level: document.getElementById('fLevel').value,
+                points: parseInt(document.getElementById('fPoints').value) || 0,
+                balance: parseFloat(document.getElementById('fBalance').value) || 0,
+                active: document.getElementById('fStatus').value === 'ativo',
+                sponsor: sponsorVal ? parseInt(sponsorVal) || null : null
+            };
+            const pass = document.getElementById('fPass').value.trim();
+
+            if (id) {
+                DB.updateUser(Number(id), data);
+                Layout.toast('Usuário atualizado com sucesso!', 'success');
+            } else {
+                if (!pass || pass.length < 4) return Layout.toast('Senha deve ter ao menos 4 caracteres', 'error');
+                data.password = pass;
+                DB.addUser(data);
+                Layout.toast('Usuário criado com sucesso!', 'success');
+            }
+            closeUserModal();
+            renderTable();
+        }
+
+        function deleteUser(id) {
+            if (!confirm('Deseja realmente excluir este usuário?')) return;
+            DB.deleteUser(Number(id));
+            Layout.toast('Usuário excluído', 'success');
+            renderTable();
+        }
+    </script>
+</body>
+</html>

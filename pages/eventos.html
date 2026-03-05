@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Eventos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Eventos</h2><p>Próximos eventos e encontros</p></div>
+        <div class="tabs" id="eventTabs">
+            <div class="tab active" onclick="showTab('proximos')">Próximos</div>
+            <div class="tab" onclick="showTab('passados')">Passados</div>
+        </div>
+        <div id="proximosTab"></div>
+        <div id="passadosTab" style="display:none"></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'eventos', title: 'Eventos' });
+        const events = DB.get('events') || [];
+        const months = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        function renderEvents(list) {
+            if (!list.length) return '<div class="empty-state"><i class="fas fa-calendar"></i><p>Nenhum evento</p></div>';
+            return `<div style="display:grid;gap:12px">${list.map(e => {
+                const parts = e.date.split('-');
+                return `<div class="event-card">
+                    <div class="event-date"><div class="day">${parseInt(parts[2])}</div><div class="month">${months[parseInt(parts[1])]}</div></div>
+                    <div class="event-info">
+                        <h4>${e.title}</h4>
+                        <p>${e.description}</p>
+                        <div class="event-meta"><span><i class="fas fa-clock"></i>${e.time}</span><span><i class="fas fa-map-marker-alt"></i>${e.location}</span><span class="badge badge-${e.type==='online'?'blue':'green'}">${e.type}</span></div>
+                    </div>
+                </div>`;
+            }).join('')}</div>`;
+        }
+
+        document.getElementById('proximosTab').innerHTML = renderEvents(events.filter(e => e.status === 'proximo'));
+        document.getElementById('passadosTab').innerHTML = renderEvents(events.filter(e => e.status === 'passado'));
+
+        function showTab(tab) {
+            document.querySelectorAll('#eventTabs .tab').forEach((t, i) => t.classList.toggle('active', i === (tab === 'proximos' ? 0 : 1)));
+            document.getElementById('proximosTab').style.display = tab === 'proximos' ? 'block' : 'none';
+            document.getElementById('passadosTab').style.display = tab === 'passados' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>

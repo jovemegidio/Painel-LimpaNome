@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Consultar CPF</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <template id="page-content">
+        <div class="page-header">
+            <h2>Limpa Nome — Consultar CPF</h2>
+            <p>Verifique a situação do CPF nos órgãos de proteção ao crédito</p>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-search"></i> Nova Consulta</h3></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>CPF</label>
+                        <input class="form-control" id="cpfInput" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input class="form-control" id="nameInput" placeholder="Nome do titular">
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="consultarCPF()"><i class="fas fa-search"></i> Consultar</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-info-circle"></i> Como funciona?</h3></div>
+                <div class="card-body">
+                    <ul class="activity-list">
+                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-1"></i></div><div class="activity-info"><div class="title">Informe o CPF</div><div class="desc">Digite o CPF que deseja consultar</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon purple"><i class="fas fa-2"></i></div><div class="activity-info"><div class="title">Análise automática</div><div class="desc">Verificamos nos principais órgãos de crédito</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-3"></i></div><div class="activity-info"><div class="title">Resultado</div><div class="desc">Receba o relatório completo em instantes</div></div></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:24px;display:none" id="resultCard">
+            <div class="card-header"><h3><i class="fas fa-file-alt"></i> Resultado da Consulta</h3></div>
+            <div class="card-body" id="resultBody"></div>
+        </div>
+    </template>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'limpa-nome-consulta', title: 'Consultar CPF' });
+
+        function maskCPF(el) {
+            let v = el.value.replace(/\D/g, '');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            el.value = v;
+        }
+
+        function consultarCPF() {
+            const cpf = document.getElementById('cpfInput').value;
+            const name = document.getElementById('nameInput').value;
+            if (cpf.length < 14) { Layout.toast('CPF inválido', 'error'); return; }
+
+            Layout.toast('Consultando...', 'info');
+            setTimeout(() => {
+                const card = document.getElementById('resultCard');
+                card.style.display = 'block';
+                const hasIssue = Math.random() > 0.3;
+                document.getElementById('resultBody').innerHTML = hasIssue ? `
+                    <div style="padding:16px;background:var(--danger-bg);border-radius:var(--radius);margin-bottom:16px">
+                        <h4 style="color:var(--danger);font-size:.9rem;margin-bottom:4px"><i class="fas fa-exclamation-triangle"></i> Restrições Encontradas</h4>
+                        <p style="font-size:.82rem;color:var(--text2)">Foram encontradas pendências no CPF ${cpf}</p>
+                    </div>
+                    <div class="table-wrap"><table>
+                        <thead><tr><th>Órgão</th><th>Tipo</th><th>Valor</th><th>Data</th></tr></thead>
+                        <tbody>
+                            <tr><td>Serasa</td><td>Negativação</td><td>R$ 2.340,00</td><td>15/08/2025</td></tr>
+                            <tr><td>SPC</td><td>Dívida</td><td>R$ 890,00</td><td>22/10/2025</td></tr>
+                        </tbody>
+                    </table></div>
+                    <div style="margin-top:16px"><button class="btn btn-primary" onclick="window.location.href='limpa-nome-processos.html'"><i class="fas fa-plus"></i> Abrir Processo de Limpeza</button></div>
+                ` : `
+                    <div style="padding:16px;background:var(--success-bg);border-radius:var(--radius)">
+                        <h4 style="color:var(--success);font-size:.9rem;margin-bottom:4px"><i class="fas fa-check-circle"></i> CPF Limpo</h4>
+                        <p style="font-size:.82rem;color:var(--text2)">Nenhuma restrição encontrada para o CPF ${cpf}</p>
+                    </div>`;
+                card.scrollIntoView({ behavior: 'smooth' });
+            }, 1200);
+        }
+    </script>
+</body>
+</html>

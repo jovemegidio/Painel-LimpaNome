@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Processos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Gerenciar Processos</h2><p>Acompanhe e atualize os processos de limpa nome e Bacen</p></div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="card" style="margin-top:24px">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+                <h3>Todos os Processos</h3>
+                <div style="display:flex;gap:12px">
+                    <select id="filterStatus" class="form-control" style="max-width:180px" onchange="renderTable()">
+                        <option value="">Todos os Status</option>
+                        <option value="pendente">Pendente</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="concluido">Concluído</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="processTable"><thead><tr>
+                    <th>ID</th><th>Usuário</th><th>Tipo</th><th>Documento</th><th>Data</th><th>Status</th><th style="width:180px">Alterar Status</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-processes', title: 'Processos', admin: true });
+
+        function renderStats() {
+            const all = DB.getProcesses();
+            const counts = { pendente: 0, em_andamento: 0, concluido: 0, cancelado: 0 };
+            all.forEach(p => { counts[p.status] = (counts[p.status] || 0) + 1; });
+            const items = [
+                { icon: 'fa-clock', color: '#f59e0b', label: 'Pendentes', value: counts.pendente },
+                { icon: 'fa-search', color: '#007bff', label: 'Em Andamento', value: counts.em_andamento },
+                { icon: 'fa-check-circle', color: '#28a745', label: 'Concluídos', value: counts.concluido },
+                { icon: 'fa-ban', color: '#dc3545', label: 'Cancelados', value: counts.cancelado }
+            ];
+            document.getElementById('statsGrid').innerHTML = items.map(s => `
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:${s.color}20;color:${s.color}"><i class="fas ${s.icon}"></i></div>
+                    <div class="stat-info"><span class="stat-value">${s.value}</span><span class="stat-label">${s.label}</span></div>
+                </div>`).join('');
+        }
+
+        function renderTable() {
+            const filter = document.getElementById('filterStatus').value;
+            let list = DB.getProcesses();
+            if (filter) list = list.filter(p => p.status === filter);
+            const tbody = document.querySelector('#processTable tbody');
+            const stMap = { pendente: 'warning', em_andamento: 'info', concluido: 'success', cancelado: 'danger' };
+            tbody.innerHTML = list.length ? list.map(p => {
+                const u = DB.getUser(p.userId);
+                return `<tr>
+                    <td>#${p.id}</td>
+                    <td>${u ? u.name : '—'}</td>
+                    <td>${p.type}</td>
+                    <td>${p.cpf || '—'}</td>
+                    <td>${new Date(p.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td><span class="badge badge-${stMap[p.status] || 'secondary'}">${p.status.replace('_',' ')}</span></td>
+                    <td>
+                        <select class="form-control" style="font-size:13px;padding:4px 8px" onchange="changeStatus(${p.id},this.value)">
+                            <option value="pendente" ${p.status==='pendente'?'selected':''}>Pendente</option>
+                            <option value="em_andamento" ${p.status==='em_andamento'?'selected':''}>Em Andamento</option>
+                            <option value="concluido" ${p.status==='concluido'?'selected':''}>Concluído</option>
+                            <option value="cancelado" ${p.status==='cancelado'?'selected':''}>Cancelado</option>
+                        </select>
+                    </td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b">Nenhum processo encontrado</td></tr>';
+        }
+
+        function changeStatus(id, newStatus) {
+            DB.updateProcess(Number(id), { status: newStatus });
+            Layout.toast('Status atualizado!', 'success');
+            renderStats();
+            renderTable();
+        }
+
+        renderStats();
+        renderTable();
+    </script>
+</body>
+</html>

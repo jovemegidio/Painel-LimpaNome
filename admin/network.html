@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 Admin — Rede</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Rede Completa</h2><p>Visualização da árvore multinível de todos os usuários</p></div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="card" style="margin-top:24px">
+            <div class="card-header"><h3>Árvore de Rede</h3></div>
+            <div class="card-body">
+                <div id="networkTree" class="tree-view"></div>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-network', title: 'Rede', admin: true });
+
+        const users = DB.getAllUsers();
+        const totalPts = users.reduce((s, u) => s + u.points, 0);
+        const levels = { prata: 0, ouro: 0, diamante: 0 };
+        users.forEach(u => { levels[u.level] = (levels[u.level] || 0) + 1; });
+
+        document.getElementById('statsGrid').innerHTML = [
+            { icon: 'fa-users', color: '#007bff', label: 'Total Membros', value: users.length },
+            { icon: 'fa-star', color: '#f59e0b', label: 'Total Pontos', value: totalPts.toLocaleString('pt-BR') },
+            { icon: 'fa-medal', color: '#94a3b8', label: 'Prata', value: levels.prata || 0 },
+            { icon: 'fa-crown', color: '#6366f1', label: 'Diamante', value: levels.diamante || 0 }
+        ].map(s => `
+            <div class="stat-card">
+                <div class="stat-icon" style="background:${s.color}20;color:${s.color}"><i class="fas ${s.icon}"></i></div>
+                <div class="stat-info"><span class="stat-value">${s.value}</span><span class="stat-label">${s.label}</span></div>
+            </div>`).join('');
+
+        /* ── Build tree ─────────────── */
+        function buildTree(parentId) {
+            const children = users.filter(u => u.sponsor === parentId);
+            if (!children.length) return '';
+            return '<ul>' + children.map(u => {
+                const lvlCls = u.level === 'diamante' ? 'purple' : u.level === 'ouro' ? 'warning' : 'secondary';
+                const lvls = DB.get('levels') || {};
+                const lvlName = (lvls[u.level] || {}).name || u.level;
+                return `<li>
+                    <div class="tree-node">
+                        <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#475569">${u.name.charAt(0)}</div>
+                        <div>
+                            <strong>${u.name}</strong><br>
+                            <span class="badge badge-${lvlCls}" style="font-size:11px">${lvlName}</span>
+                            <span style="color:#64748b;font-size:12px;margin-left:6px">${u.points} pts</span>
+                            <span class="badge badge-${u.active?'success':'danger'}" style="font-size:11px;margin-left:4px">${u.active?'ativo':'inativo'}</span>
+                        </div>
+                    </div>
+                    ${buildTree(u.id)}
+                </li>`;
+            }).join('') + '</ul>';
+        }
+
+        /* Find root users (no sponsor) */
+        const roots = users.filter(u => !u.sponsor);
+        let treeHtml = '';
+        if (roots.length) {
+            treeHtml = '<ul>' + roots.map(u => {
+                const lvlCls = u.level === 'diamante' ? 'purple' : u.level === 'ouro' ? 'warning' : 'secondary';
+                const lvls = DB.get('levels') || {};
+                const lvlName = (lvls[u.level] || {}).name || u.level;
+                return `<li>
+                    <div class="tree-node">
+                        <div style="width:36px;height:36px;border-radius:50%;background:#007bff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff">${u.name.charAt(0)}</div>
+                        <div>
+                            <strong>${u.name}</strong> <span style="color:#64748b;font-size:12px">(Raiz)</span><br>
+                            <span class="badge badge-${lvlCls}" style="font-size:11px">${lvlName}</span>
+                            <span style="color:#64748b;font-size:12px;margin-left:6px">${u.points} pts</span>
+                        </div>
+                    </div>
+                    ${buildTree(u.id)}
+                </li>`;
+            }).join('') + '</ul>';
+        } else {
+            treeHtml = '<p style="color:#64748b;text-align:center">Nenhum usuário cadastrado</p>';
+        }
+        document.getElementById('networkTree').innerHTML = treeHtml;
+    </script>
+</body>
+</html>
