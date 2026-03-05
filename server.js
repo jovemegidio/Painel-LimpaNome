@@ -63,6 +63,7 @@ const limiter = rateLimit({
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.path === '/api/payments/webhook', // Webhook sem rate limit
     message: { error: 'Muitas requisições. Tente novamente em alguns minutos.' }
 });
 app.use('/api/', limiter);
@@ -94,6 +95,7 @@ app.use('/api/university', require('./routes/university'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/lgpd', require('./routes/lgpd'));
+app.use('/api/payments', require('./routes/payments'));
 
 // ── Servir SOMENTE arquivos do frontend (whitelist) ──
 const publicDirs = ['css', 'js', 'pages', 'admin'];

@@ -34,30 +34,162 @@
         function buyPackage(id) {
             const pkg = pkgs.find(p => p.id === id);
             if (!pkg) return;
-            Layout.openModal('Confirmar Compra', `
+            Layout.openModal('Forma de Pagamento', `
                 <div style="text-align:center;padding:16px">
                     <div style="font-size:2.5rem;margin-bottom:12px"><i class="fas fa-cube" style="color:var(--accent)"></i></div>
                     <h3 style="margin-bottom:4px">${pkg.name}</h3>
                     <p style="color:var(--text3);font-size:.85rem;margin-bottom:16px">${pkg.description}</p>
                     <p style="font-size:1.8rem;font-weight:700;color:var(--accent)">R$ ${fmt(pkg.price)}</p>
                     <p style="font-size:.85rem;color:var(--success);margin-top:6px"><i class="fas fa-star"></i> +${pkg.points} pontos</p>
+                    <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
+                        <button class="btn btn-success w-full" onclick="processPayment(${id}, 'pix')" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-qrcode"></i> Pagar com PIX</button>
+                        <button class="btn btn-primary w-full" onclick="processPayment(${id}, 'boleto')" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-barcode"></i> Pagar com Boleto</button>
+                        <button class="btn btn-outline w-full" onclick="showCreditCardForm(${id})" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-credit-card"></i> Cartão de Crédito</button>
+                    </div>
                 </div>
-            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-success" onclick="confirmBuy(${id})"><i class="fas fa-check"></i> Confirmar</button>`);
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button>`);
         }
 
-        function confirmBuy(id) {
-            const pkg = pkgs.find(p => p.id === id);
-            if (user.balance < pkg.price) {
-                Layout.closeModal();
-                Layout.toast('Saldo insuficiente! Seu saldo: R$ ' + fmt(user.balance), 'error');
+        async function processPayment(packageId, method, cardData) {
+            Layout.closeModal();
+            Layout.toast('Processando pagamento...', 'info');
+
+            const body = { method };
+            if (method === 'credit_card' && cardData) {
+                body.creditCard = cardData.creditCard;
+                body.creditCardHolderInfo = cardData.creditCardHolderInfo;
+            }
+
+            const result = await DB.api('POST', `/api/payments/package/${packageId}`, body);
+
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
+            if (result.error) { Layout.toast(result.error, 'error'); return; }
+
+            if (result.approved) {
+                // Cartão aprovado ou fallback
+                Layout.toast(result.message || 'Pacote ativado!', 'success');
+                await DB.syncData();
+                setTimeout(() => location.reload(), 1500);
                 return;
             }
-            DB.updateUser(user.id, { points: user.points + pkg.points, balance: user.balance - pkg.price });
-            DB.addTransaction({ userId: user.id, type: 'compra', amount: pkg.price, description: 'Compra: ' + pkg.name, status: 'concluido' });
-            user.points += pkg.points;
-            user.balance -= pkg.price;
+
+            if (method === 'pix' && result.pix) {
+                showPixPayment(result);
+            } else if (method === 'boleto') {
+                showBoletoPayment(result);
+            }
+        }
+
+        function showPixPayment(result) {
+            Layout.openModal('Pagar com PIX', `
+                <div style="text-align:center;padding:16px">
+                    <h3 style="margin-bottom:12px;color:var(--success)"><i class="fas fa-qrcode"></i> PIX - QR Code</h3>
+                    <p style="font-size:1.5rem;font-weight:700;color:var(--accent);margin-bottom:16px">R$ ${fmt(result.value)}</p>
+                    ${result.pix.qrCodeImage ? `<img src="data:image/png;base64,${result.pix.qrCodeImage}" alt="QR Code PIX" style="max-width:250px;margin:0 auto 16px;display:block;border-radius:12px;border:2px solid var(--border)">` : ''}
+                    <div style="margin-top:12px">
+                        <label style="font-size:.8rem;color:var(--text3);display:block;margin-bottom:6px">Copia e Cola (clique para copiar)</label>
+                        <div onclick="copyPixCode(this)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.75rem;word-break:break-all;cursor:pointer;max-height:80px;overflow:auto">${result.pix.copyPaste || ''}</div>
+                    </div>
+                    <p style="font-size:.8rem;color:var(--text3);margin-top:12px"><i class="fas fa-clock"></i> O pagamento é confirmado automaticamente</p>
+                    <div style="margin-top:16px"><button class="btn btn-outline btn-sm" onclick="checkPaymentStatus('${result.paymentId}')"><i class="fas fa-sync-alt"></i> Verificar Pagamento</button></div>
+                </div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
+        }
+
+        function showBoletoPayment(result) {
+            const boleto = result.boleto || {};
+            Layout.openModal('Pagar com Boleto', `
+                <div style="text-align:center;padding:16px">
+                    <h3 style="margin-bottom:12px;color:var(--primary)"><i class="fas fa-barcode"></i> Boleto Bancário</h3>
+                    <p style="font-size:1.5rem;font-weight:700;color:var(--accent);margin-bottom:16px">R$ ${fmt(result.value)}</p>
+                    <p style="font-size:.85rem;color:var(--text3);margin-bottom:12px">Vencimento: ${result.dueDate || 'Em 3 dias'}</p>
+                    ${boleto.identificationField ? `
+                        <div style="margin-top:12px">
+                            <label style="font-size:.8rem;color:var(--text3);display:block;margin-bottom:6px">Linha Digitável (clique para copiar)</label>
+                            <div onclick="copyBoletoCode(this)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.8rem;word-break:break-all;cursor:pointer">${boleto.identificationField}</div>
+                        </div>
+                    ` : ''}
+                    ${result.invoiceUrl ? `<div style="margin-top:16px"><a href="${result.invoiceUrl}" target="_blank" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Abrir Boleto</a></div>` : ''}
+                    <p style="font-size:.8rem;color:var(--text3);margin-top:12px"><i class="fas fa-info-circle"></i> Boletos são compensados em até 3 dias úteis</p>
+                </div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
+        }
+
+        function showCreditCardForm(packageId) {
             Layout.closeModal();
-            Layout.toast('Pacote adquirido! +' + pkg.points + ' pontos', 'success');
+            Layout.openModal('Cartão de Crédito', `
+                <div style="padding:8px">
+                    <div class="form-group"><label>Nome no Cartão</label><input class="form-control" id="ccName" placeholder="Como aparece no cartão"></div>
+                    <div class="form-group"><label>Número do Cartão</label><input class="form-control" id="ccNumber" placeholder="0000 0000 0000 0000" maxlength="19" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Validade</label><input class="form-control" id="ccExpiry" placeholder="MM/AA" maxlength="5" oninput="if(this.value.length===2&&!this.value.includes('/'))this.value+='/'"></div>
+                        <div class="form-group"><label>CVV</label><input class="form-control" id="ccCvv" placeholder="123" maxlength="4"></div>
+                    </div>
+                    <hr style="margin:16px 0;border-color:var(--border)">
+                    <h4 style="margin-bottom:12px;font-size:.9rem"><i class="fas fa-user"></i> Dados do Titular</h4>
+                    <div class="form-group"><label>CPF do Titular</label><input class="form-control" id="ccCpf" placeholder="000.000.000-00" value="${user.cpf || ''}"></div>
+                    <div class="form-group"><label>Email</label><input class="form-control" id="ccEmail" value="${user.email || ''}"></div>
+                    <div class="form-group"><label>Telefone</label><input class="form-control" id="ccPhone" value="${user.phone || ''}"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>CEP</label><input class="form-control" id="ccPostalCode" placeholder="00000-000"></div>
+                        <div class="form-group"><label>Número</label><input class="form-control" id="ccAddressNumber" placeholder="123"></div>
+                    </div>
+                </div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-success" onclick="submitCreditCard(${packageId})"><i class="fas fa-lock"></i> Pagar</button>`);
+        }
+
+        function submitCreditCard(packageId) {
+            const ccNumber = (document.getElementById('ccNumber').value || '').replace(/\s/g, '');
+            const ccExpiry = document.getElementById('ccExpiry').value || '';
+            const ccCvv = document.getElementById('ccCvv').value || '';
+            const ccName = document.getElementById('ccName').value || '';
+            const [expMonth, expYear] = ccExpiry.split('/');
+
+            if (!ccNumber || ccNumber.length < 13) { Layout.toast('Número do cartão inválido', 'error'); return; }
+            if (!expMonth || !expYear) { Layout.toast('Validade inválida', 'error'); return; }
+            if (!ccCvv || ccCvv.length < 3) { Layout.toast('CVV inválido', 'error'); return; }
+            if (!ccName) { Layout.toast('Nome no cartão é obrigatório', 'error'); return; }
+
+            const cardData = {
+                creditCard: {
+                    holderName: ccName,
+                    number: ccNumber,
+                    expiryMonth: expMonth,
+                    expiryYear: '20' + expYear,
+                    ccv: ccCvv
+                },
+                creditCardHolderInfo: {
+                    name: ccName,
+                    email: document.getElementById('ccEmail').value || user.email,
+                    cpfCnpj: (document.getElementById('ccCpf').value || '').replace(/\D/g, ''),
+                    postalCode: (document.getElementById('ccPostalCode').value || '').replace(/\D/g, ''),
+                    addressNumber: document.getElementById('ccAddressNumber').value || 'SN',
+                    phone: (document.getElementById('ccPhone').value || '').replace(/\D/g, '')
+                }
+            };
+
+            processPayment(packageId, 'credit_card', cardData);
+        }
+
+        function copyPixCode(el) {
+            navigator.clipboard.writeText(el.textContent).then(() => Layout.toast('Código PIX copiado!', 'success')).catch(() => {});
+        }
+
+        function copyBoletoCode(el) {
+            navigator.clipboard.writeText(el.textContent).then(() => Layout.toast('Linha digitável copiada!', 'success')).catch(() => {});
+        }
+
+        async function checkPaymentStatus(paymentId) {
+            const result = await DB.api('GET', `/api/payments/${paymentId}/status`);
+            if (!result) { Layout.toast('Erro ao verificar', 'error'); return; }
+            if (result.status === 'pago') {
+                Layout.toast('Pagamento confirmado! Pacote ativado!', 'success');
+                await DB.syncData();
+                Layout.closeModal();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                Layout.toast(`Status: ${result.status}. Aguarde a confirmação.`, 'info');
+            }
         }
     </script>
 </body>

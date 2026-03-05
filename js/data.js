@@ -620,6 +620,42 @@ const DB = {
 
     async requestDataDeletion(password) {
         return await this.api('POST', '/api/lgpd/delete-request', { password });
+    },
+
+    // ── Pagamentos (Asaas) ──
+    async createPackagePayment(packageId, method, cardData) {
+        const body = { method };
+        if (method === 'credit_card' && cardData) {
+            body.creditCard = cardData.creditCard;
+            body.creditCardHolderInfo = cardData.creditCardHolderInfo;
+        }
+        return await this.api('POST', `/api/payments/package/${packageId}`, body);
+    },
+
+    async createPlanPayment(planId, method, cardData) {
+        const body = { method };
+        if (method === 'credit_card' && cardData) {
+            body.creditCard = cardData.creditCard;
+            body.creditCardHolderInfo = cardData.creditCardHolderInfo;
+        }
+        return await this.api('POST', `/api/payments/plan/${planId}`, body);
+    },
+
+    async checkPaymentStatus(paymentId) {
+        return await this.api('GET', `/api/payments/${paymentId}/status`);
+    },
+
+    async getMyPayments() {
+        const result = await this.api('GET', '/api/payments/my');
+        return result && result.payments ? result.payments : [];
+    },
+
+    async getPixQrCode(paymentId) {
+        return await this.api('GET', `/api/payments/${paymentId}/pix`);
+    },
+
+    async requestWithdraw(amount, pixKey) {
+        return await this.api('POST', '/api/services/transactions/withdraw', { amount, pixKey });
     }
 };
 

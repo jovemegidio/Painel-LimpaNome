@@ -267,6 +267,27 @@ function initDatabase() {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (course_id) REFERENCES university_courses(id) ON DELETE CASCADE
         );
+
+        CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            asaas_payment_id TEXT DEFAULT '',
+            asaas_customer_id TEXT DEFAULT '',
+            type TEXT NOT NULL DEFAULT 'package',
+            reference_id INTEGER DEFAULT 0,
+            amount REAL NOT NULL DEFAULT 0,
+            method TEXT DEFAULT 'pix',
+            status TEXT DEFAULT 'pendente',
+            invoice_url TEXT DEFAULT '',
+            pix_qr_code TEXT DEFAULT '',
+            pix_copy_paste TEXT DEFAULT '',
+            external_reference TEXT DEFAULT '',
+            due_date TEXT DEFAULT '',
+            paid_at TEXT,
+            updated_at TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
     `);
 
     // ── Índices para performance ──
@@ -295,7 +316,12 @@ function initDatabase() {
         'CREATE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(token, verified)',
         'CREATE INDEX IF NOT EXISTS idx_documents_process ON documents(process_id)',
         'CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id)',
-        'CREATE INDEX IF NOT EXISTS idx_university_progress_user ON university_progress(user_id)'
+        'CREATE INDEX IF NOT EXISTS idx_university_progress_user ON university_progress(user_id)',
+        'CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id)',
+        'CREATE INDEX IF NOT EXISTS idx_payments_asaas_id ON payments(asaas_payment_id)',
+        'CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)',
+        'CREATE INDEX IF NOT EXISTS idx_payments_type ON payments(type)',
+        'CREATE INDEX IF NOT EXISTS idx_payments_external_ref ON payments(external_reference)'
     ];
     indexes.forEach(sql => d.exec(sql));
 
@@ -318,6 +344,7 @@ function initDatabase() {
     addCol('user_packages', 'payment_status', "TEXT DEFAULT 'pendente'");
     addCol('users', 'email_verified', 'INTEGER DEFAULT 0');
     addCol('users', 'email_verified_at', 'TEXT');
+    addCol('users', 'asaas_customer_id', "TEXT DEFAULT ''");
 
     // Seed if empty
     const count = d.prepare('SELECT COUNT(*) as c FROM users').get();

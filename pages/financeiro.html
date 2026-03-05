@@ -64,25 +64,40 @@
         document.getElementById('txTable').innerHTML = tx.length ? `<table>
             <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
             <tbody>${tx.map(t => `<tr>
-                <td><span class="badge badge-${t.type==='bonus'?'green':t.type==='comissao'?'blue':t.type==='saque'?'orange':'gray'}">${t.type}</span></td>
+                <td><span class="badge badge-${t.type==='bonus'?'green':t.type==='comissao'?'blue':t.type==='saque'?'orange':t.type==='pagamento'?'purple':'gray'}">${t.type}</span></td>
                 <td>${t.description}</td>
                 <td style="font-weight:700;color:${t.amount>=0?'var(--success)':'var(--danger)'}">${t.amount>=0?'+':''}R$ ${fmt(Math.abs(t.amount))}</td>
-                <td><span class="badge badge-green">${t.status}</span></td>
+                <td><span class="badge badge-${t.status==='concluido'||t.status==='creditado'?'green':t.status==='pendente'||t.status==='processando'?'orange':t.status==='falhou'?'red':'gray'}">${t.status}</span></td>
                 <td>${t.date}</td>
             </tr>`).join('')}</tbody>
         </table>` : '<div class="table-empty"><i class="fas fa-receipt"></i><p>Nenhuma transação</p></div>';
 
-        function requestWithdraw() {
+        async function requestWithdraw() {
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            const pix = document.getElementById('withdrawPix').value;
+            const pix = document.getElementById('withdrawPix').value.trim();
             if (!amount || amount < 50) { Layout.toast('Saque mínimo: R$ 50,00', 'error'); return; }
             if (!pix) { Layout.toast('Informe a chave PIX', 'error'); return; }
             if (amount > user.balance) { Layout.toast('Saldo insuficiente', 'error'); return; }
 
-            DB.updateUser(user.id, { balance: user.balance - amount });
-            DB.addTransaction({ userId: user.id, type: 'saque', amount: -amount, description: `Saque via PIX: ${pix}`, status: 'pendente' });
-            Layout.toast('Saque solicitado!', 'success');
-            setTimeout(() => location.reload(), 800);
+            // Confirmar antes de sacar
+            if (!confirm(`Confirmar saque de R$ ${fmt(amount)} para PIX: ${pix}?`)) return;
+
+            Layout.toast('Processando saque...', 'info');
+
+            const result = await DB.api('POST', '/api/services/transactions/withdraw', {
+                amount: amount,
+                pixKey: pix
+            });
+
+            if (!result) { Layout.toast('Erro de conexão com o servidor', 'error'); return; }
+            if (result.error || !result.success) {
+                Layout.toast(result.error || 'Erro ao solicitar saque', 'error');
+                return;
+            }
+
+            Layout.toast(result.message || 'Saque solicitado com sucesso!', 'success');
+            await DB.syncData();
+            setTimeout(() => location.reload(), 1500);
         }
     </script>
 </body>

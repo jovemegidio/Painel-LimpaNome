@@ -8,6 +8,7 @@ const { getDB } = require('../database/init');
 const { auth } = require('../middleware/auth');
 const { logAudit, getClientIP } = require('../utils/audit');
 const { createNotification } = require('../utils/notifications');
+const asaas = require('../utils/asaas');
 
 const router = express.Router();
 
@@ -212,12 +213,14 @@ router.get('/transactions', auth, (req, res) => {
     }
 });
 
-// Solicitar saque — ATÔMICO com transaction
-router.post('/transactions/withdraw', auth, (req, res) => {
+// Solicitar saque — ATÔMICO com transaction + Asaas PIX Payout
+router.post('/transactions/withdraw', auth, async (req, res) => {
     try {
         const amount = Number(req.body.amount);
         const pixKey = sanitize(req.body.pixKey);
+        const pixType = sanitize(req.body.pixType || '');
         if (!amount || !isFinite(amount) || amount <= 0) return res.status(400).json({ error: 'Valor inválido' });
+        if (!pixKey) return res.status(400).json({ error: 'Chave PIX é obrigatória' });
 
         const db = getDB();
         const settings = {};
@@ -233,16 +236,16 @@ router.post('/transactions/withdraw', auth, (req, res) => {
             if (amount > user.balance) throw new Error('INSUFFICIENT_BALANCE');
 
             db.prepare('UPDATE users SET balance = balance - ? WHERE id = ?').run(amount, req.user.id);
-            db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status) VALUES (?, 'saque', ?, ?, date('now'), 'pendente')`)
+
+            const txResult = db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status, reference_type) VALUES (?, 'saque', ?, ?, date('now'), 'pendente', 'payment')`)
                 .run(req.user.id, -amount, `Saque via PIX - ${pixKey || 'N/A'}`);
 
-            return true;
+            return txResult.lastInsertRowid;
         });
 
+        let transactionId;
         try {
-            withdraw();
-            logAudit({ userType: 'user', userId: req.user.id, action: 'withdraw', entity: 'transaction', details: { amount, pixKey }, ip: getClientIP(req) });
-            res.json({ success: true, message: 'Saque solicitado com sucesso' });
+            transactionId = withdraw();
         } catch (txErr) {
             if (txErr.message === 'INSUFFICIENT_BALANCE') {
                 return res.status(400).json({ success: false, error: 'Saldo insuficiente' });
@@ -252,6 +255,49 @@ router.post('/transactions/withdraw', auth, (req, res) => {
             }
             throw txErr;
         }
+
+        logAudit({ userType: 'user', userId: req.user.id, action: 'withdraw', entity: 'transaction', details: { amount, pixKey }, ip: getClientIP(req) });
+
+        // ── Asaas PIX Payout (se configurado) ──
+        if (asaas.isConfigured()) {
+            try {
+                const transfer = await asaas.createPixTransfer({
+                    value: amount,
+                    pixKey: pixKey,
+                    pixType: pixType,
+                    description: `Saque Credbusiness #${transactionId}`
+                });
+
+                // Salvar referência do payout no banco
+                db.prepare(`INSERT INTO payments (user_id, asaas_payment_id, type, amount, method, status, external_reference, created_at)
+                    VALUES (?, ?, 'withdraw', ?, 'pix_payout', 'processando', ?, datetime('now'))`)
+                    .run(req.user.id, transfer.id, amount, `withdraw_tx_${transactionId}`);
+
+                // Atualizar transação com referência do payment
+                const paymentRow = db.prepare("SELECT id FROM payments WHERE asaas_payment_id = ?").get(transfer.id);
+                if (paymentRow) {
+                    db.prepare("UPDATE transactions SET reference_id = ? WHERE id = ?").run(paymentRow.id, transactionId);
+                }
+
+                return res.json({
+                    success: true,
+                    message: 'Saque solicitado! A transferência PIX está sendo processada.',
+                    transferId: transfer.id,
+                    status: transfer.status
+                });
+            } catch (pixErr) {
+                // PIX falhou — devolver saldo
+                console.error('[Withdraw] Erro PIX payout:', pixErr.message);
+                db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(amount, req.user.id);
+                db.prepare("UPDATE transactions SET status = 'falhou', description = ? WHERE id = ?")
+                    .run(`Saque via PIX - FALHOU: ${pixErr.message}`, transactionId);
+
+                return res.status(500).json({ success: false, error: 'Erro ao processar transferência PIX. O valor foi devolvido ao seu saldo.' });
+            }
+        }
+
+        // Sem Asaas — modo manual (admin processa depois)
+        res.json({ success: true, message: 'Saque solicitado com sucesso. Processamento em até 3 dias úteis.' });
     } catch (err) {
         console.error('Erro saque:', err.message);
         res.status(500).json({ error: 'Erro interno do servidor' });
