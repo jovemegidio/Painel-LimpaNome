@@ -40,8 +40,9 @@
             }).join('')}</div>`;
         }
 
-        document.getElementById('proximosTab').innerHTML = renderEvents(events.filter(e => e.status === 'proximo'));
-        document.getElementById('passadosTab').innerHTML = renderEvents(events.filter(e => e.status === 'passado'));
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('proximosTab').innerHTML = renderEvents(events.filter(e => e.date >= today));
+        document.getElementById('passadosTab').innerHTML = renderEvents(events.filter(e => e.date < today));
 
         function showTab(tab) {
             document.querySelectorAll('#eventTabs .tab').forEach((t, i) => t.classList.toggle('active', i === (tab === 'proximos' ? 0 : 1)));

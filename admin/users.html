@@ -12,7 +12,10 @@
     <template id="page-content">
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
             <div><h2>Gerenciar Usuários</h2><p>Adicione, edite ou remova usuários do sistema</p></div>
-            <button class="btn btn-primary" onclick="openModal('add')"><i class="fas fa-plus"></i> Novo Usuário</button>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-outline" onclick="exportUsers()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+                <button class="btn btn-primary" onclick="openModal('add')"><i class="fas fa-plus"></i> Novo Usuário</button>
+            </div>
         </div>
 
         <div class="card" style="margin-bottom:16px">
@@ -95,8 +98,9 @@
             if (status) users = users.filter(u => status === 'ativo' ? u.active === true : u.active === false);
 
             const levels = DB.get('levels') || {};
-            const tbody = document.querySelector('#usersTable tbody');
-            tbody.innerHTML = users.length ? users.map(u => {
+            Paginator.create('usersTable', users, 15, function(pageUsers) {
+                const tbody = document.querySelector('#usersTable tbody');
+                tbody.innerHTML = pageUsers.length ? pageUsers.map(u => {
                 const lvl = levels[u.level] || {};
                 const st = u.active ? 'ativo' : 'inativo';
                 return `<tr>
@@ -113,7 +117,8 @@
                     <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" title="Excluir"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
-            }).join('') : '<tr><td colspan="9" style="text-align:center;color:#64748b">Nenhum usuário encontrado</td></tr>';
+                }).join('') : '<tr><td colspan="9" style="text-align:center;color:#64748b">Nenhum usuário encontrado</td></tr>';
+            });
         }
         renderTable();
 
@@ -178,6 +183,14 @@
             DB.deleteUser(Number(id));
             Layout.toast('Usuário excluído', 'success');
             renderTable();
+        }
+
+        function exportUsers() {
+            const users = DB.getAllUsers();
+            ExportCSV.download('usuarios',
+                ['ID', 'Nome', 'Email', 'CPF', 'Telefone', 'Plano', 'Nível', 'Pontos', 'Saldo', 'Status', 'Criado em'],
+                users.map(u => [u.id, u.name, u.email, u.cpf, u.phone, u.plan, u.level, u.points, u.balance, u.active ? 'Ativo' : 'Inativo', u.createdAt || ''])
+            );
         }
     </script>
 </body>

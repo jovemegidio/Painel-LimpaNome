@@ -85,7 +85,7 @@
             <div style="margin-bottom:20px">
                 <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:.82rem;color:var(--text2)">
                     <input type="checkbox" id="regTerms" required style="margin-top:3px;accent-color:var(--primary)">
-                    Li e aceito os <a href="#" style="margin-left:4px">Termos de Uso</a> <span style="margin:0 2px">&</span> <a href="#">Política de Privacidade</a>
+                    Li e aceito os <a href="termos-de-uso.html" target="_blank" style="margin-left:4px">Termos de Uso</a> <span style="margin:0 2px">&</span> <a href="politica-de-privacidade.html" target="_blank">Política de Privacidade</a>
                 </label>
             </div>
 
@@ -95,7 +95,52 @@
             </button>
         </form>
 
-        <div class="login-footer">
+        <!-- Success Screen (hidden) -->
+        <div id="successScreen" style="display:none;text-align:center;padding:16px 0">
+            <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px">
+                <i class="fas fa-check-circle" style="font-size:2rem;color:#10b981"></i>
+            </div>
+            <h2 style="margin:0 0 4px;font-size:1.3rem;color:var(--text1)">Conta Criada!</h2>
+            <p style="color:var(--text3);font-size:.85rem;margin-bottom:20px">Seu cadastro foi realizado com sucesso</p>
+
+            <div style="background:var(--bg2);border-radius:var(--radius);padding:16px;text-align:left;margin-bottom:16px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                    <i class="fas fa-user-circle" style="font-size:1.2rem;color:var(--primary)"></i>
+                    <span style="font-weight:600;font-size:.9rem;color:var(--text1)" id="successName"></span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem">
+                    <div><span style="color:var(--text3)">Usuário:</span> <strong id="successUser"></strong></div>
+                    <div><span style="color:var(--text3)">Plano:</span> <strong>Básico</strong></div>
+                    <div><span style="color:var(--text3)">Nível:</span> <strong>🥈 Prata</strong></div>
+                    <div><span style="color:var(--text3)">Status:</span> <strong style="color:#10b981">Ativo</strong></div>
+                </div>
+            </div>
+
+            <!-- Referral link -->
+            <div style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(99,102,241,0.03));border:1px solid rgba(99,102,241,0.15);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+                <div style="font-size:.78rem;color:var(--primary);font-weight:600;margin-bottom:6px"><i class="fas fa-link" style="margin-right:4px"></i>Seu link de indicação</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <input type="text" id="refLink" class="form-control" readonly style="font-size:.78rem;background:var(--card);cursor:pointer" onclick="copyRef()">
+                    <button class="btn" style="padding:8px 12px;white-space:nowrap;font-size:.78rem" onclick="copyRef()"><i class="fas fa-copy"></i></button>
+                </div>
+            </div>
+
+            <div style="background:rgba(245,158,11,0.06);border-radius:var(--radius);padding:12px;margin-bottom:20px;text-align:left">
+                <div style="font-size:.82rem;font-weight:600;color:#f59e0b;margin-bottom:6px"><i class="fas fa-lightbulb" style="margin-right:4px"></i>Próximos passos</div>
+                <ul style="font-size:.78rem;color:var(--text2);margin:0;padding-left:18px;line-height:1.8">
+                    <li>Faça login com seu usuário e senha</li>
+                    <li>Ative o <strong>2FA</strong> nas Configurações para mais segurança</li>
+                    <li>Explore os <strong>pacotes disponíveis</strong> para crescer sua rede</li>
+                    <li>Compartilhe seu <strong>link de indicação</strong> com amigos</li>
+                </ul>
+            </div>
+
+            <a href="login.html" class="btn btn-primary w-full" style="padding:12px;font-size:.95rem;text-decoration:none">
+                <i class="fas fa-sign-in-alt" style="margin-right:6px"></i>Fazer Login
+            </a>
+        </div>
+
+        <div class="login-footer" id="footerLinks">
             Já tem uma conta? <a href="login.html">Faça login</a>
         </div>
     </div>
@@ -121,6 +166,13 @@
     }
     setPersonType('pf');
 
+    // Auto-fill sponsor from URL ?ref= parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const refParam = urlParams.get('ref');
+    if (refParam) {
+        document.getElementById('regSponsor').value = refParam;
+    }
+
     function togglePass(id, btn) {
         const inp = document.getElementById(id);
         const show = inp.type === 'password';
@@ -128,7 +180,7 @@
         btn.querySelector('i').className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
     }
 
-    function doRegister(e) {
+    async function doRegister(e) {
         e.preventDefault();
         const pass = document.getElementById('regPassword').value;
         const pass2 = document.getElementById('regPassword2').value;
@@ -139,8 +191,8 @@
         btn.querySelector('.fa-spin').style.display = 'inline-block';
         btn.disabled = true;
 
-        setTimeout(() => {
-            const result = DB.register({
+        try {
+            const result = await DB.register({
                 sponsor: document.getElementById('regSponsor').value.trim(),
                 name: document.getElementById('regName').value.trim(),
                 username: document.getElementById('regUsername').value.toLowerCase().trim(),
@@ -151,15 +203,30 @@
             });
 
             if (result.success) {
-                showToast('Conta criada com sucesso! Redirecionando...', 'success');
-                setTimeout(() => window.location.href = 'login.html', 1200);
+                // Show success screen with user info
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('footerLinks').style.display = 'none';
+                document.getElementById('successScreen').style.display = 'block';
+
+                const regName = document.getElementById('regName').value.trim();
+                const regUser = document.getElementById('regUsername').value.toLowerCase().trim();
+                document.getElementById('successName').textContent = regName;
+                document.getElementById('successUser').textContent = regUser;
+
+                const domain = window.location.origin;
+                document.getElementById('refLink').value = domain + '/register.html?ref=' + regUser;
             } else {
-                showToast(result.error, 'error');
+                showToast(result.error || 'Erro ao criar conta', 'error');
                 btn.querySelector('.btn-text').style.display = 'inline';
                 btn.querySelector('.fa-spin').style.display = 'none';
                 btn.disabled = false;
             }
-        }, 800);
+        } catch (err) {
+            showToast('Erro de conexão com o servidor.', 'error');
+            btn.querySelector('.btn-text').style.display = 'inline';
+            btn.querySelector('.fa-spin').style.display = 'none';
+            btn.disabled = false;
+        }
     }
 
     function showToast(msg, type) {
@@ -170,6 +237,17 @@
         el.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span>${msg}</span>`;
         c.appendChild(el);
         setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
+    }
+
+    function copyRef() {
+        const inp = document.getElementById('refLink');
+        inp.select();
+        navigator.clipboard.writeText(inp.value).then(() => {
+            showToast('Link copiado!', 'success');
+        }).catch(() => {
+            document.execCommand('copy');
+            showToast('Link copiado!', 'success');
+        });
     }
 </script>
 </body>

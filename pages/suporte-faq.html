@@ -11,28 +11,94 @@
     <div id="app"></div>
     <template id="page-content">
         <div class="page-header"><h2>Perguntas Frequentes</h2><p>Tire suas dúvidas sobre o sistema</p></div>
+
+        <!-- Search -->
+        <div class="form-group" style="max-width:500px;margin-bottom:24px">
+            <div class="input-group">
+                <span class="input-group-icon"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control" id="faqSearch" placeholder="Buscar pergunta..." oninput="filterFAQ()">
+            </div>
+        </div>
+
+        <!-- Category tabs -->
+        <div class="tabs" style="margin-bottom:24px">
+            <div class="tab active" onclick="filterCat('todos', this)">Todos</div>
+            <div class="tab" onclick="filterCat('conta', this)">Conta</div>
+            <div class="tab" onclick="filterCat('rede', this)">Rede & Indicação</div>
+            <div class="tab" onclick="filterCat('servicos', this)">Serviços</div>
+            <div class="tab" onclick="filterCat('financeiro', this)">Financeiro</div>
+        </div>
+
         <div class="card"><div class="card-body" id="faqList"></div></div>
+
+        <div class="card" style="margin-top:24px;text-align:center;padding:32px">
+            <h3 style="margin-bottom:8px"><i class="fas fa-question-circle" style="color:var(--primary)"></i> Não encontrou sua dúvida?</h3>
+            <p style="color:var(--text3);margin-bottom:16px">Abra um ticket de suporte e nossa equipe responderá em até 24h</p>
+            <a href="suporte-tickets.html" class="btn btn-primary"><i class="fas fa-headset"></i> Abrir Ticket</a>
+        </div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
         Layout.init({ basePath: '../', page: 'suporte-faq', title: 'FAQ' });
 
-        const faqs = [
-            { q: 'Como funciona o sistema de indicação?', a: 'Você recebe um link de indicação exclusivo. Cada pessoa que se cadastra através do seu link se torna seu indicado direto. Você ganha bônus e comissões pelas atividades da sua rede.' },
-            { q: 'Quais são os níveis do sistema?', a: 'Existem 3 níveis: Prata (0+ pontos, 5% bônus), Ouro (1000+ pontos, 10% bônus) e Diamante (2000+ pontos, 15% bônus). Quanto mais pontos, maior seu nível e benefícios.' },
-            { q: 'Como solicitar um saque?', a: 'Acesse a página Financeiro, informe o valor desejado (mínimo R$ 50,00) e sua chave PIX. O saque é processado em até 3 dias úteis.' },
-            { q: 'O que é o Limpa Nome?', a: 'É nosso serviço de regularização de CPF. Consultamos os principais órgãos de proteção ao crédito (Serasa, SPC, Boa Vista) e abrimos processos de contestação para limpar negativações indevidas.' },
-            { q: 'Como ganhar mais pontos?', a: 'Indicando novos membros, adquirindo pacotes, e com as atividades da sua rede. Cada ação gera pontos que contam para sua graduação.' },
-            { q: 'Posso ter mais de um plano?', a: 'Não, cada usuário pode ter apenas um plano ativo. Mas você pode fazer upgrade a qualquer momento pela página "Meu Plano".' }
+        // FAQ data - loaded from API (admin-manageable), with fallback defaults
+        const defaultFaqs = [
+            { q: 'Como funciona o sistema de indicação?', a: 'Você recebe um link de indicação exclusivo. Cada pessoa que se cadastra através do seu link se torna seu indicado direto. Você ganha bônus e comissões pelas atividades da sua rede.', cat: 'rede' },
+            { q: 'Quais são os níveis do sistema?', a: 'Existem 3 níveis: <strong>Prata</strong> (0+ pontos, 5% bônus), <strong>Ouro</strong> (1000+ pontos, 10% bônus) e <strong>Diamante</strong> (2000+ pontos, 15% bônus). Quanto mais pontos, maior seu nível e benefícios.', cat: 'rede' },
+            { q: 'Como solicitar um saque?', a: 'Acesse a página <strong>Financeiro</strong>, informe o valor desejado (mínimo R$ 50,00) e sua chave PIX. O saque é processado em até 3 dias úteis.', cat: 'financeiro' },
+            { q: 'O que é o Limpa Nome?', a: 'É nosso serviço de regularização de CPF. Consultamos os principais órgãos de proteção ao crédito (Serasa, SPC, Boa Vista) e abrimos processos de contestação para limpar negativações indevidas.', cat: 'servicos' },
+            { q: 'O que é a Consulta Bacen (SVR)?', a: 'O <strong>Sistema de Valores a Receber</strong> do Banco Central permite consultar se você tem dinheiro esquecido em bancos, seguradoras ou consórcios. Nós fazemos a consulta e ajudamos no resgate.', cat: 'servicos' },
+            { q: 'Como ganhar mais pontos?', a: 'Indicando novos membros, adquirindo pacotes, e com as atividades da sua rede. Cada ação gera pontos que contam para sua graduação.', cat: 'rede' },
+            { q: 'Posso ter mais de um plano?', a: 'Não, cada usuário pode ter apenas um plano ativo. Mas você pode fazer <strong>upgrade</strong> a qualquer momento pela página "Meu Plano".', cat: 'financeiro' },
+            { q: 'Como ativar o 2FA?', a: 'Acesse <strong>Configurações > Segurança 2FA</strong>. Instale o Google Authenticator ou Authy no celular, escaneie o QR Code e informe o código de 6 dígitos para ativar.', cat: 'conta' },
+            { q: 'Esqueci minha senha, e agora?', a: 'Na tela de login, clique em <strong>"Esqueceu sua senha?"</strong>. Informe seu e-mail cadastrado e um link de redefinição será enviado. O link expira em 1 hora.', cat: 'conta' },
+            { q: 'Como alterar meus dados pessoais?', a: 'Vá em <strong>Configurações > Dados Pessoais</strong>. Você pode alterar nome, e-mail e telefone. O CPF e nome de usuário não podem ser modificados.', cat: 'conta' },
+            { q: 'Quanto tempo leva o processo Limpa Nome?', a: 'O prazo médio é de <strong>30 a 90 dias</strong>, dependendo do tipo de negativação e dos órgãos envolvidos. Você pode acompanhar o status em tempo real pelo painel.', cat: 'servicos' },
+            { q: 'Como funciona a comissão multinível?', a: 'Você recebe comissões até <strong>3 níveis</strong> de profundidade: 10% do 1º nível, 5% do 2º nível e 3% do 3º nível (valores podem variar conforme seu plano e graduação).', cat: 'financeiro' }
         ];
 
-        document.getElementById('faqList').innerHTML = faqs.map((f, i) => `
-            <div class="faq-item ${i === 0 ? 'open' : ''}" onclick="this.classList.toggle('open')">
-                <div class="faq-q">${f.q}<i class="fas fa-chevron-down"></i></div>
-                <div class="faq-a">${f.a}</div>
-            </div>
-        `).join('');
+        let faqs = [];
+        let currentCat = 'todos';
+
+        // Try loading from admin-managed content
+        async function loadFaqs() {
+            try {
+                const res = await DB.api('GET', '/api/content/faqs');
+                if (Array.isArray(res) && res.length > 0) { faqs = res; } else { faqs = defaultFaqs; }
+            } catch { faqs = defaultFaqs; }
+            renderFaqs();
+        }
+
+        function filterCat(cat, el) {
+            currentCat = cat;
+            document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderFaqs();
+        }
+
+        function filterFAQ() { renderFaqs(); }
+
+        function renderFaqs() {
+            const search = (document.getElementById('faqSearch').value || '').toLowerCase();
+            let filtered = faqs;
+            if (currentCat !== 'todos') filtered = filtered.filter(f => f.cat === currentCat);
+            if (search) filtered = filtered.filter(f => f.q.toLowerCase().includes(search) || f.a.toLowerCase().includes(search));
+
+            const el = document.getElementById('faqList');
+            if (!filtered.length) {
+                el.innerHTML = '<div class="table-empty"><i class="fas fa-search"></i><p>Nenhuma pergunta encontrada</p></div>';
+                return;
+            }
+            el.innerHTML = filtered.map((f, i) => `
+                <div class="faq-item ${i === 0 && !search ? 'open' : ''}" onclick="this.classList.toggle('open')">
+                    <div class="faq-q">${f.q}<i class="fas fa-chevron-down"></i></div>
+                    <div class="faq-a">${f.a}</div>
+                </div>
+            `).join('');
+        }
+
+        loadFaqs();
     </script>
 </body>
 </html>

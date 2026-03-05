@@ -117,22 +117,39 @@
             </li>
         `).join('')}</ul>` : '<div class="table-empty"><i class="fas fa-inbox"></i><p>Nenhuma atividade</p></div>';
 
-        // Goals
+        // Goals — compute real vendas do mês
+        const nowDate = new Date();
+        const currentMonthStr = nowDate.toISOString().slice(0, 7);
+        const vendasMes = tx.filter(t => (t.type === 'compra') && t.date.startsWith(currentMonthStr)).length;
         document.getElementById('goalsCard').innerHTML = `
             <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Indicados este mês</span><strong>${stats.indicados}/10</strong></div><div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, stats.indicados * 10)}%"></div></div></div>
             <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Pontos para próximo nível</span><strong>${user.points}/${stats.nextLevel ? stats.nextLevel.minPoints : user.points}</strong></div><div class="progress-bar"><div class="progress-fill green" style="width:${stats.progressToNext}%"></div></div></div>
-            <div><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Vendas do mês</span><strong>3/5</strong></div><div class="progress-bar"><div class="progress-fill orange" style="width:60%"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Vendas do mês</span><strong>${vendasMes}/5</strong></div><div class="progress-bar"><div class="progress-fill orange" style="width:${Math.min(100, vendasMes * 20)}%"></div></div></div>
         `;
 
         // Referral Link
         document.getElementById('refLink').value = `https://mi2.com.br/ref/${user.username}`;
 
-        // Points Chart
+        // Points Chart — compute real monthly data from transactions
+        const allTx = DB.getTransactions(user.id);
+        const chartNow = new Date();
+        const chartLabels = [];
+        const chartData = [];
+        const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(chartNow.getFullYear(), chartNow.getMonth() - i, 1);
+            const key = d.toISOString().slice(0, 7);
+            chartLabels.push(monthNames[d.getMonth()]);
+            const monthPts = allTx.filter(t => t.date && t.date.startsWith(key) && t.amount > 0).reduce((s, t) => s + t.amount, 0);
+            chartData.push(Math.round(monthPts));
+        }
+        // If all zeros, show current points in last bar
+        if (chartData.every(v => v === 0)) chartData[5] = user.points;
         new Chart(document.getElementById('pointsChart').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['Out', 'Nov', 'Dez', 'Jan', 'Fev', 'Mar'],
-                datasets: [{ label: 'Pontos', data: [180, 250, 320, 400, 380, user.points > 400 ? user.points : 450], backgroundColor: '#3b82f6', borderRadius: 6, barThickness: 32 }]
+                labels: chartLabels,
+                datasets: [{ label: 'Pontos', data: chartData, backgroundColor: '#3b82f6', borderRadius: 6, barThickness: 32 }]
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f1f5f9' }, beginAtZero: true } } }
         });

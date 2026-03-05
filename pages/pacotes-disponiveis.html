@@ -47,9 +47,15 @@
 
         function confirmBuy(id) {
             const pkg = pkgs.find(p => p.id === id);
+            if (user.balance < pkg.price) {
+                Layout.closeModal();
+                Layout.toast('Saldo insuficiente! Seu saldo: R$ ' + fmt(user.balance), 'error');
+                return;
+            }
             DB.updateUser(user.id, { points: user.points + pkg.points, balance: user.balance - pkg.price });
             DB.addTransaction({ userId: user.id, type: 'compra', amount: pkg.price, description: 'Compra: ' + pkg.name, status: 'concluido' });
             user.points += pkg.points;
+            user.balance -= pkg.price;
             Layout.closeModal();
             Layout.toast('Pacote adquirido! +' + pkg.points + ' pontos', 'success');
         }

@@ -17,7 +17,11 @@
         <div class="card" style="margin-top:24px">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
                 <h3>Todas as Transações</h3>
-                <div style="display:flex;gap:12px">
+                <button class="btn btn-outline btn-sm" onclick="exportTx()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+            </div>
+            <div class="card-header" style="border-top:none;padding-top:0"> style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                    <div class="form-group" style="margin:0"><label style="font-size:.75rem">De</label><input type="date" class="form-control" id="dateFrom" onchange="renderTable()" style="max-width:160px"></div>
+                    <div class="form-group" style="margin:0"><label style="font-size:.75rem">Até</label><input type="date" class="form-control" id="dateTo" onchange="renderTable()" style="max-width:160px"></div>
                     <select id="filterType" class="form-control" style="max-width:180px" onchange="renderTable()">
                         <option value="">Todos os Tipos</option>
                         <option value="compra">Compra</option>
@@ -62,8 +66,12 @@
         function renderTable() {
             const typeFilter = document.getElementById('filterType').value;
             const search = document.getElementById('searchInput').value.toLowerCase();
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
             let txs = DB.getTransactions();
             if (typeFilter) txs = txs.filter(t => t.type === typeFilter);
+            if (from) txs = txs.filter(t => t.date >= from);
+            if (to) txs = txs.filter(t => t.date <= to + 'T23:59:59');
             if (search) txs = txs.filter(t => {
                 const u = DB.getUser(t.userId);
                 return u && u.name.toLowerCase().includes(search);
@@ -71,23 +79,33 @@
             txs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             const typeMap = { compra: 'primary', bonus: 'warning', comissao: 'success', saque: 'danger' };
-            const tbody = document.querySelector('#txTable tbody');
-            tbody.innerHTML = txs.length ? txs.map(t => {
-                const u = DB.getUser(t.userId);
-                return `<tr>
-                    <td>#${t.id}</td>
-                    <td>${new Date(t.date).toLocaleDateString('pt-BR')}</td>
-                    <td>${u ? u.name : '—'}</td>
-                    <td><span class="badge badge-${typeMap[t.type] || 'secondary'}">${t.type}</span></td>
-                    <td>${t.description}</td>
-                    <td style="font-weight:600;color:${t.type==='saque'?'#dc3545':'#28a745'}">${t.type==='saque'?'- ':'+ '}${fmt(t.amount)}</td>
-                    <td><span class="badge badge-${t.status==='aprovado'?'success':t.status==='pendente'?'warning':'danger'}">${t.status}</span></td>
-                </tr>`;
-            }).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b">Nenhuma transação encontrada</td></tr>';
+            Paginator.create('txTable', txs, 20, function(pageTxs) {
+                const tbody = document.querySelector('#txTable tbody');
+                tbody.innerHTML = pageTxs.length ? pageTxs.map(t => {
+                    const u = DB.getUser(t.userId);
+                    return `<tr>
+                        <td>#${t.id}</td>
+                        <td>${new Date(t.date).toLocaleDateString('pt-BR')}</td>
+                        <td>${u ? u.name : '—'}</td>
+                        <td><span class="badge badge-${typeMap[t.type] || 'secondary'}">${t.type}</span></td>
+                        <td>${t.description}</td>
+                        <td style="font-weight:600;color:${t.type==='saque'?'#dc3545':'#28a745'}">${t.type==='saque'?'- ':'+ '}${fmt(t.amount)}</td>
+                        <td><span class="badge badge-${t.status==='aprovado'?'success':t.status==='pendente'?'warning':'danger'}">${t.status}</span></td>
+                    </tr>`;
+                }).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b">Nenhuma transação encontrada</td></tr>';
+            });
         }
 
         renderStats();
         renderTable();
+
+        function exportTx() {
+            const txs = DB.getTransactions();
+            ExportCSV.download('transacoes',
+                ['ID', 'Data', 'Usuário', 'Tipo', 'Descrição', 'Valor', 'Status'],
+                txs.map(t => { const u = DB.getUser(t.userId); return [t.id, t.date, u ? u.name : '', t.type, t.description, t.amount, t.status]; })
+            );
+        }
     </script>
 </body>
 </html>

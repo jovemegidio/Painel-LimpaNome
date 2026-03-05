@@ -10,11 +10,60 @@
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Bacen — Relatórios</h2><p>Histórico de consultas ao Banco Central</p></div>
-        <div class="card"><div class="card-body"><div class="empty-state"><i class="fas fa-chart-line"></i><p>Nenhum relatório disponível</p><small>Faça uma consulta Bacen para gerar relatórios</small></div></div></div>
+        <div class="page-header"><h2>Bacen — Relatórios</h2><p>Histórico completo de consultas ao Banco Central</p></div>
+
+        <div class="stats-grid" id="bacenStats"></div>
+
+        <div class="card" style="margin-top:24px">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                <h3><i class="fas fa-chart-line"></i> Histórico de Consultas</h3>
+                <button class="btn btn-sm btn-outline" onclick="window.location.href='bacen-consulta.html'"><i class="fas fa-plus"></i> Nova Consulta</button>
+            </div>
+            <div class="card-body"><div class="table-wrap" id="reportTable"></div></div>
+        </div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
-    <script>Layout.init({ basePath: '../', page: 'bacen-relatorios', title: 'Bacen Relatórios' });</script>
+    <script>
+        Layout.init({ basePath: '../', page: 'bacen-relatorios', title: 'Bacen Relatórios' });
+
+        async function loadReports() {
+            try {
+                const data = await DB.api('GET', '/api/services/consultations');
+                const bacenList = (data || []).filter(c => c.type === 'bacen');
+
+                const totalConsultas = bacenList.length;
+                const totalValor = bacenList.reduce((s, c) => {
+                    const r = c.result || {};
+                    return s + parseFloat((r.dados || {}).valores_a_receber || 0);
+                }, 0);
+
+                document.getElementById('bacenStats').innerHTML = `
+                    <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-search"></i></div><div class="stat-info"><h3>${totalConsultas}</h3><p>Total Consultas</p></div></div>
+                    <div class="stat-card"><div class="stat-icon green"><i class="fas fa-coins"></i></div><div class="stat-info"><h3>R$ ${fmt(totalValor)}</h3><p>Total Valores Encontrados</p></div></div>
+                `;
+
+                document.getElementById('reportTable').innerHTML = bacenList.length ? `<table>
+                    <thead><tr><th>#</th><th>CPF/CNPJ</th><th>Valor Encontrado</th><th>Instituições</th><th>Data</th><th>Detalhes</th></tr></thead>
+                    <tbody>${bacenList.map((c, i) => {
+                        const r = c.result || {};
+                        const dados = r.dados || {};
+                        const val = parseFloat(dados.valores_a_receber || 0);
+                        return `<tr>
+                            <td>${i + 1}</td>
+                            <td>${c.cpf}</td>
+                            <td style="font-weight:700;color:${val > 0 ? 'var(--success)' : 'var(--text3)'}">R$ ${val.toFixed(2)}</td>
+                            <td>${dados.instituicoes || 0}</td>
+                            <td>${new Date(c.created_at).toLocaleDateString('pt-BR')}</td>
+                            <td>${val > 0 ? '<span class="badge badge-success">Valor encontrado</span>' : '<span class="badge badge-secondary">Sem valor</span>'}</td>
+                        </tr>`;
+                    }).join('')}</tbody>
+                </table>` : '<div class="table-empty"><i class="fas fa-chart-line"></i><p>Nenhum relatório disponível</p><small>Faça uma <a href="bacen-consulta.html" style="color:var(--primary)">consulta Bacen</a> para gerar relatórios</small></div>';
+            } catch {
+                document.getElementById('reportTable').innerHTML = '<div class="table-empty"><i class="fas fa-chart-line"></i><p>Nenhum relatório disponível</p><small>Faça uma <a href="bacen-consulta.html" style="color:var(--primary)">consulta Bacen</a> para gerar relatórios</small></div>';
+            }
+        }
+        loadReports();
+    </script>
 </body>
 </html>

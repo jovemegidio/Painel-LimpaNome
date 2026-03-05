@@ -75,18 +75,24 @@
             options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
         });
 
-        /* ── Growth Bar Chart ──────────── */
+        /* ── Growth Bar Chart ── real monthly data ── */
         const months = [];
+        const growthData = [];
         const now = new Date();
         for (let i = 5; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             months.push(d.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }));
+            const key = d.toISOString().slice(0, 7);
+            const count = users.filter(u => u.createdAt && u.createdAt.startsWith(key)).length;
+            growthData.push(count);
         }
+        // If all zeros, show total in last month
+        if (growthData.every(v => v === 0)) growthData[5] = users.length;
         new Chart(document.getElementById('growthChart'), {
             type: 'bar',
             data: {
                 labels: months,
-                datasets: [{ label: 'Novos Cadastros', data: [3, 5, 4, 8, 6, users.length], backgroundColor: '#007bff', borderRadius: 6 }]
+                datasets: [{ label: 'Novos Cadastros', data: growthData, backgroundColor: '#007bff', borderRadius: 6 }]
             },
             options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
         });

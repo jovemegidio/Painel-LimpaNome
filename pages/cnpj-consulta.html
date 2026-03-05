@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI2 — Consulta CNPJ</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2><i class="fas fa-building" style="color:var(--primary)"></i> Consulta CNPJ</h2><p>Informações cadastrais de empresas na Receita Federal</p></div>
+
+        <div class="card" style="max-width:600px">
+            <div class="card-header"><h3><i class="fas fa-search"></i> Consultar CNPJ</h3></div>
+            <div class="card-body">
+                <form onsubmit="consultarCNPJ(event)">
+                    <div class="form-group">
+                        <label>CNPJ</label>
+                        <input type="text" id="cnpjInput" class="form-control" placeholder="00.000.000/0000-00" required maxlength="18" oninput="maskCNPJ(this)">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="consultBtn"><i class="fas fa-search"></i> Consultar CNPJ</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div class="card" id="resultCard" style="margin-top:24px;display:none">
+            <div class="card-header"><h3><i class="fas fa-building"></i> Resultado da Consulta</h3></div>
+            <div class="card-body" id="resultBody"></div>
+        </div>
+
+        <!-- History -->
+        <div class="card" style="margin-top:24px">
+            <div class="card-header"><h3><i class="fas fa-history"></i> Histórico de Consultas</h3></div>
+            <div class="card-body" id="historyBody">
+                <div class="table-empty"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'consultas', title: 'Consulta CNPJ' });
+
+        function maskCNPJ(el) {
+            let v = el.value.replace(/\D/g, '');
+            if (v.length > 14) v = v.slice(0, 14);
+            v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+            v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+            v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+            v = v.replace(/(\d{4})(\d)/, '$1-$2');
+            el.value = v;
+        }
+
+        async function consultarCNPJ(e) {
+            e.preventDefault();
+            const cnpj = document.getElementById('cnpjInput').value;
+            const btn = document.getElementById('consultBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
+
+            try {
+                const res = await DB.api('POST', '/api/services/consultar-cnpj', { cnpj });
+                const card = document.getElementById('resultCard');
+                const body = document.getElementById('resultBody');
+                card.style.display = 'block';
+
+                if (res.status === 'found') {
+                    const sit = res.situacao === 'ATIVA' ? 'success' : 'danger';
+                    body.innerHTML = `
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+                            <div class="stat-icon" style="background:${res.situacao==='ATIVA'?'#dcfce7':'#fee2e2'};color:${res.situacao==='ATIVA'?'#22c55e':'#ef4444'}"><i class="fas fa-building"></i></div>
+                            <div>
+                                <h4 style="margin:0">${res.nome}</h4>
+                                ${res.fantasia ? '<p style="color:var(--text3);margin:0;font-size:.85rem">'+res.fantasia+'</p>' : ''}
+                            </div>
+                            <span class="badge badge-${sit}" style="margin-left:auto">${res.situacao}</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                            <div class="info-row"><span style="color:var(--text3);font-size:.8rem">CNPJ</span><br><strong>${res.cnpj}</strong></div>
+                            <div class="info-row"><span style="color:var(--text3);font-size:.8rem">Tipo</span><br><strong>${res.tipo}</strong></div>
+                            <div class="info-row"><span style="color:var(--text3);font-size:.8rem">Abertura</span><br><strong>${res.abertura}</strong></div>
+                            <div class="info-row"><span style="color:var(--text3);font-size:.8rem">Capital Social</span><br><strong>R$ ${fmt(Number(res.capital_social) || 0)}</strong></div>
+                            <div class="info-row" style="grid-column:1/-1"><span style="color:var(--text3);font-size:.8rem">Natureza Jurídica</span><br><strong>${res.natureza_juridica}</strong></div>
+                            <div class="info-row" style="grid-column:1/-1"><span style="color:var(--text3);font-size:.8rem">Atividade Principal</span><br><strong>${res.atividade_principal}</strong></div>
+                            <div class="info-row" style="grid-column:1/-1"><span style="color:var(--text3);font-size:.8rem">Endereço</span><br><strong>${res.endereco}</strong></div>
+                            <div class="info-row"><span style="color:var(--text3);font-size:.8rem">Telefone</span><br><strong>${res.telefone || '—'}</strong></div>
+                            <div class="info-row"><span style="color:var(--text3);font-size:.8rem">E-mail</span><br><strong>${res.email || '—'}</strong></div>
+                        </div>
+                        ${res.mock ? '<p style="margin-top:12px;font-size:.78rem;color:var(--text3)"><i class="fas fa-info-circle"></i> Dados simulados (API ReceitaWS indisponível)</p>' : ''}
+                    `;
+                } else {
+                    body.innerHTML = `
+                        <div style="text-align:center;padding:24px">
+                            <i class="fas fa-exclamation-triangle" style="font-size:2rem;color:var(--warning);margin-bottom:12px"></i>
+                            <h4>CNPJ não encontrado</h4>
+                            <p style="color:var(--text3)">${res.message || 'Verifique o número e tente novamente'}</p>
+                        </div>
+                    `;
+                }
+                loadHistory();
+            } catch (err) {
+                Layout.toast(err.message || 'Erro na consulta', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> Consultar CNPJ';
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const consultations = await DB.api('GET', '/api/services/consultations');
+                const cnpjConsults = (consultations || []).filter(c => c.type === 'cnpj');
+                const body = document.getElementById('historyBody');
+
+                if (!cnpjConsults.length) {
+                    body.innerHTML = '<div class="table-empty"><i class="fas fa-building"></i><p>Nenhuma consulta CNPJ realizada</p></div>';
+                    return;
+                }
+                body.innerHTML = `<table class="table"><thead><tr><th>Data</th><th>CNPJ</th><th>Empresa</th><th>Situação</th></tr></thead><tbody>${cnpjConsults.map(c => {
+                    let r = {};
+                    try { r = JSON.parse(c.result); } catch {}
+                    return `<tr>
+                        <td>${new Date(c.created_at).toLocaleDateString('pt-BR')}</td>
+                        <td>${c.cpf ? c.cpf.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : '—'}</td>
+                        <td>${r.nome || '—'}</td>
+                        <td><span class="badge badge-${r.situacao==='ATIVA'?'success':'danger'}">${r.situacao || r.status || '—'}</span></td>
+                    </tr>`;
+                }).join('')}</tbody></table>`;
+            } catch {
+                document.getElementById('historyBody').innerHTML = '<div class="table-empty"><i class="fas fa-building"></i><p>Nenhuma consulta CNPJ realizada</p></div>';
+            }
+        }
+
+        loadHistory();
+    </script>
+</body>
+</html>

@@ -20,6 +20,7 @@
     <div class="tabs">
         <div class="tab active" onclick="switchTab('perfil',this)">Dados Pessoais</div>
         <div class="tab" onclick="switchTab('senha',this)">Alterar Senha</div>
+        <div class="tab" onclick="switchTab('2fa',this)">Segurança 2FA</div>
         <div class="tab" onclick="switchTab('notif',this)">Notificações</div>
     </div>
 
@@ -107,6 +108,72 @@
         </div>
     </div>
 
+    <!-- Tab: 2FA -->
+    <div class="tab-content" id="tab-2fa">
+        <div class="card" style="max-width:560px">
+            <div class="card-header">
+                <h3><i class="fas fa-shield-halved"></i> Autenticação em Dois Fatores (2FA)</h3>
+            </div>
+            <div class="card-body">
+                <!-- Status -->
+                <div id="twofa-status" style="display:flex;align-items:center;gap:12px;padding:16px;border-radius:var(--radius);margin-bottom:20px;background:var(--bg2)">
+                    <i id="twofa-icon" class="fas fa-shield-halved" style="font-size:1.5rem"></i>
+                    <div>
+                        <div id="twofa-label" style="font-weight:600;font-size:.9rem"></div>
+                        <div id="twofa-desc" style="font-size:.78rem;color:var(--text3)"></div>
+                    </div>
+                </div>
+
+                <!-- Setup (hidden) -->
+                <div id="twofa-setup" style="display:none">
+                    <p style="font-size:.85rem;color:var(--text2);margin-bottom:16px">
+                        <strong>1.</strong> Baixe um app autenticador no celular: 
+                        <strong>Google Authenticator</strong> ou <strong>Authy</strong>.
+                    </p>
+                    <p style="font-size:.85rem;color:var(--text2);margin-bottom:12px">
+                        <strong>2.</strong> Escaneie o QR Code abaixo com o app:
+                    </p>
+                    <div id="twofa-qr" style="text-align:center;margin:16px 0;padding:16px;background:#fff;border-radius:var(--radius);border:1px solid var(--border-light);display:inline-block"></div>
+                    <p style="font-size:.78rem;color:var(--text3);margin:8px 0 16px">
+                        Ou insira manualmente a chave: <code id="twofa-secret" style="background:var(--bg2);padding:2px 8px;border-radius:4px;font-size:.82rem;user-select:all"></code>
+                    </p>
+                    <p style="font-size:.85rem;color:var(--text2);margin-bottom:12px">
+                        <strong>3.</strong> Informe o código de 6 dígitos do app:
+                    </p>
+                    <form onsubmit="enable2FA(event)" style="display:flex;gap:8px;align-items:flex-end">
+                        <div class="form-group" style="flex:1;margin:0">
+                            <input type="text" class="form-control" id="twofa-code" placeholder="000000" maxlength="6" pattern="\d{6}" inputmode="numeric" required style="text-align:center;font-size:1.1rem;letter-spacing:6px;font-weight:600">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="twofa-enable-btn">
+                            <i class="fas fa-check"></i> Ativar
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Disable (hidden) -->
+                <div id="twofa-disable" style="display:none">
+                    <p style="font-size:.85rem;color:var(--text2);margin-bottom:16px">
+                        Para desativar o 2FA, informe sua senha atual:
+                    </p>
+                    <form onsubmit="disable2FA(event)" style="display:flex;gap:8px;align-items:flex-end">
+                        <div class="form-group" style="flex:1;margin:0">
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="twofa-pass" placeholder="Sua senha" required>
+                                <button type="button" class="input-group-btn" onclick="tgl('twofa-pass',this)"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn" style="background:#ef4444;color:#fff">
+                            <i class="fas fa-shield-halved"></i> Desativar
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Action button -->
+                <div id="twofa-actions" style="margin-top:16px"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Tab: Notificações -->
     <div class="tab-content" id="tab-notif">
         <div class="card" style="max-width:500px">
@@ -120,39 +187,39 @@
                             <div style="font-weight:550;font-size:.9rem">E-mail de novas transações</div>
                             <div style="font-size:.78rem;color:var(--text3)">Receba um e-mail quando houver créditos ou saques</div>
                         </div>
-                        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)">
+                        <input type="checkbox" id="notif_transactions" checked style="width:18px;height:18px;accent-color:var(--primary)">
                     </label>
                     <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
                         <div>
                             <div style="font-weight:550;font-size:.9rem">Novos indicados</div>
                             <div style="font-size:.78rem;color:var(--text3)">Seja notificado quando um novo indicado se cadastrar</div>
                         </div>
-                        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)">
+                        <input type="checkbox" id="notif_referrals" checked style="width:18px;height:18px;accent-color:var(--primary)">
                     </label>
                     <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
                         <div>
                             <div style="font-weight:550;font-size:.9rem">Atualizações do sistema</div>
                             <div style="font-size:.78rem;color:var(--text3)">Receba novidades e atualizações da plataforma</div>
                         </div>
-                        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)">
+                        <input type="checkbox" id="notif_system" checked style="width:18px;height:18px;accent-color:var(--primary)">
                     </label>
                     <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
                         <div>
                             <div style="font-weight:550;font-size:.9rem">Processos Limpa Nome</div>
                             <div style="font-size:.78rem;color:var(--text3)">Notificações sobre status dos seus processos</div>
                         </div>
-                        <input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--primary)">
+                        <input type="checkbox" id="notif_processes" checked style="width:18px;height:18px;accent-color:var(--primary)">
                     </label>
                     <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;cursor:pointer">
                         <div>
                             <div style="font-weight:550;font-size:.9rem">Newsletter semanal</div>
                             <div style="font-size:.78rem;color:var(--text3)">Resumo semanal das suas atividades e rede</div>
                         </div>
-                        <input type="checkbox" style="width:18px;height:18px;accent-color:var(--primary)">
+                        <input type="checkbox" id="notif_newsletter" style="width:18px;height:18px;accent-color:var(--primary)">
                     </label>
                 </div>
                 <div style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="Layout.toast('Preferências salvas!','success')"><i class="fas fa-save"></i> Salvar Preferências</button>
+                    <button class="btn btn-primary" id="saveNotifBtn" onclick="saveNotifPrefs()"><i class="fas fa-save"></i> Salvar Preferências</button>
                 </div>
             </div>
         </div>
@@ -216,6 +283,147 @@
         inp.type = show ? 'text' : 'password';
         btn.querySelector('i').className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
     }
+
+    // ══════════════════════════════
+    //  2FA Functions
+    // ══════════════════════════════
+    let twofaEnabled = false;
+
+    async function load2FAStatus() {
+        try {
+            const result = await DB.api('GET', '/api/auth/2fa/status');
+            twofaEnabled = result.enabled;
+            render2FA();
+        } catch { render2FA(); }
+    }
+
+    function render2FA() {
+        const icon = document.getElementById('twofa-icon');
+        const label = document.getElementById('twofa-label');
+        const desc = document.getElementById('twofa-desc');
+        const status = document.getElementById('twofa-status');
+        const actions = document.getElementById('twofa-actions');
+
+        document.getElementById('twofa-setup').style.display = 'none';
+        document.getElementById('twofa-disable').style.display = 'none';
+
+        if (twofaEnabled) {
+            status.style.background = 'rgba(16,185,129,0.08)';
+            icon.style.color = '#10b981';
+            label.textContent = '2FA Ativado';
+            label.style.color = '#10b981';
+            desc.textContent = 'Sua conta possui uma camada extra de segurança.';
+            actions.innerHTML = '<button class="btn" style="background:rgba(239,68,68,0.1);color:#ef4444" onclick="show2FADisable()"><i class="fas fa-times"></i> Desativar 2FA</button>';
+        } else {
+            status.style.background = 'rgba(245,158,11,0.08)';
+            icon.style.color = '#f59e0b';
+            label.textContent = '2FA Desativado';
+            label.style.color = '#f59e0b';
+            desc.textContent = 'Recomendamos ativar para maior segurança da sua conta.';
+            actions.innerHTML = '<button class="btn btn-primary" onclick="setup2FA()"><i class="fas fa-shield-halved"></i> Configurar 2FA</button>';
+        }
+    }
+
+    async function setup2FA() {
+        try {
+            const result = await DB.api('POST', '/api/auth/2fa/setup');
+            if (!result.success) { Layout.toast(result.error, 'error'); return; }
+
+            document.getElementById('twofa-actions').style.display = 'none';
+            document.getElementById('twofa-setup').style.display = 'block';
+            document.getElementById('twofa-qr').innerHTML = '<img src="' + result.qrCode + '" alt="QR Code" style="width:200px;height:200px">';
+            document.getElementById('twofa-secret').textContent = result.secret;
+        } catch (err) {
+            Layout.toast('Erro ao configurar 2FA', 'error');
+        }
+    }
+
+    async function enable2FA(e) {
+        e.preventDefault();
+        const code = document.getElementById('twofa-code').value.trim();
+        try {
+            const result = await DB.api('POST', '/api/auth/2fa/enable', { code });
+            if (result.success) {
+                Layout.toast('2FA ativado com sucesso!', 'success');
+                twofaEnabled = true;
+                render2FA();
+                document.getElementById('twofa-actions').style.display = 'block';
+            } else {
+                Layout.toast(result.error || 'Código inválido', 'error');
+                document.getElementById('twofa-code').value = '';
+                document.getElementById('twofa-code').focus();
+            }
+        } catch { Layout.toast('Erro de conexão', 'error'); }
+    }
+
+    function show2FADisable() {
+        document.getElementById('twofa-actions').style.display = 'none';
+        document.getElementById('twofa-disable').style.display = 'block';
+    }
+
+    async function disable2FA(e) {
+        e.preventDefault();
+        const password = document.getElementById('twofa-pass').value;
+        try {
+            const result = await DB.api('POST', '/api/auth/2fa/disable', { password });
+            if (result.success) {
+                Layout.toast('2FA desativado', 'success');
+                twofaEnabled = false;
+                render2FA();
+                document.getElementById('twofa-actions').style.display = 'block';
+                document.getElementById('twofa-pass').value = '';
+            } else {
+                Layout.toast(result.error || 'Erro ao desativar', 'error');
+            }
+        } catch { Layout.toast('Erro de conexão', 'error'); }
+    }
+
+    // Load 2FA status on page load
+    load2FAStatus();
+
+    // ══════════════════════════════
+    //  Notification Preferences
+    // ══════════════════════════════
+    const notifKeys = ['notif_transactions', 'notif_referrals', 'notif_system', 'notif_processes', 'notif_newsletter'];
+
+    async function loadNotifPrefs() {
+        try {
+            const res = await DB.api('GET', '/api/users/preferences');
+            if (res && res.notifications) {
+                const prefs = res.notifications;
+                notifKeys.forEach(k => {
+                    const el = document.getElementById(k);
+                    if (el && prefs[k] !== undefined) el.checked = prefs[k];
+                });
+            }
+        } catch {
+            // Fallback: load from localStorage
+            const saved = JSON.parse(localStorage.getItem('mi2_notif_prefs') || 'null');
+            if (saved) {
+                notifKeys.forEach(k => {
+                    const el = document.getElementById(k);
+                    if (el && saved[k] !== undefined) el.checked = saved[k];
+                });
+            }
+        }
+    }
+
+    async function saveNotifPrefs() {
+        const prefs = {};
+        notifKeys.forEach(k => { prefs[k] = document.getElementById(k).checked; });
+
+        // Save locally immediately
+        localStorage.setItem('mi2_notif_prefs', JSON.stringify(prefs));
+
+        try {
+            await DB.api('PUT', '/api/users/preferences', { notifications: prefs });
+            Layout.toast('Preferências salvas com sucesso!', 'success');
+        } catch {
+            Layout.toast('Preferências salvas localmente!', 'success');
+        }
+    }
+
+    loadNotifPrefs();
 </script>
 </body>
 </html>

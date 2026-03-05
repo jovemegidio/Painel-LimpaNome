@@ -42,6 +42,28 @@
             </button>
         </form>
 
+        <!-- 2FA Step (hidden) -->
+        <form id="twoFAForm" onsubmit="verify2FA(event)" style="display:none">
+            <div style="text-align:center;margin-bottom:16px">
+                <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(79,70,229,0.1));display:inline-flex;align-items:center;justify-content:center;margin-bottom:8px">
+                    <i class="fas fa-shield-halved" style="font-size:1.2rem;color:var(--primary)"></i>
+                </div>
+                <h3 style="font-size:1rem;margin:0 0 4px">Autenticação em Dois Fatores</h3>
+                <p style="font-size:.82rem;color:var(--text3);margin:0">Informe o código do seu app autenticador</p>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-key" style="margin-right:6px;opacity:.4"></i>Código 2FA</label>
+                <input type="text" class="form-control" id="totpCode" placeholder="000000" required maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;font-size:1.3rem;letter-spacing:8px;font-weight:600">
+            </div>
+            <button type="submit" class="btn btn-primary w-full" id="twoFABtn" style="padding:12px;font-size:.95rem">
+                <span class="btn-text">Verificar</span>
+                <i class="fas fa-spinner fa-spin" style="display:none"></i>
+            </button>
+            <div style="text-align:center;margin-top:12px">
+                <a href="#" onclick="cancel2FA();return false" style="font-size:.82rem;color:var(--text3)"><i class="fas fa-arrow-left" style="margin-right:4px"></i>Voltar</a>
+            </div>
+        </form>
+
         <!-- Admin Login (hidden) -->
         <form id="adminForm" onsubmit="doLogin(event,'admin')" style="display:none">
             <div class="form-group">
@@ -86,12 +108,16 @@
     const brandIcon = document.querySelector('.login-brand .brand-icon');
     if (brandIcon) brandIcon.textContent = _s.logoText || 'MI2';
 
+    let pending2FAToken = null;
+
     function switchTab(tab) {
         document.querySelectorAll('.auth-tab').forEach((t, i) => {
             t.classList.toggle('active', (tab === 'user' && i === 0) || (tab === 'admin' && i === 1));
         });
         document.getElementById('userForm').style.display = tab === 'user' ? 'block' : 'none';
         document.getElementById('adminForm').style.display = tab === 'admin' ? 'block' : 'none';
+        document.getElementById('twoFAForm').style.display = 'none';
+        document.querySelector('.auth-tabs').style.display = '';
     }
 
     function togglePass(id, btn) {
@@ -101,7 +127,7 @@
         btn.querySelector('i').className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
     }
 
-    function doLogin(e, type) {
+    async function doLogin(e, type) {
         e.preventDefault();
         const btn = e.target.querySelector('button[type=submit]');
         const text = btn.querySelector('.btn-text');
@@ -110,16 +136,30 @@
         spin.style.display = 'inline-block';
         btn.disabled = true;
 
-        setTimeout(() => {
+        try {
             let result;
             if (type === 'user') {
                 const u = document.getElementById('userUsername').value.toLowerCase().trim();
                 const p = document.getElementById('userPassword').value;
-                result = DB.login(u, p);
+                result = await DB.login(u, p);
             } else {
                 const u = document.getElementById('adminUsername').value.toLowerCase().trim();
                 const p = document.getElementById('adminPassword').value;
-                result = DB.adminLogin(u, p);
+                result = await DB.adminLogin(u, p);
+            }
+
+            if (result.success && result.requires2FA) {
+                // Mostrar etapa 2FA
+                pending2FAToken = result.tempToken;
+                document.getElementById('userForm').style.display = 'none';
+                document.getElementById('adminForm').style.display = 'none';
+                document.querySelector('.auth-tabs').style.display = 'none';
+                document.getElementById('twoFAForm').style.display = 'block';
+                document.getElementById('totpCode').focus();
+                text.style.display = 'inline';
+                spin.style.display = 'none';
+                btn.disabled = false;
+                return;
             }
 
             if (result.success) {
@@ -128,12 +168,57 @@
                     window.location.href = type === 'admin' ? 'admin/index.html' : 'pages/dashboard.html';
                 }, 600);
             } else {
-                showToast('Usuário ou senha inválidos.', 'error');
+                showToast(result.error || 'Usuário ou senha inválidos.', 'error');
                 text.style.display = 'inline';
                 spin.style.display = 'none';
                 btn.disabled = false;
             }
-        }, 800);
+        } catch (err) {
+            showToast('Erro de conexão com o servidor.', 'error');
+            text.style.display = 'inline';
+            spin.style.display = 'none';
+            btn.disabled = false;
+        }
+    }
+
+    async function verify2FA(e) {
+        e.preventDefault();
+        const btn = document.getElementById('twoFABtn');
+        const text = btn.querySelector('.btn-text');
+        const spin = btn.querySelector('.fa-spin');
+        text.style.display = 'none';
+        spin.style.display = 'inline-block';
+        btn.disabled = true;
+
+        try {
+            const code = document.getElementById('totpCode').value.trim();
+            const result = await DB.verify2FA(pending2FAToken, code);
+
+            if (result.success) {
+                showToast('Login realizado com sucesso!', 'success');
+                setTimeout(() => { window.location.href = 'pages/dashboard.html'; }, 600);
+            } else {
+                showToast(result.error || 'Código inválido.', 'error');
+                document.getElementById('totpCode').value = '';
+                document.getElementById('totpCode').focus();
+                text.style.display = 'inline';
+                spin.style.display = 'none';
+                btn.disabled = false;
+            }
+        } catch (err) {
+            showToast('Erro de conexão com o servidor.', 'error');
+            text.style.display = 'inline';
+            spin.style.display = 'none';
+            btn.disabled = false;
+        }
+    }
+
+    function cancel2FA() {
+        pending2FAToken = null;
+        document.getElementById('twoFAForm').style.display = 'none';
+        document.getElementById('userForm').style.display = 'block';
+        document.querySelector('.auth-tabs').style.display = '';
+        document.getElementById('totpCode').value = '';
     }
 
     function showToast(msg, type) {

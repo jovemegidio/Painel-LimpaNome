@@ -33,8 +33,8 @@
 
         document.getElementById('statsGrid').innerHTML = [
             { icon: 'fa-users', color: '#007bff', label: 'Total Membros', value: users.length },
-            { icon: 'fa-star', color: '#f59e0b', label: 'Total Pontos', value: totalPts.toLocaleString('pt-BR') },
             { icon: 'fa-medal', color: '#94a3b8', label: 'Prata', value: levels.prata || 0 },
+            { icon: 'fa-gem', color: '#f59e0b', label: 'Ouro', value: levels.ouro || 0 },
             { icon: 'fa-crown', color: '#6366f1', label: 'Diamante', value: levels.diamante || 0 }
         ].map(s => `
             <div class="stat-card">

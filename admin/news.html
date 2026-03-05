@@ -35,10 +35,10 @@
                     <div class="form-group"><label>Título</label><input type="text" id="newsTitle" class="form-control" required></div>
                     <div class="form-group"><label>Categoria</label>
                         <select id="newsCat" class="form-control">
-                            <option value="Novidade">Novidade</option>
-                            <option value="Atualização">Atualização</option>
-                            <option value="Promoção">Promoção</option>
-                            <option value="Comunicado">Comunicado</option>
+                            <option value="novidade">Novidade</option>
+                            <option value="sistema">Atualização</option>
+                            <option value="promocao">Promoção</option>
+                            <option value="evento">Comunicado</option>
                         </select>
                     </div>
                     <div class="form-group"><label>Conteúdo</label><textarea id="newsContent" class="form-control" rows="5" required></textarea></div>
@@ -109,6 +109,7 @@
                 news.push(obj);
             }
             DB.set('news', news);
+            DB.apiBackground('PUT', '/api/admin/content/news', news);
             closeNewsModal();
             renderTable();
             Layout.toast('Informativo salvo!', 'success');
@@ -118,6 +119,7 @@
             if (!confirm('Excluir este informativo?')) return;
             const news = (DB.get('news')||[]).filter(x => x.id !== id);
             DB.set('news', news);
+            DB.apiBackground('PUT', '/api/admin/content/news', news);
             renderTable();
             Layout.toast('Informativo excluído', 'success');
         }

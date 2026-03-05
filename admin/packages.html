@@ -107,6 +107,7 @@
                 pkgs.push(pkg);
             }
             DB.set('packages', pkgs);
+            DB.apiBackground('PUT', '/api/admin/content/packages', pkgs);
             closePkgModal();
             renderTable();
             Layout.toast('Pacote salvo com sucesso!', 'success');
@@ -116,6 +117,7 @@
             if (!confirm('Excluir este pacote?')) return;
             const pkgs = (DB.get('packages') || []).filter(x => x.id !== id);
             DB.set('packages', pkgs);
+            DB.apiBackground('PUT', '/api/admin/content/packages', pkgs);
             renderTable();
             Layout.toast('Pacote excluído', 'success');
         }

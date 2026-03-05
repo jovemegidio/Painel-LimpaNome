@@ -11,33 +11,66 @@
     <div id="app"></div>
     <template id="page-content">
         <div class="page-header"><h2>Relatório de Comissões</h2><p>Histórico de comissões recebidas da sua rede</p></div>
+
+        <!-- Date range filter -->
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+                <div class="form-group" style="margin:0"><label>De</label><input type="date" class="form-control" id="dateFrom" onchange="renderComm()"></div>
+                <div class="form-group" style="margin:0"><label>Até</label><input type="date" class="form-control" id="dateTo" onchange="renderComm()"></div>
+                <select class="form-control" id="filterType" style="max-width:160px" onchange="renderComm()">
+                    <option value="">Todos os Tipos</option>
+                    <option value="comissao">Comissão</option>
+                    <option value="bonus">Bônus</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="clearFilters()"><i class="fas fa-times"></i> Limpar</button>
+            </div>
+        </div>
+
         <div class="stats-grid">
             <div class="stat-card"><div class="stat-icon green"><i class="fas fa-hand-holding-usd"></i></div><div class="stat-info"><h3 id="totalComm"></h3><p>Total Comissões</p></div></div>
             <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar"></i></div><div class="stat-info"><h3 id="monthComm"></h3><p>Comissão do Mês</p></div></div>
         </div>
-        <div class="card"><div class="card-body"><div class="table-wrap" id="commTable"></div></div></div>
+        <div class="card"><div class="card-body"><table class="table" id="commTable"><thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div></div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
         Layout.init({ basePath: '../', page: 'relatorios-comissoes', title: 'Comissões' });
         const user = Layout.user;
-        const tx = DB.getTransactions(user.id).filter(t => t.type === 'comissao' || t.type === 'bonus');
-        const total = tx.reduce((s, t) => s + Math.abs(t.amount), 0);
+        const allTx = DB.getTransactions(user.id).filter(t => t.type === 'comissao' || t.type === 'bonus');
+        const currentMonth = new Date().toISOString().slice(0, 7);
 
-        document.getElementById('totalComm').textContent = 'R$ ' + fmt(total);
-        document.getElementById('monthComm').textContent = 'R$ ' + fmt(tx.filter(t => t.date.startsWith('2026-03')).reduce((s, t) => s + Math.abs(t.amount), 0));
+        function clearFilters() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('filterType').value = '';
+            renderComm();
+        }
 
-        document.getElementById('commTable').innerHTML = tx.length ? `<table>
-            <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
-            <tbody>${tx.map(t => `<tr>
-                <td><span class="badge badge-${t.type==='bonus'?'green':'blue'}">${t.type}</span></td>
-                <td>${t.description}</td>
-                <td style="font-weight:700;color:var(--success)">+R$ ${fmt(Math.abs(t.amount))}</td>
-                <td><span class="badge badge-green">${t.status}</span></td>
-                <td>${t.date}</td>
-            </tr>`).join('')}</tbody>
-        </table>` : '<div class="table-empty"><i class="fas fa-hand-holding-usd"></i><p>Nenhuma comissão</p></div>';
+        function renderComm() {
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+            const type = document.getElementById('filterType').value;
+            let tx = allTx;
+            if (from) tx = tx.filter(t => t.date >= from);
+            if (to) tx = tx.filter(t => t.date <= to + 'T23:59:59');
+            if (type) tx = tx.filter(t => t.type === type);
+
+            const total = tx.reduce((s, t) => s + Math.abs(t.amount), 0);
+            document.getElementById('totalComm').textContent = 'R$ ' + fmt(total);
+            document.getElementById('monthComm').textContent = 'R$ ' + fmt(tx.filter(t => t.date.startsWith(currentMonth)).reduce((s, t) => s + Math.abs(t.amount), 0));
+
+            Paginator.create('commTable', tx, 15, function(pageTx) {
+                document.querySelector('#commTable tbody').innerHTML = pageTx.length ? pageTx.map(t => `<tr>
+                    <td><span class="badge badge-${t.type==='bonus'?'green':'blue'}">${t.type}</span></td>
+                    <td>${t.description}</td>
+                    <td style="font-weight:700;color:var(--success)">+R$ ${fmt(Math.abs(t.amount))}</td>
+                    <td><span class="badge badge-green">${t.status}</span></td>
+                    <td>${t.date}</td>
+                </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#64748b">Nenhuma comissão encontrada</td></tr>';
+            });
+        }
+        renderComm();
     </script>
 </body>
 </html>

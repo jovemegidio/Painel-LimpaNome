@@ -32,31 +32,99 @@
             <div class="card-header"><h3><i class="fas fa-coins"></i> Resultado</h3></div>
             <div class="card-body" id="bacenBody"></div>
         </div>
+
+        <!-- Histórico de consultas Bacen -->
+        <div class="card" style="margin-top:24px">
+            <div class="card-header"><h3><i class="fas fa-history"></i> Histórico de Consultas Bacen</h3></div>
+            <div class="card-body"><div class="table-wrap" id="bacenHistory"></div></div>
+        </div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
         Layout.init({ basePath: '../', page: 'bacen-consulta', title: 'Bacen' });
 
-        function consultarBacen() {
+        async function consultarBacen() {
             const doc = document.getElementById('bacenDoc').value;
             if (!doc) { Layout.toast('Informe o CPF/CNPJ', 'error'); return; }
-            Layout.toast('Consultando Banco Central...', 'info');
-            setTimeout(() => {
-                const result = document.getElementById('bacenResult');
-                result.style.display = 'block';
-                const val = (Math.random() * 500 + 50).toFixed(2);
-                document.getElementById('bacenBody').innerHTML = `
-                    <div style="text-align:center;padding:24px">
-                        <div style="font-size:3rem;margin-bottom:8px"><i class="fas fa-coins" style="color:var(--warning)"></i></div>
-                        <h3 style="font-size:1.3rem;margin-bottom:4px">Valores Encontrados!</h3>
-                        <p style="font-size:2rem;font-weight:700;color:var(--success);margin:12px 0">R$ ${val}</p>
-                        <p style="font-size:.85rem;color:var(--text3)">Existem valores a receber para o documento informado</p>
-                        <button class="btn btn-success" style="margin-top:16px"><i class="fas fa-download"></i> Solicitar Resgate</button>
-                    </div>`;
-                result.scrollIntoView({ behavior: 'smooth' });
-            }, 1500);
+
+            const btn = document.querySelector('.btn-primary');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
+
+            try {
+                const result = await DB.api('POST', '/api/services/consultar-bacen', { cpf: doc });
+                const resultDiv = document.getElementById('bacenResult');
+                resultDiv.style.display = 'block';
+
+                if (!result || result.error) {
+                    document.getElementById('bacenBody').innerHTML = `
+                        <div style="text-align:center;padding:24px">
+                            <div style="font-size:3rem;margin-bottom:8px"><i class="fas fa-exclamation-circle" style="color:var(--danger)"></i></div>
+                            <h3 style="font-size:1.1rem;margin-bottom:4px">Erro na Consulta</h3>
+                            <p style="font-size:.85rem;color:var(--text3)">${result?.error || result?.mensagem || 'Serviço indisponível. Tente novamente.'}</p>
+                        </div>`;
+                } else if (result.dados && parseFloat(result.dados.valores_a_receber) > 0) {
+                    const val = parseFloat(result.dados.valores_a_receber).toFixed(2);
+                    document.getElementById('bacenBody').innerHTML = `
+                        <div style="text-align:center;padding:24px">
+                            <div style="font-size:3rem;margin-bottom:8px"><i class="fas fa-coins" style="color:var(--warning)"></i></div>
+                            <h3 style="font-size:1.3rem;margin-bottom:4px">Valores Encontrados!</h3>
+                            <p style="font-size:2rem;font-weight:700;color:var(--success);margin:12px 0">R$ ${val}</p>
+                            <p style="font-size:.85rem;color:var(--text3)">Valores a receber de ${result.dados.instituicoes || 0} instituição(ões)</p>
+                            <p style="font-size:.78rem;color:var(--text3);margin-top:4px">Última atualização: ${result.dados.ultima_atualizacao || '—'}</p>
+                            <button class="btn btn-success" style="margin-top:16px" onclick="solicitarResgate('${doc}', '${val}')"><i class="fas fa-download"></i> Solicitar Resgate</button>
+                        </div>`;
+                } else {
+                    document.getElementById('bacenBody').innerHTML = `
+                        <div style="text-align:center;padding:24px">
+                            <div style="font-size:3rem;margin-bottom:8px"><i class="fas fa-check-circle" style="color:var(--success)"></i></div>
+                            <h3 style="font-size:1.1rem;margin-bottom:4px">Nenhum Valor Encontrado</h3>
+                            <p style="font-size:.85rem;color:var(--text3)">Não existem valores a receber para o documento informado</p>
+                        </div>`;
+                }
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+                loadBacenHistory();
+            } catch (err) {
+                Layout.toast('Erro ao consultar. Tente novamente.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> Consultar';
+            }
         }
+
+        function solicitarResgate(cpf, valor) {
+            const user = Layout.user;
+            DB.addProcess({
+                userId: user.id, user_id: user.id,
+                cpf: cpf, name: user.name,
+                type: 'bacen', value: parseFloat(valor),
+                institution: 'Banco Central (SVR)',
+                status: 'pendente'
+            });
+            Layout.toast('Processo de resgate aberto com sucesso! Acompanhe em "Meus Processos".', 'success');
+            document.querySelector('.btn-success').disabled = true;
+            document.querySelector('.btn-success').innerHTML = '<i class="fas fa-check"></i> Processo Aberto';
+        }
+
+        async function loadBacenHistory() {
+            try {
+                const data = await DB.api('GET', '/api/services/consultations');
+                const bacenList = (data || []).filter(c => c.type === 'bacen');
+                document.getElementById('bacenHistory').innerHTML = bacenList.length ? `<table>
+                    <thead><tr><th>CPF/CNPJ</th><th>Valor Encontrado</th><th>Instituições</th><th>Data</th></tr></thead>
+                    <tbody>${bacenList.map(c => {
+                        const r = c.result || {};
+                        const dados = r.dados || {};
+                        return `<tr><td>${c.cpf}</td>
+                            <td style="font-weight:700;color:var(--success)">R$ ${parseFloat(dados.valores_a_receber || 0).toFixed(2)}</td>
+                            <td>${dados.instituicoes || 0}</td>
+                            <td>${new Date(c.created_at).toLocaleDateString('pt-BR')}</td></tr>`;
+                    }).join('')}</tbody>
+                </table>` : '<div class="table-empty"><i class="fas fa-university"></i><p>Nenhuma consulta Bacen realizada</p></div>';
+            } catch {}
+        }
+        loadBacenHistory();
     </script>
 </body>
 </html>

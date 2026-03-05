@@ -3,3 +3,7 @@ node_modules/
 Thumbs.db
 *.log
 .vscode/
+.env
+database/*.db
+*.old.js
+test-local.js

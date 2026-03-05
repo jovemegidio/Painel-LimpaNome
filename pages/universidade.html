@@ -10,7 +10,28 @@
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Universidade MI2</h2><p>Treinamentos e materiais de apoio</p></div>
+        <div class="page-header"><h2>Universidade MI2</h2><p>Treinamentos e materiais de apoio para seu sucesso</p></div>
+
+        <!-- Categories -->
+        <div class="tabs" style="margin-bottom:24px">
+            <div class="tab active" onclick="filterCat('todos', this)">Todos</div>
+            <div class="tab" onclick="filterCat('inicio', this)">Primeiros Passos</div>
+            <div class="tab" onclick="filterCat('vendas', this)">Vendas & Rede</div>
+            <div class="tab" onclick="filterCat('servicos', this)">Serviços</div>
+            <div class="tab" onclick="filterCat('financeiro', this)">Financeiro</div>
+        </div>
+
+        <!-- Progress -->
+        <div class="card" style="margin-bottom:24px">
+            <div class="card-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                <div style="flex:1;min-width:200px">
+                    <h4 style="font-size:.9rem;margin-bottom:6px"><i class="fas fa-graduation-cap"></i> Seu Progresso</h4>
+                    <div class="progress-bar" style="height:8px"><div class="progress-fill green" id="progressBar" style="width:0%"></div></div>
+                </div>
+                <div id="progressText" style="font-size:.85rem;color:var(--text3)">0/0 aulas assistidas</div>
+            </div>
+        </div>
+
         <div class="grid-3" id="videoGrid"></div>
     </template>
     <script src="../js/data.js"></script>
@@ -19,20 +40,73 @@
         Layout.init({ basePath: '../', page: 'universidade', title: 'Universidade' });
 
         const videos = [
-            { title: 'Primeiros Passos na MI2', desc: 'Aprenda a configurar sua conta', duration: '12:30', icon: 'fa-play-circle' },
-            { title: 'Como Indicar e Ganhar', desc: 'Estratégias de indicação eficazes', duration: '18:45', icon: 'fa-users' },
-            { title: 'Entendendo o Sistema de Pontos', desc: 'Graduação e benefícios por nível', duration: '15:20', icon: 'fa-star' },
-            { title: 'Usando o Limpa Nome', desc: 'Passo a passo do serviço', duration: '10:15', icon: 'fa-broom' },
-            { title: 'Marketing Digital para Rede', desc: 'Atraia clientes pelas redes sociais', duration: '22:00', icon: 'fa-bullhorn' },
-            { title: 'Gestão Financeira', desc: 'Controle seus ganhos e saques', duration: '14:10', icon: 'fa-wallet' }
+            { id: 1, title: 'Primeiros Passos na MI2', desc: 'Aprenda a configurar sua conta e entender o painel', duration: '12:30', icon: 'fa-play-circle', cat: 'inicio', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 2, title: 'Como Indicar e Ganhar', desc: 'Estratégias de indicação eficazes para crescer sua rede', duration: '18:45', icon: 'fa-users', cat: 'vendas', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 3, title: 'Sistema de Pontos e Graduação', desc: 'Entenda os níveis, benefícios e como subir mais rápido', duration: '15:20', icon: 'fa-star', cat: 'inicio', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 4, title: 'Usando o Limpa Nome', desc: 'Passo a passo completo do serviço de regularização', duration: '10:15', icon: 'fa-broom', cat: 'servicos', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 5, title: 'Marketing Digital para Rede', desc: 'Atraia clientes e parceiros pelas redes sociais', duration: '22:00', icon: 'fa-bullhorn', cat: 'vendas', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 6, title: 'Gestão Financeira', desc: 'Controle seus ganhos, saques e comissões', duration: '14:10', icon: 'fa-wallet', cat: 'financeiro', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 7, title: 'Consulta Bacen (SVR)', desc: 'Como consultar valores a receber no Banco Central', duration: '8:45', icon: 'fa-university', cat: 'servicos', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 8, title: 'Construindo sua Equipe', desc: 'Técnicas avançadas para formação de líderes', duration: '25:30', icon: 'fa-people-group', cat: 'vendas', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+            { id: 9, title: 'Configurações e Segurança', desc: '2FA, troca de senha e proteção da conta', duration: '7:20', icon: 'fa-shield-halved', cat: 'inicio', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }
         ];
 
-        document.getElementById('videoGrid').innerHTML = videos.map(v => `
-            <div class="video-card">
-                <div class="video-thumb"><i class="fas ${v.icon}"></i><span class="duration">${v.duration}</span></div>
-                <div class="video-info"><h4>${v.title}</h4><p>${v.desc}</p></div>
-            </div>
-        `).join('');
+        // Load watched state from localStorage
+        const watchedKey = 'mi2_watched_videos';
+        let watched = JSON.parse(localStorage.getItem(watchedKey) || '[]');
+
+        function updateProgress() {
+            const pct = videos.length ? Math.round((watched.length / videos.length) * 100) : 0;
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressText').textContent = `${watched.length}/${videos.length} aulas assistidas (${pct}%)`;
+        }
+
+        function toggleWatched(id) {
+            if (watched.includes(id)) {
+                watched = watched.filter(w => w !== id);
+            } else {
+                watched.push(id);
+            }
+            localStorage.setItem(watchedKey, JSON.stringify(watched));
+            renderVideos(currentFilter);
+            updateProgress();
+        }
+
+        let currentFilter = 'todos';
+
+        function filterCat(cat, el) {
+            currentFilter = cat;
+            document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderVideos(cat);
+        }
+
+        function renderVideos(cat) {
+            const filtered = cat === 'todos' ? videos : videos.filter(v => v.cat === cat);
+            document.getElementById('videoGrid').innerHTML = filtered.length ? filtered.map(v => `
+                <div class="video-card ${watched.includes(v.id) ? 'watched' : ''}" style="position:relative">
+                    ${watched.includes(v.id) ? '<div style="position:absolute;top:8px;right:8px;z-index:2"><span class="badge badge-success"><i class="fas fa-check"></i> Assistido</span></div>' : ''}
+                    <div class="video-thumb" onclick="window.open('${v.url}','_blank')" style="cursor:pointer">
+                        <i class="fas ${v.icon}"></i><span class="duration">${v.duration}</span>
+                    </div>
+                    <div class="video-info">
+                        <h4>${v.title}</h4>
+                        <p>${v.desc}</p>
+                        <div style="display:flex;gap:8px;margin-top:8px">
+                            <button class="btn btn-sm ${watched.includes(v.id) ? 'btn-outline' : 'btn-primary'}" onclick="window.open('${v.url}','_blank')">
+                                <i class="fas fa-play"></i> ${watched.includes(v.id) ? 'Reassistir' : 'Assistir'}
+                            </button>
+                            <button class="btn btn-sm ${watched.includes(v.id) ? 'btn-success' : 'btn-outline'}" onclick="toggleWatched(${v.id})">
+                                <i class="fas ${watched.includes(v.id) ? 'fa-check-circle' : 'fa-circle'}"></i> ${watched.includes(v.id) ? 'Concluído' : 'Marcar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('') : '<div class="table-empty" style="grid-column:1/-1"><i class="fas fa-graduation-cap"></i><p>Nenhuma aula nesta categoria</p></div>';
+        }
+
+        renderVideos('todos');
+        updateProgress();
     </script>
 </body>
 </html>

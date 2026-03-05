@@ -23,6 +23,15 @@ const Layout = {
         this.buildLayout();
         this.initSidebar();
         this.initHeader();
+
+        // Background sync — atualiza dados do servidor silenciosamente
+        if (DB.getToken && DB.getToken()) {
+            DB.syncData().then(() => {
+                // Refresh user data from cache after sync
+                const refreshed = DB.getCurrentUser();
+                if (refreshed) this.user = refreshed;
+            }).catch(() => {});
+        }
     },
 
     buildLayout() {
@@ -263,3 +272,73 @@ const Layout = {
 
 /* ── Currency formatter ── */
 function fmt(n) { return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+/* ── Pagination Utility ── */
+const Paginator = {
+    create(containerId, items, perPage, renderFn) {
+        perPage = perPage || 15;
+        const state = { page: 1, items, perPage, containerId, renderFn };
+        this._render(state);
+        return state;
+    },
+    _render(state) {
+        const totalPages = Math.max(1, Math.ceil(state.items.length / state.perPage));
+        if (state.page > totalPages) state.page = totalPages;
+        const start = (state.page - 1) * state.perPage;
+        const pageItems = state.items.slice(start, start + state.perPage);
+        state.renderFn(pageItems, start);
+
+        // Render pagination controls
+        let pag = document.getElementById(state.containerId + '-pagination');
+        if (!pag) {
+            pag = document.createElement('div');
+            pag.id = state.containerId + '-pagination';
+            pag.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 0;font-size:.85rem;color:var(--text3)';
+            const container = document.getElementById(state.containerId);
+            if (container) container.parentNode.insertBefore(pag, container.nextSibling);
+        }
+        if (state.items.length <= state.perPage) { pag.innerHTML = ''; return; }
+        const showing = `Mostrando ${start + 1}-${Math.min(start + state.perPage, state.items.length)} de ${state.items.length}`;
+        let btns = '';
+        btns += `<button class="btn btn-sm btn-outline" ${state.page <= 1 ? 'disabled' : ''} onclick="Paginator._go('${state.containerId}',${state.page - 1})"><i class="fas fa-chevron-left"></i></button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            if (totalPages > 7 && i > 2 && i < totalPages - 1 && Math.abs(i - state.page) > 1) {
+                if (i === 3 || i === totalPages - 2) btns += '<span style="padding:0 4px">...</span>';
+                continue;
+            }
+            btns += `<button class="btn btn-sm ${i === state.page ? 'btn-primary' : 'btn-outline'}" onclick="Paginator._go('${state.containerId}',${i})">${i}</button>`;
+        }
+        btns += `<button class="btn btn-sm btn-outline" ${state.page >= totalPages ? 'disabled' : ''} onclick="Paginator._go('${state.containerId}',${state.page + 1})"><i class="fas fa-chevron-right"></i></button>`;
+        pag.innerHTML = `<span>${showing}</span><div style="display:flex;gap:4px">${btns}</div>`;
+        // Store state globally for navigation
+        window['_pag_' + state.containerId] = state;
+    },
+    _go(containerId, page) {
+        const state = window['_pag_' + containerId];
+        if (!state) return;
+        state.page = page;
+        this._render(state);
+    },
+    update(containerId, newItems) {
+        const state = window['_pag_' + containerId];
+        if (!state) return;
+        state.items = newItems;
+        state.page = 1;
+        this._render(state);
+    }
+};
+
+/* ── CSV Export Utility ── */
+const ExportCSV = {
+    download(filename, headers, rows) {
+        const bom = '\uFEFF'; // UTF-8 BOM for Excel
+        const csv = bom + [headers.join(';'), ...rows.map(r => r.map(c => '"' + String(c || '').replace(/"/g, '""') + '"').join(';'))].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+        Layout.toast('Arquivo exportado com sucesso!', 'success');
+    }
+};

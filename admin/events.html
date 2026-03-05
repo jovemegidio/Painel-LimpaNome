@@ -117,6 +117,7 @@
                 evs.push(obj);
             }
             DB.set('events', evs);
+            DB.apiBackground('PUT', '/api/admin/content/events', evs);
             closeEvModal();
             renderTable();
             Layout.toast('Evento salvo!', 'success');
@@ -126,6 +127,7 @@
             if (!confirm('Excluir este evento?')) return;
             const evs = (DB.get('events')||[]).filter(x => x.id !== id);
             DB.set('events', evs);
+            DB.apiBackground('PUT', '/api/admin/content/events', evs);
             renderTable();
             Layout.toast('Evento excluído', 'success');
         }
