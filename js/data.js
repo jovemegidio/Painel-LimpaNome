@@ -102,6 +102,8 @@ const DB = {
         if (data.tickets) this.set('tickets', data.tickets);
         if (data.settings) this.set('settings', data.settings);
         if (data.admins) this.set('admins', data.admins);
+        if (data.notifications) this.set('notifications', data.notifications);
+        if (data.unreadNotifications !== undefined) this.set('unreadNotifications', data.unreadNotifications);
         this.set('initialized', true);
 
         return true;
@@ -159,7 +161,7 @@ const DB = {
         this.remove('currentUser');
         // Keep settings for login page branding
         const settings = this.get('settings');
-        const keys = ['users','admins','levels','plans','packages','limpanome_processes','transactions','news','events','tickets','initialized'];
+        const keys = ['users','admins','levels','plans','packages','limpanome_processes','transactions','news','events','tickets','initialized','notifications','unreadNotifications'];
         keys.forEach(k => this.remove(k));
         if (settings) this.set('settings', settings);
     },
@@ -470,6 +472,154 @@ const DB = {
             nextLevelKey: nextLevel ? levelKeys[currentIdx + 1] : null,
             progressToNext: nextLevel ? Math.min(100, (user.points / nextLevel.minPoints) * 100) : 100
         };
+    },
+
+    // ── Notificações ──
+    getNotifications() {
+        return this.get('notifications') || [];
+    },
+
+    getUnreadCount() {
+        return this.get('unreadNotifications') || 0;
+    },
+
+    async fetchNotifications() {
+        const result = await this.api('GET', '/api/notifications');
+        if (result && result.notifications) {
+            this.set('notifications', result.notifications);
+            return result.notifications;
+        }
+        return this.getNotifications();
+    },
+
+    async fetchUnreadCount() {
+        const result = await this.api('GET', '/api/notifications/count');
+        if (result) {
+            this.set('unreadNotifications', result.unread);
+            return result.unread;
+        }
+        return 0;
+    },
+
+    async markNotificationRead(id) {
+        await this.api('PUT', `/api/notifications/${id}/read`);
+        const notifs = this.getNotifications();
+        const idx = notifs.findIndex(n => n.id === id);
+        if (idx !== -1) { notifs[idx].read = 1; this.set('notifications', notifs); }
+        const count = this.getUnreadCount();
+        if (count > 0) this.set('unreadNotifications', count - 1);
+    },
+
+    async markAllNotificationsRead() {
+        await this.api('PUT', '/api/notifications/read-all');
+        const notifs = this.getNotifications();
+        notifs.forEach(n => n.read = 1);
+        this.set('notifications', notifs);
+        this.set('unreadNotifications', 0);
+    },
+
+    async deleteNotification(id) {
+        await this.api('DELETE', `/api/notifications/${id}`);
+        let notifs = this.getNotifications();
+        const n = notifs.find(n => n.id === id);
+        if (n && !n.read) {
+            const count = this.getUnreadCount();
+            if (count > 0) this.set('unreadNotifications', count - 1);
+        }
+        notifs = notifs.filter(n => n.id !== id);
+        this.set('notifications', notifs);
+    },
+
+    // ── University ──
+    async fetchCourses() {
+        return await this.api('GET', '/api/university/courses') || [];
+    },
+
+    async fetchCourseProgress() {
+        return await this.api('GET', '/api/university/progress') || [];
+    },
+
+    async markCourseCompleted(courseId) {
+        return await this.api('POST', '/api/university/progress', { courseId });
+    },
+
+    async unmarkCourseCompleted(courseId) {
+        return await this.api('DELETE', `/api/university/progress/${courseId}`);
+    },
+
+    // ── Reports ──
+    async fetchSalesReport(from, to) {
+        const params = new URLSearchParams();
+        if (from) params.set('from', from);
+        if (to) params.set('to', to);
+        return await this.api('GET', `/api/reports/sales?${params}`) || {};
+    },
+
+    async fetchCommissionsReport(from, to, type) {
+        const params = new URLSearchParams();
+        if (from) params.set('from', from);
+        if (to) params.set('to', to);
+        if (type) params.set('type', type);
+        return await this.api('GET', `/api/reports/commissions?${params}`) || {};
+    },
+
+    // ── Documents ──
+    async uploadDocument(processId, file) {
+        try {
+            const token = this.getToken();
+            const formData = new FormData();
+            formData.append('document', file);
+            const res = await fetch(`${this.API_URL}/api/documents/upload/${processId}`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+            return await res.json();
+        } catch (e) {
+            console.error('Upload error:', e);
+            return null;
+        }
+    },
+
+    async fetchProcessDocuments(processId) {
+        return await this.api('GET', `/api/documents/process/${processId}`) || [];
+    },
+
+    async deleteDocument(id) {
+        return await this.api('DELETE', `/api/documents/${id}`);
+    },
+
+    // ── LGPD ──
+    async getLGPDConsent() {
+        return await this.api('GET', '/api/lgpd/consent') || {};
+    },
+
+    async updateLGPDConsent(consent) {
+        return await this.api('POST', '/api/lgpd/consent', { consent });
+    },
+
+    async exportMyData() {
+        try {
+            const token = this.getToken();
+            const res = await fetch(`${this.API_URL}/api/lgpd/export`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'meus-dados-credbusiness.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            return { success: true };
+        } catch (e) {
+            console.error('Export error:', e);
+            return { success: false };
+        }
+    },
+
+    async requestDataDeletion(password) {
+        return await this.api('POST', '/api/lgpd/delete-request', { password });
     }
 };
 

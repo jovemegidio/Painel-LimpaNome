@@ -71,7 +71,8 @@ router.get('/', auth, (req, res) => {
             news,
             events,
             tickets: allTickets,
-            settings
+            settings,
+            notifications: [] // Admin doesn't have personal notifications
         });
     }
 
@@ -113,6 +114,10 @@ router.get('/', auth, (req, res) => {
         t.responses = db.prepare('SELECT * FROM ticket_responses WHERE ticket_id = ? ORDER BY date ASC').all(t.id);
     });
 
+    // Notifications (unread + recent)
+    const notifications = db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(user.id);
+    const unreadNotifications = db.prepare('SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND read = 0').get(user.id).c;
+
     res.json({
         role: 'user',
         currentUserId: user.id,
@@ -125,7 +130,9 @@ router.get('/', auth, (req, res) => {
         news,
         events,
         tickets,
-        settings
+        settings,
+        notifications,
+        unreadNotifications
     });
 });
 

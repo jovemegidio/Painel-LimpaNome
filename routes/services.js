@@ -6,6 +6,8 @@ const express = require('express');
 const axios = require('axios');
 const { getDB } = require('../database/init');
 const { auth } = require('../middleware/auth');
+const { logAudit, getClientIP } = require('../utils/audit');
+const { createNotification } = require('../utils/notifications');
 
 const router = express.Router();
 
@@ -55,6 +57,7 @@ router.post('/processes', auth, (req, res) => {
         `).run(req.user.id, cpf, name, type, value, institution);
 
         const process = db.prepare('SELECT * FROM processes WHERE id = ?').get(result.lastInsertRowid);
+        logAudit({ userType: 'user', userId: req.user.id, action: 'create_process', entity: 'process', entityId: result.lastInsertRowid, ip: getClientIP(req) });
         res.status(201).json({ success: true, process });
     } catch (err) {
         console.error('Erro criar processo:', err.message);
@@ -128,6 +131,7 @@ router.post('/consultar-cpf', auth, (req, res) => {
         db.prepare(`INSERT INTO consultations (user_id, cpf, name, type, result, created_at) VALUES (?, ?, ?, 'cpf', ?, datetime('now'))`)
             .run(req.user.id, cpf, nome || '', JSON.stringify(mockResult));
 
+        logAudit({ userType: 'user', userId: req.user.id, action: 'consult_cpf', entity: 'consultation', details: { cpf }, ip: getClientIP(req) });
         res.json(mockResult);
     } catch (err) {
         console.error('Erro consultar-cpf:', err.message);
@@ -237,6 +241,7 @@ router.post('/transactions/withdraw', auth, (req, res) => {
 
         try {
             withdraw();
+            logAudit({ userType: 'user', userId: req.user.id, action: 'withdraw', entity: 'transaction', details: { amount, pixKey }, ip: getClientIP(req) });
             res.json({ success: true, message: 'Saque solicitado com sucesso' });
         } catch (txErr) {
             if (txErr.message === 'INSUFFICIENT_BALANCE') {

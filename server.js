@@ -89,6 +89,11 @@ app.use('/api/content', require('./routes/content'));
 app.use('/api/tickets', require('./routes/tickets'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/sync', require('./routes/sync'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/university', require('./routes/university'));
+app.use('/api/reports', require('./routes/reports'));
+app.use('/api/documents', require('./routes/documents'));
+app.use('/api/lgpd', require('./routes/lgpd'));
 
 // ── Servir SOMENTE arquivos do frontend (whitelist) ──
 const publicDirs = ['css', 'js', 'pages', 'admin'];
@@ -98,6 +103,11 @@ publicDirs.forEach(dir => {
         app.use(`/${dir}`, express.static(dirPath, { extensions: ['html', 'css', 'js'] }));
     }
 });
+
+// Uploads directory (serve uploaded documents)
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
 
 // Arquivos HTML na raiz (whitelist explícita)
 const publicFiles = ['index.html', 'login.html', 'register.html', 'password-forgot.html', 'password-reset.html', 'termos-de-uso.html', 'politica-de-privacidade.html'];

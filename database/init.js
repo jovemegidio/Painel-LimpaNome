@@ -208,6 +208,65 @@ function initDatabase() {
             created_at TEXT DEFAULT (datetime('now')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
+
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            type TEXT DEFAULT 'info',
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            link TEXT DEFAULT '',
+            read INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS email_verifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TEXT NOT NULL,
+            verified INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            process_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            filename TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            mimetype TEXT DEFAULT '',
+            size INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS university_courses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'geral',
+            thumbnail TEXT DEFAULT '',
+            video_url TEXT DEFAULT '',
+            duration TEXT DEFAULT '',
+            sort_order INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS university_progress (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            course_id INTEGER NOT NULL,
+            completed INTEGER DEFAULT 0,
+            completed_at TEXT,
+            UNIQUE(user_id, course_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (course_id) REFERENCES university_courses(id) ON DELETE CASCADE
+        );
     `);
 
     // ── Índices para performance ──
@@ -230,7 +289,13 @@ function initDatabase() {
         'CREATE INDEX IF NOT EXISTS idx_commissions_from ON commissions(from_user_id)',
         'CREATE INDEX IF NOT EXISTS idx_audit_log_user ON audit_log(user_type, user_id)',
         'CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action)',
-        'CREATE INDEX IF NOT EXISTS idx_password_reset ON password_reset_tokens(token, used)'
+        'CREATE INDEX IF NOT EXISTS idx_password_reset ON password_reset_tokens(token, used)',
+        'CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read)',
+        'CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)',
+        'CREATE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(token, verified)',
+        'CREATE INDEX IF NOT EXISTS idx_documents_process ON documents(process_id)',
+        'CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id)',
+        'CREATE INDEX IF NOT EXISTS idx_university_progress_user ON university_progress(user_id)'
     ];
     indexes.forEach(sql => d.exec(sql));
 
@@ -251,6 +316,8 @@ function initDatabase() {
     addCol('transactions', 'reference_type', "TEXT DEFAULT ''");
     addCol('transactions', 'reference_id', 'INTEGER');
     addCol('user_packages', 'payment_status', "TEXT DEFAULT 'pendente'");
+    addCol('users', 'email_verified', 'INTEGER DEFAULT 0');
+    addCol('users', 'email_verified_at', 'TEXT');
 
     // Seed if empty
     const count = d.prepare('SELECT COUNT(*) as c FROM users').get();
@@ -341,6 +408,25 @@ function seedData(d) {
     // Ticket responses
     d.prepare('INSERT INTO ticket_responses (ticket_id,from_type,message,date) VALUES (?,?,?,?)')
         .run(1, 'admin', 'As comissões são calculadas com base no nível e volume da sua rede.', '2026-03-02');
+
+    // Notifications
+    const iNotif = d.prepare('INSERT INTO notifications (user_id, type, title, message, link, read, created_at) VALUES (?,?,?,?,?,?,?)');
+    iNotif.run(1, 'success', 'Bem-vindo!', 'Sua conta foi criada com sucesso. Explore o painel!', '/pages/dashboard.html', 0, '2026-03-04');
+    iNotif.run(1, 'info', 'Novo informativo', 'Confira as novidades da plataforma.', '/pages/informativos.html', 0, '2026-03-03');
+    iNotif.run(1, 'warning', 'Processo atualizado', 'Seu processo #1 foi concluído.', '/pages/limpa-nome-processos.html', 1, '2026-02-28');
+    iNotif.run(2, 'info', 'Bem-vindo!', 'Sua conta foi criada com sucesso.', '/pages/dashboard.html', 0, '2026-03-01');
+    iNotif.run(2, 'alert', 'Ticket respondido', 'O suporte respondeu ao seu ticket #2.', '/pages/suporte-tickets.html', 0, '2026-03-04');
+
+    // University Courses
+    const iCourse = d.prepare('INSERT INTO university_courses (title, description, category, video_url, duration, sort_order) VALUES (?,?,?,?,?,?)');
+    iCourse.run('Primeiros Passos na Plataforma', 'Aprenda a navegar pelo painel e configurar sua conta.', 'primeiros-passos', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '15:00', 1);
+    iCourse.run('Como Funciona o Limpa Nome', 'Entenda o processo de limpeza de nome e como acompanhar.', 'servicos', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '20:00', 2);
+    iCourse.run('Construindo sua Rede de Indicações', 'Estratégias para crescer sua rede MLM de forma sustentável.', 'vendas', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '25:00', 3);
+    iCourse.run('Consultas CPF e Bacen', 'Como realizar consultas e interpretar os resultados.', 'servicos', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '12:00', 4);
+    iCourse.run('Entendendo Comissões e Bônus', 'Saiba como são calculadas as comissões e bônus da sua rede.', 'financeiro', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '18:00', 5);
+    iCourse.run('Técnicas de Vendas Online', 'Melhore suas conversões com estratégias comprovadas.', 'vendas', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '22:00', 6);
+    iCourse.run('Usando o Suporte e FAQ', 'Saiba como abrir tickets e encontrar respostas rápidas.', 'primeiros-passos', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '10:00', 7);
+    iCourse.run('Saques e Gestão Financeira', 'Aprenda a solicitar saques e gerenciar seu saldo.', 'financeiro', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '14:00', 8);
 
     // Settings
     const iS = d.prepare('INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)');

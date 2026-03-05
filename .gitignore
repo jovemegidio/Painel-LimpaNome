@@ -7,5 +7,6 @@ Thumbs.db
 database/*.db
 database/*.db-shm
 database/*.db-wal
+uploads/
 *.old.js
 test-local.js

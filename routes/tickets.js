@@ -5,6 +5,7 @@
 const express = require('express');
 const { getDB } = require('../database/init');
 const { auth } = require('../middleware/auth');
+const { logAudit, getClientIP } = require('../utils/audit');
 
 const router = express.Router();
 
@@ -34,6 +35,7 @@ router.post('/', auth, (req, res) => {
 
     const ticket = db.prepare('SELECT * FROM tickets WHERE id = ?').get(result.lastInsertRowid);
     ticket.responses = [];
+    logAudit({ userType: 'user', userId: req.user.id, action: 'create_ticket', entity: 'ticket', entityId: result.lastInsertRowid, ip: getClientIP(req) });
     res.json({ success: true, ticket });
 });
 

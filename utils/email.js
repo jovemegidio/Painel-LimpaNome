@@ -129,4 +129,67 @@ async function send2FAEnabledEmail(email, name) {
     return sendEmail(email, 'Credbusiness — 2FA Ativado na sua conta', html);
 }
 
-module.exports = { sendEmail, sendPasswordResetEmail, send2FAEnabledEmail };
+/**
+ * Email de verificação de conta
+ */
+async function sendVerificationEmail(email, name, token) {
+    const domain = process.env.DOMAIN || 'localhost:3001';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const verifyUrl = `${protocol}://${domain}/api/auth/verify-email?token=${token}`;
+
+    const html = `
+    <div style="max-width:500px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+        <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);padding:32px 24px;text-align:center">
+            <h1 style="color:#fff;margin:0;font-size:1.5rem">Credbusiness</h1>
+            <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:0.9rem">Escritório Virtual</p>
+        </div>
+        <div style="padding:32px 24px">
+            <h2 style="margin:0 0 8px;color:#1e293b;font-size:1.15rem">Olá, ${name}!</h2>
+            <p style="color:#64748b;font-size:0.9rem;line-height:1.6;margin:0 0 24px">
+                Obrigado por se cadastrar! Para ativar sua conta, clique no botão abaixo:
+            </p>
+            <div style="text-align:center;margin:24px 0">
+                <a href="${verifyUrl}" style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:600;font-size:0.95rem;box-shadow:0 4px 14px rgba(16,185,129,0.3)">
+                    Verificar Email
+                </a>
+            </div>
+            <p style="color:#94a3b8;font-size:0.82rem;line-height:1.5;margin:24px 0 0">
+                Se você não criou esta conta, ignore este email. O link expira em <strong>24 horas</strong>.
+            </p>
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
+            <p style="color:#94a3b8;font-size:0.75rem;margin:0">
+                Caso o botão não funcione, copie e cole este link:<br>
+                <a href="${verifyUrl}" style="color:#6366f1;word-break:break-all">${verifyUrl}</a>
+            </p>
+        </div>
+        <div style="background:#f8fafc;padding:16px 24px;text-align:center">
+            <p style="color:#94a3b8;font-size:0.72rem;margin:0">© 2026 Credbusiness — Escritório Virtual</p>
+        </div>
+    </div>`;
+
+    return sendEmail(email, 'Credbusiness — Verifique seu email', html);
+}
+
+/**
+ * Email de notificação (genérico)
+ */
+async function sendNotificationEmail(email, name, subject, bodyText) {
+    const html = `
+    <div style="max-width:500px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+        <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);padding:32px 24px;text-align:center">
+            <h1 style="color:#fff;margin:0;font-size:1.5rem">Credbusiness</h1>
+            <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:0.9rem">Escritório Virtual</p>
+        </div>
+        <div style="padding:32px 24px">
+            <h2 style="margin:0 0 8px;color:#1e293b;font-size:1.15rem">Olá, ${name}!</h2>
+            <p style="color:#64748b;font-size:0.9rem;line-height:1.6">${bodyText}</p>
+        </div>
+        <div style="background:#f8fafc;padding:16px 24px;text-align:center">
+            <p style="color:#94a3b8;font-size:0.72rem;margin:0">© 2026 Credbusiness — Escritório Virtual</p>
+        </div>
+    </div>`;
+
+    return sendEmail(email, subject, html);
+}
+
+module.exports = { sendEmail, sendPasswordResetEmail, send2FAEnabledEmail, sendVerificationEmail, sendNotificationEmail };

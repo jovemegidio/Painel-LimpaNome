@@ -19,7 +19,9 @@ const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { getDB } = require('../database/init');
 const { generateToken, auth } = require('../middleware/auth');
-const { sendPasswordResetEmail, send2FAEnabledEmail } = require('../utils/email');
+const { sendPasswordResetEmail, send2FAEnabledEmail, sendVerificationEmail } = require('../utils/email');
+const { logAudit, getClientIP } = require('../utils/audit');
+const { createNotification } = require('../utils/notifications');
 
 const router = express.Router();
 
@@ -59,6 +61,8 @@ router.post('/login', (req, res) => {
 
         // Atualizar último login
         db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
+
+        logAudit({ userType: 'user', userId: user.id, action: 'login', entity: 'user', entityId: user.id, ip: getClientIP(req) });
 
         const token = generateToken({ id: user.id, role: 'user', username: user.username });
         const referrals = db.prepare('SELECT id FROM users WHERE sponsor_id = ?').all(user.id).map(r => r.id);
@@ -188,16 +192,105 @@ router.post('/register', (req, res) => {
         const hashedPassword = bcrypt.hashSync(password, 12);
 
         const result = db.prepare(`
-            INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'basico', 'prata', 0, 0, 0, 1, 'user', 1, datetime('now'), date('now'))
+            INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, email_verified, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'basico', 'prata', 0, 0, 0, 1, 'user', 1, datetime('now'), 0, date('now'))
         `).run(username.toLowerCase(), hashedPassword, name, email.toLowerCase(), phone || '', cpf || '', sponsorId);
 
-        res.status(201).json({ success: true, userId: result.lastInsertRowid });
+        const userId = result.lastInsertRowid;
+
+        // Enviar email de verificação
+        const verifyToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
+        db.prepare('INSERT INTO email_verifications (user_id, token, expires_at) VALUES (?, ?, ?)')
+            .run(userId, verifyToken, expiresAt);
+        sendVerificationEmail(email, name, verifyToken).catch(err => console.error('Erro enviar email verificação:', err.message));
+
+        // Criar notificação de boas-vindas
+        createNotification(userId, 'success', 'Bem-vindo!', 'Sua conta foi criada com sucesso. Explore o painel!', '/pages/dashboard.html');
+
+        // Notificar patrocinador
+        if (sponsorId) {
+            createNotification(sponsorId, 'info', 'Novo indicado!', `${name} se cadastrou como seu indicado direto.`, '/pages/rede-indicados.html');
+        }
+
+        logAudit({ userType: 'user', userId, action: 'register', entity: 'user', entityId: userId, ip: getClientIP(req) });
+
+        res.status(201).json({ success: true, userId, message: 'Conta criada! Verifique seu email para ativar.' });
     } catch (err) {
         console.error('Erro registro:', err.message);
         res.status(500).json({ success: false, error: 'Erro interno do servidor' });
     }
 });
+
+// ── Verificar Email ──
+router.get('/verify-email', (req, res) => {
+    try {
+        const token = req.query.token;
+        if (!token) return res.status(400).send(verifyPage('Token não fornecido', false));
+
+        const db = getDB();
+        const record = db.prepare(
+            "SELECT * FROM email_verifications WHERE token = ? AND verified = 0 AND expires_at > datetime('now')"
+        ).get(token);
+
+        if (!record) return res.status(400).send(verifyPage('Link inválido ou expirado. Solicite um novo email de verificação.', false));
+
+        db.prepare('UPDATE email_verifications SET verified = 1 WHERE id = ?').run(record.id);
+        db.prepare("UPDATE users SET email_verified = 1, email_verified_at = datetime('now') WHERE id = ?").run(record.user_id);
+
+        logAudit({ userType: 'user', userId: record.user_id, action: 'email_verified', entity: 'user', entityId: record.user_id });
+
+        return res.send(verifyPage('Email verificado com sucesso! Você já pode fazer login.', true));
+    } catch (err) {
+        console.error('Erro verify-email:', err.message);
+        res.status(500).send(verifyPage('Erro interno. Tente novamente.', false));
+    }
+});
+
+// ── Reenviar email de verificação ──
+router.post('/resend-verification', async (req, res) => {
+    try {
+        const email = sanitize(req.body.email);
+        if (!email) return res.status(400).json({ error: 'Email é obrigatório' });
+
+        const db = getDB();
+        const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ? AND email_verified = 0').get(email.toLowerCase());
+
+        // Não revelar se email existe
+        if (!user) return res.json({ success: true, message: 'Se o email estiver cadastrado, um novo link será enviado.' });
+
+        // Invalidar tokens anteriores
+        db.prepare('UPDATE email_verifications SET verified = 1 WHERE user_id = ? AND verified = 0').run(user.id);
+
+        const verifyToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        db.prepare('INSERT INTO email_verifications (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, verifyToken, expiresAt);
+
+        await sendVerificationEmail(user.email, user.name, verifyToken);
+        res.json({ success: true, message: 'Se o email estiver cadastrado, um novo link será enviado.' });
+    } catch (err) {
+        console.error('Erro resend-verification:', err.message);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+function verifyPage(message, success) {
+    return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Verificação de Email — Credbusiness</title>
+    <style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;font-family:'Segoe UI',sans-serif}
+    .card{background:#1e293b;border-radius:16px;padding:48px;text-align:center;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .icon{font-size:3rem;margin-bottom:16px}
+    h2{color:#fff;margin:0 0 12px}
+    p{color:#94a3b8;line-height:1.6}
+    a{display:inline-block;margin-top:24px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:600}
+    </style></head><body>
+    <div class="card">
+        <div class="icon">${success ? '✅' : '❌'}</div>
+        <h2>${success ? 'Sucesso!' : 'Erro'}</h2>
+        <p>${message}</p>
+        <a href="/login.html">Ir para Login</a>
+    </div></body></html>`;
+}
 
 // ── Recuperar Senha (envia email com token) ──
 router.post('/forgot-password', async (req, res) => {

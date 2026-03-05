@@ -213,7 +213,17 @@ const Layout = {
             <div class="header-breadcrumb">Painel &rsaquo; <span>${this.title}</span></div>
             <div class="header-spacer"></div>
             <div class="header-actions">
-                <button class="header-btn" title="Notificações"><i class="fas fa-bell"></i><span class="dot"></span></button>
+                <div class="notification-wrapper" id="notifWrapper">
+                    <button class="header-btn" id="notifBtn" title="Notificações"><i class="fas fa-bell"></i><span class="dot" id="notifDot" style="display:none"></span></button>
+                    <div class="notification-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            <strong>Notificações</strong>
+                            <a href="#" id="notifReadAll" style="font-size:.78rem;color:var(--primary)">Marcar todas como lidas</a>
+                        </div>
+                        <div class="notif-list" id="notifList"><div style="padding:16px;text-align:center;color:var(--text3);font-size:.85rem">Carregando...</div></div>
+                        <div class="notif-footer"><a href="${bp}pages/configuracoes.html">Ver todas</a></div>
+                    </div>
+                </div>
             </div>
             <div class="user-menu" id="userMenuBtn">
                 <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=${(this.settings.primaryColor||'#6366f1').replace('#','')}&color=fff&size=34&rounded=true&bold=true" alt="">
@@ -244,6 +254,112 @@ const Layout = {
         const dd = document.getElementById('userDropdown');
         btn?.addEventListener('click', e => { e.stopPropagation(); dd.classList.toggle('show'); });
         document.addEventListener('click', () => dd?.classList.remove('show'));
+
+        // ── Notifications ──
+        if (!this.isAdmin) {
+            this.initNotifications();
+        }
+    },
+
+    initNotifications() {
+        const notifBtn = document.getElementById('notifBtn');
+        const notifDropdown = document.getElementById('notifDropdown');
+        const notifDot = document.getElementById('notifDot');
+        const notifList = document.getElementById('notifList');
+        const notifReadAll = document.getElementById('notifReadAll');
+
+        if (!notifBtn) return;
+
+        // Toggle dropdown
+        notifBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('show');
+            if (notifDropdown.classList.contains('show')) this.loadNotifications();
+        });
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.notification-wrapper')) notifDropdown?.classList.remove('show');
+        });
+
+        // Mark all as read
+        notifReadAll?.addEventListener('click', async e => {
+            e.preventDefault();
+            await DB.markAllNotificationsRead();
+            notifDot.style.display = 'none';
+            this.loadNotifications();
+        });
+
+        // Initial count check
+        DB.fetchUnreadCount().then(count => {
+            if (count > 0) {
+                notifDot.style.display = '';
+                notifDot.textContent = count > 9 ? '9+' : count;
+            }
+        }).catch(() => {});
+    },
+
+    async loadNotifications() {
+        const notifList = document.getElementById('notifList');
+        const notifDot = document.getElementById('notifDot');
+        if (!notifList) return;
+
+        try {
+            const notifs = await DB.fetchNotifications();
+            if (!notifs || notifs.length === 0) {
+                notifList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:.85rem"><i class="fas fa-bell-slash" style="font-size:1.5rem;margin-bottom:8px;display:block;opacity:.5"></i>Nenhuma notificação</div>';
+                return;
+            }
+
+            const icons = { info: 'fa-info-circle text-primary', success: 'fa-check-circle text-success', warning: 'fa-exclamation-triangle text-warning', alert: 'fa-exclamation-circle text-danger', error: 'fa-times-circle text-danger' };
+            notifList.innerHTML = notifs.slice(0, 10).map(n => `
+                <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}" data-link="${n.link || ''}">
+                    <i class="fas ${icons[n.type] || icons.info}"></i>
+                    <div class="notif-content">
+                        <div class="notif-title">${n.title}</div>
+                        <div class="notif-msg">${n.message}</div>
+                        <div class="notif-time">${this.timeAgo(n.created_at)}</div>
+                    </div>
+                    <button class="notif-dismiss" onclick="event.stopPropagation();Layout.dismissNotif(${n.id})"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+
+            // Click to navigate
+            notifList.querySelectorAll('.notif-item').forEach(el => {
+                el.addEventListener('click', async () => {
+                    const id = el.dataset.id;
+                    await DB.markNotificationRead(id);
+                    const link = el.dataset.link;
+                    if (link) window.location.href = this.basePath + link.replace(/^\//, '');
+                });
+            });
+
+            const unread = notifs.filter(n => !n.read).length;
+            if (unread > 0) {
+                notifDot.style.display = '';
+                notifDot.textContent = unread > 9 ? '9+' : unread;
+            } else {
+                notifDot.style.display = 'none';
+            }
+        } catch (err) {
+            notifList.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3)">Erro ao carregar</div>';
+        }
+    },
+
+    async dismissNotif(id) {
+        await DB.deleteNotification(id);
+        this.loadNotifications();
+    },
+
+    timeAgo(dateStr) {
+        if (!dateStr) return '';
+        const diff = Date.now() - new Date(dateStr).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'Agora';
+        if (mins < 60) return mins + 'min atrás';
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + 'h atrás';
+        const days = Math.floor(hrs / 24);
+        if (days < 7) return days + 'd atrás';
+        return new Date(dateStr).toLocaleDateString('pt-BR');
     },
 
     logout() { DB.logout(); window.location.href = this.basePath + 'login.html'; },
