@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Shared Components
+   Credbusiness — Shared Components
    Sidebar, Header, Footer, Modal, Toast
    ═══════════════════════════════════════════ */
 
@@ -51,7 +51,7 @@ const Layout = {
                     ${contentHTML}
                 </main>
                 <footer class="main-footer">
-                    <p>${this.settings.footerText || '© 2026 MI2'} — ${this.isAdmin ? 'Painel Administrativo' : 'Escritório Virtual'}</p>
+                    <p>${this.settings.footerText || '© 2026 Credbusiness'} — ${this.isAdmin ? 'Painel Administrativo' : 'Escritório Virtual'}</p>
                 </footer>
             </div>
             <div class="overlay" id="overlay"></div>
@@ -122,8 +122,8 @@ const Layout = {
         return `
             <div class="sidebar-header">
                 <a class="sidebar-brand" href="${bp}pages/dashboard.html">
-                    <div class="brand-icon">${this.settings.logoText || 'MI2'}</div>
-                    <h1>${this.settings.siteName || 'MI2'}</h1>
+                    <div class="brand-icon">${this.settings.logoText || 'Credbusiness'}</div>
+                    <h1>${this.settings.siteName || 'Credbusiness'}</h1>
                 </a>
             </div>
             <nav class="sidebar-nav">
@@ -171,8 +171,8 @@ const Layout = {
         return `
             <div class="sidebar-header">
                 <a class="sidebar-brand" href="${bp}admin/index.html">
-                    <div class="brand-icon">${this.settings.logoText || 'MI2'}</div>
-                    <h1>${this.settings.siteName || 'MI2'}</h1>
+                    <div class="brand-icon">${this.settings.logoText || 'Credbusiness'}</div>
+                    <h1>${this.settings.siteName || 'Credbusiness'}</h1>
                 </a>
             </div>
             <nav class="sidebar-nav">

@@ -1,12 +1,12 @@
-# Painel Marketing Multinível (MI2)
+# Painel Marketing Multinível (Credbusiness)
 
-Bem-vindo ao **Painel Marketing Multinível (MI2)** — uma solução completa, moderna e responsiva para gestão de redes de marketing multinível, desenvolvida para proporcionar controle, transparência e performance tanto para administradores quanto para usuários.
+Bem-vindo ao **Painel Marketing Multinível (Credbusiness)** — uma solução completa, moderna e responsiva para gestão de redes de marketing multinível, desenvolvida para proporcionar controle, transparência e performance tanto para administradores quanto para usuários.
 
 ![Dashboard Preview](https://jovemegidio.github.io/Painel-Marketing-Multinivel/assets/preview.png)
 
 ## 🚀 Visão Geral
 
-O MI2 é um painel administrativo e operacional para empresas de marketing multinível, com foco em usabilidade, segurança e experiência do usuário. Permite o gerenciamento de usuários, pacotes, vendas, relatórios, configurações e auditoria, tudo em uma interface intuitiva e responsiva.
+O Credbusiness é um painel administrativo e operacional para empresas de marketing multinível, com foco em usabilidade, segurança e experiência do usuário. Permite o gerenciamento de usuários, pacotes, vendas, relatórios, configurações e auditoria, tudo em uma interface intuitiva e responsiva.
 
 ## ✨ Funcionalidades Principais
 

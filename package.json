@@ -1,7 +1,7 @@
 {
-  "name": "mi2-escritorio-virtual",
+  "name": "credbusiness-escritorio-virtual",
   "version": "1.0.0",
-  "description": "MI2 - Escritório Virtual - Backend + Frontend",
+  "description": "Credbusiness - Escritório Virtual - Backend + Frontend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

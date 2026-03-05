@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Database Initialization (SQLite)
+   Credbusiness — Database Initialization (SQLite)
    ═══════════════════════════════════════════ */
 
 const Database = require('better-sqlite3');
@@ -331,7 +331,7 @@ function seedData(d) {
     const iE = d.prepare('INSERT INTO events (title,date,time,type,location,description,status) VALUES (?,?,?,?,?,?,?)');
     iE.run('Webinar: Crescimento de Rede', '2026-03-15', '20:00', 'online', 'Zoom', 'Estratégias avançadas para crescer sua rede de indicações.', 'proximo');
     iE.run('Encontro Regional SP', '2026-03-22', '14:00', 'presencial', 'São Paulo - SP', 'Encontro presencial para networking e treinamento.', 'proximo');
-    iE.run('Live: Novidades MI2', '2026-02-20', '19:00', 'online', 'YouTube', 'Apresentação das novidades da plataforma.', 'passado');
+    iE.run('Live: Novidades Credbusiness', '2026-02-20', '19:00', 'online', 'YouTube', 'Apresentação das novidades da plataforma.', 'passado');
 
     // Tickets
     const iTk = d.prepare('INSERT INTO tickets (user_id,subject,message,status,priority,created_at) VALUES (?,?,?,?,?,?)');
@@ -344,13 +344,13 @@ function seedData(d) {
 
     // Settings
     const iS = d.prepare('INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)');
-    iS.run('siteName', 'MI2');
-    iS.run('siteTitle', 'MI2 — Escritório Virtual');
-    iS.run('logoText', 'MI2');
+    iS.run('siteName', 'Credbusiness');
+    iS.run('siteTitle', 'Credbusiness — Escritório Virtual');
+    iS.run('logoText', 'Credbusiness');
     iS.run('faviconEmoji', '💎');
     iS.run('primaryColor', '#6366f1');
     iS.run('accentColor', '#10b981');
-    iS.run('footerText', '© 2026 MI2');
+    iS.run('footerText', '© 2026 Credbusiness');
     iS.run('loginBg', 'css/Fundo/Fundo.jpg');
     iS.run('commissionLevel1', '10');
     iS.run('commissionLevel2', '5');

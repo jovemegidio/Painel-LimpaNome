@@ -15,11 +15,11 @@ function exec(conn, cmd) {
 
 const backupScript = `#!/bin/bash
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR=/var/backups/mi2
-DB_PATH=/var/www/mi2/database/mi2.db
+BACKUP_DIR=/var/backups/credbusiness
+DB_PATH=/var/www/credbusiness/database/mi2.db
 sqlite3 $DB_PATH ".backup $BACKUP_DIR/mi2_$DATE.db"
 ls -t $BACKUP_DIR/mi2_*.db 2>/dev/null | tail -n +31 | xargs rm -f 2>/dev/null
-echo "[$(date)] Backup mi2_$DATE.db OK" >> /var/log/mi2-backup.log
+echo "[$(date)] Backup mi2_$DATE.db OK" >> /var/log/credbusiness-backup.log
 `;
 
 c.on('ready', async () => {
@@ -28,7 +28,7 @@ c.on('ready', async () => {
     // Upload backup script
     const sftp = await new Promise((res, rej) => c.sftp((e, s) => e ? rej(e) : res(s)));
     await new Promise((res, rej) => {
-        const ws = sftp.createWriteStream('/usr/local/bin/backup-mi2.sh');
+        const ws = sftp.createWriteStream('/usr/local/bin/backup-credbusiness.sh');
         ws.on('close', res);
         ws.on('error', rej);
         ws.end(backupScript);
@@ -36,19 +36,19 @@ c.on('ready', async () => {
     console.log('✅ Script de backup enviado');
 
     let out;
-    out = await exec(c, 'chmod +x /usr/local/bin/backup-mi2.sh');
-    out = await exec(c, 'mkdir -p /var/backups/mi2');
+    out = await exec(c, 'chmod +x /usr/local/bin/backup-credbusiness.sh');
+    out = await exec(c, 'mkdir -p /var/backups/credbusiness');
     out = await exec(c, 'apt-get install -y sqlite3 2>&1 | tail -3');
     console.log('  sqlite3:', out.trim());
 
     // Add to crontab
-    out = await exec(c, '(crontab -l 2>/dev/null | grep -v backup-mi2; echo "0 */6 * * * /usr/local/bin/backup-mi2.sh") | crontab -');
+    out = await exec(c, '(crontab -l 2>/dev/null | grep -v backup-credbusiness; echo "0 */6 * * * /usr/local/bin/backup-credbusiness.sh") | crontab -');
     console.log('✅ Cron configurado (backup a cada 6h)');
     out = await exec(c, 'crontab -l');
     console.log('  ', out.trim());
 
     // Run first backup
-    out = await exec(c, '/usr/local/bin/backup-mi2.sh && ls -la /var/backups/mi2/');
+    out = await exec(c, '/usr/local/bin/backup-credbusiness.sh && ls -la /var/backups/credbusiness/');
     console.log('✅ Primeiro backup:', out.trim());
 
     // Verify HTTPS works
@@ -62,7 +62,7 @@ c.on('ready', async () => {
 
     // Final summary
     console.log('\n════════════════════════════════════════');
-    out = await exec(c, "pm2 status && echo '---' && df -h / | tail -1 && echo '---' && free -h | tail -2 && echo '---' && ls -lh /var/www/mi2/database/mi2.db && echo '---' && cat /etc/nginx/sites-enabled/mi2 | grep -E 'ssl|listen|server_name' | head -10");
+    out = await exec(c, "pm2 status && echo '---' && df -h / | tail -1 && echo '---' && free -h | tail -2 && echo '---' && ls -lh /var/www/credbusiness/database/mi2.db && echo '---' && cat /etc/nginx/sites-enabled/credbusiness | grep -E 'ssl|listen|server_name' | head -10");
     console.log(out);
 
     console.log('\n🎯 SETUP SSL + BACKUP COMPLETO!');

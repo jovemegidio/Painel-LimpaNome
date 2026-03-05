@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Deploy Script para VPS KingHost
+   Credbusiness — Deploy Script para VPS KingHost
    Conecta via SSH, configura e faz deploy
    ═══════════════════════════════════════════ */
 
@@ -16,7 +16,7 @@ const VPS = {
     readyTimeout: 30000
 };
 
-const APP_DIR = '/var/www/mi2';
+const APP_DIR = '/var/www/credbusiness';
 const LOCAL_DIR = path.join(__dirname, '..');
 
 // Arquivos para enviar (sem node_modules, .git, .db)
@@ -81,7 +81,7 @@ function mkdirRecursive(sftp, dirPath) {
 
 async function deploy() {
     console.log('╔══════════════════════════════════════════╗');
-    console.log('║  MI2 — Deploy para VPS KingHost          ║');
+    console.log('║  Credbusiness — Deploy para VPS KingHost          ║');
     console.log('╚══════════════════════════════════════════╝');
     console.log('');
 
@@ -160,7 +160,7 @@ async function deploy() {
             console.log('⚙️  ETAPA 4: Configurando .env...');
             const envContent = `PORT=3001
 NODE_ENV=production
-JWT_SECRET=mi2_jwt_PROD_${Date.now()}_credbusiness_s3cret
+JWT_SECRET=credbusiness_jwt_PROD_${Date.now()}_credbusiness_s3cret
 JWT_EXPIRES_IN=7d
 DB_PATH=./database/mi2.db
 DOMAIN=mkt-credbusiness.vps-kinghost.net
@@ -219,12 +219,12 @@ API_BACEN_KEY=
     client_max_body_size 10M;
 }`;
             await new Promise((resolve, reject) => {
-                sftp.writeFile('/etc/nginx/sites-available/mi2', nginxConf, (err) => {
+                sftp.writeFile('/etc/nginx/sites-available/credbusiness', nginxConf, (err) => {
                     if (err) reject(err); else resolve();
                 });
             });
 
-            await exec(conn, 'ln -sf /etc/nginx/sites-available/mi2 /etc/nginx/sites-enabled/');
+            await exec(conn, 'ln -sf /etc/nginx/sites-available/credbusiness /etc/nginx/sites-enabled/');
             await exec(conn, 'rm -f /etc/nginx/sites-enabled/default');
             await exec(conn, 'nginx -t && systemctl restart nginx && systemctl enable nginx');
             console.log('  ✅ Nginx configurado\n');
@@ -236,7 +236,7 @@ API_BACEN_KEY=
 
             // ═══ ETAPA 8: Iniciar app com PM2 ═══
             console.log('🚀 ETAPA 8: Iniciando aplicação com PM2...');
-            await exec(conn, `cd ${APP_DIR} && pm2 delete mi2 2>/dev/null; pm2 start ecosystem.config.js`);
+            await exec(conn, `cd ${APP_DIR} && pm2 delete credbusiness 2>/dev/null; pm2 start ecosystem.config.js`);
             await exec(conn, 'pm2 save');
             await exec(conn, 'pm2 startup systemd -u root --hp /root 2>/dev/null || true');
             console.log('  ✅ Aplicação iniciada\n');

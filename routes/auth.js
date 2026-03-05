@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Auth Routes
+   Credbusiness — Auth Routes
    POST /api/auth/login
    POST /api/auth/admin-login
    POST /api/auth/register
@@ -315,8 +315,8 @@ router.post('/2fa/setup', auth, async (req, res) => {
 
         // Gerar secret
         const secret = speakeasy.generateSecret({
-            name: `MI2 (${user.username})`,
-            issuer: 'MI2',
+            name: `Credbusiness (${user.username})`,
+            issuer: 'Credbusiness',
             length: 20
         });
 

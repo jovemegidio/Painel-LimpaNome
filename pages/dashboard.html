@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MI2 — Dashboard</title>
+    <title>Credbusiness — Dashboard</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -128,7 +128,7 @@
         `;
 
         // Referral Link
-        document.getElementById('refLink').value = `https://mi2.com.br/ref/${user.username}`;
+        document.getElementById('refLink').value = `https://credbusiness.com.br/ref/${user.username}`;
 
         // Points Chart — compute real monthly data from transactions
         const allTx = DB.getTransactions(user.id);
@@ -156,7 +156,7 @@
 
         // Helpers
         function copyLink() { navigator.clipboard.writeText(document.getElementById('refLink').value); Layout.toast('Link copiado!', 'success'); }
-        function shareWpp() { window.open('https://wa.me/?text=' + encodeURIComponent('Conheça a MI2! ' + document.getElementById('refLink').value)); }
+        function shareWpp() { window.open('https://wa.me/?text=' + encodeURIComponent('Conheça a Credbusiness! ' + document.getElementById('refLink').value)); }
     </script>
 </body>
 </html>

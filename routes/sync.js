@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Sync Route
+   Credbusiness — Sync Route
    GET /api/sync — Retorna todos os dados necessários para o cache do frontend
    ═══════════════════════════════════════════ */
 

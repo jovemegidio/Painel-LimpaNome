@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MI2 — Entrar</title>
+    <title>Credbusiness — Entrar</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -12,7 +12,7 @@
     <div class="login-card">
         <!-- Brand -->
         <div class="login-brand">
-            <div class="brand-icon">MI2</div>
+            <div class="brand-icon">Credbusiness</div>
             <h2>Bem-vindo de volta</h2>
             <p>Acesse seu escritório virtual</p>
         </div>
@@ -97,6 +97,25 @@
 
 <script src="js/data.js"></script>
 <script>
+    // Clear stale auth data on login page load (prevents redirect loops)
+    (function cleanupStaleAuth() {
+        const token = localStorage.getItem('mi2_token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (!payload.exp || payload.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('mi2_token');
+                    localStorage.removeItem('mi2_currentUser');
+                    return;
+                }
+            } catch {
+                localStorage.removeItem('mi2_token');
+                localStorage.removeItem('mi2_currentUser');
+                return;
+            }
+        }
+    })();
+
     // Check if already logged
     DB.init();
     const cur = DB.getCurrentUser();
@@ -104,9 +123,9 @@
 
     // Apply dynamic branding
     const _s = DB.getSettings();
-    document.title = _s.siteTitle || 'MI2 — Entrar';
+    document.title = _s.siteTitle || 'Credbusiness — Entrar';
     const brandIcon = document.querySelector('.login-brand .brand-icon');
-    if (brandIcon) brandIcon.textContent = _s.logoText || 'MI2';
+    if (brandIcon) brandIcon.textContent = _s.logoText || 'Credbusiness';
 
     let pending2FAToken = null;
 

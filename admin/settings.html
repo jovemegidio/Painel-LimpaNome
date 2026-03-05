@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MI2 Admin — Configurações</title>
+    <title>Credbusiness Admin — Configurações</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -42,15 +42,15 @@
         <div class="settings-section active" id="sec-appearance">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
                 <div class="card"><div class="card-header"><h3><i class="fas fa-tag"></i> Identidade</h3></div><div class="card-body">
-                    <div class="form-group"><label>Nome do Sistema</label><input type="text" id="siteName" class="form-control" placeholder="Ex: MI2"><div class="form-hint">Aparece na sidebar, header e footer</div></div>
-                    <div class="form-group"><label>Título da Aba (Browser)</label><input type="text" id="siteTitle" class="form-control" placeholder="Ex: MI2 — Escritório Virtual"></div>
-                    <div class="form-group"><label>Texto do Logo</label><input type="text" id="logoText" class="form-control" placeholder="Ex: MI2" maxlength="5"><div class="form-hint">Texto curto exibido no ícone do sidebar</div></div>
+                    <div class="form-group"><label>Nome do Sistema</label><input type="text" id="siteName" class="form-control" placeholder="Ex: Credbusiness"><div class="form-hint">Aparece na sidebar, header e footer</div></div>
+                    <div class="form-group"><label>Título da Aba (Browser)</label><input type="text" id="siteTitle" class="form-control" placeholder="Ex: Credbusiness — Escritório Virtual"></div>
+                    <div class="form-group"><label>Texto do Logo</label><input type="text" id="logoText" class="form-control" placeholder="Ex: Credbusiness" maxlength="5"><div class="form-hint">Texto curto exibido no ícone do sidebar</div></div>
                     <div class="form-group"><label>Favicon (Emoji)</label><input type="text" id="faviconEmoji" class="form-control" placeholder="Ex: 💎" maxlength="4" style="font-size:1.2rem"><div class="form-hint">Emoji na aba do navegador</div></div>
                 </div></div>
                 <div class="card"><div class="card-header"><h3><i class="fas fa-swatchbook"></i> Cores & Visual</h3></div><div class="card-body">
                     <div class="form-group"><label>Cor Primária</label><div class="color-field"><input type="color" id="primaryColor" value="#6366f1"><input type="text" id="primaryColorText" class="form-control" style="max-width:120px;font-family:monospace"></div></div>
                     <div class="form-group"><label>Cor de Destaque</label><div class="color-field"><input type="color" id="accentColor" value="#10b981"><input type="text" id="accentColorText" class="form-control" style="max-width:120px;font-family:monospace"></div></div>
-                    <div class="form-group"><label>Texto do Rodapé</label><input type="text" id="footerText" class="form-control" placeholder="Ex: © 2026 MI2"></div>
+                    <div class="form-group"><label>Texto do Rodapé</label><input type="text" id="footerText" class="form-control" placeholder="Ex: © 2026 Credbusiness"></div>
                     <div class="form-group"><label>Imagem de Fundo do Login</label><input type="text" id="loginBg" class="form-control" placeholder="Ex: css/Fundo/Fundo.jpg"><div class="form-hint">Caminho relativo à raiz do projeto</div></div>
                 </div></div>
             </div>
@@ -146,7 +146,7 @@
         ['siteName','logoText','faviconEmoji','footerText'].forEach(id => document.getElementById(id).addEventListener('input', updatePreview));
 
         function updatePreview() {
-            const name = document.getElementById('siteName').value || 'MI2';
+            const name = document.getElementById('siteName').value || 'Credbusiness';
             const logo = document.getElementById('logoText').value || name;
             const color = document.getElementById('primaryColor').value;
             const footer = document.getElementById('footerText').value || '\u00a9 2026 ' + name;
@@ -156,7 +156,7 @@
         }
 
         function saveAppearance() {
-            DB.saveSettings({ siteName: document.getElementById('siteName').value.trim()||'MI2', siteTitle: document.getElementById('siteTitle').value.trim(), logoText: document.getElementById('logoText').value.trim(), faviconEmoji: document.getElementById('faviconEmoji').value.trim(), primaryColor: document.getElementById('primaryColor').value, accentColor: document.getElementById('accentColor').value, footerText: document.getElementById('footerText').value.trim(), loginBg: document.getElementById('loginBg').value.trim() });
+            DB.saveSettings({ siteName: document.getElementById('siteName').value.trim()||'Credbusiness', siteTitle: document.getElementById('siteTitle').value.trim(), logoText: document.getElementById('logoText').value.trim(), faviconEmoji: document.getElementById('faviconEmoji').value.trim(), primaryColor: document.getElementById('primaryColor').value, accentColor: document.getElementById('accentColor').value, footerText: document.getElementById('footerText').value.trim(), loginBg: document.getElementById('loginBg').value.trim() });
             Layout.toast('Aparência salva! Recarregue as páginas para aplicar.', 'success');
         }
 
@@ -218,7 +218,7 @@
 
         function exportData() {
             const blob = new Blob([JSON.stringify(DB.exportAll(),null,2)],{type:'application/json'});
-            const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mi2_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+            const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='credbusiness_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
             Layout.toast('Dados exportados!','success');
         }
         function handleImport(e) {

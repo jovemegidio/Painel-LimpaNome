@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Admin Routes (CRUD completo)
+   Credbusiness — Admin Routes (CRUD completo)
    ═══════════════════════════════════════════ */
 
 const express = require('express');

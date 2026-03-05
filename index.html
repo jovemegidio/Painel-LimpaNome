@@ -3,198 +3,640 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MI2 — Limpa Nome & Marketing Multinível</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Credbusiness - Recuperacao de Credito e Consultoria Financeira</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Inter','Segoe UI',sans-serif;color:#1e293b;overflow-x:hidden;background:#f8fafc}
-        .landing-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.06);transition:box-shadow .3s}
-        .landing-nav.scrolled{box-shadow:0 2px 20px rgba(0,0,0,.08)}
-        .landing-logo{font-size:1.5rem;font-weight:800;color:#7c3aed;display:flex;align-items:center;gap:8px}
-        .landing-logo span{background:linear-gradient(135deg,#7c3aed,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .nav-links{display:flex;align-items:center;gap:24px}
-        .nav-links a{text-decoration:none;color:#64748b;font-size:.9rem;font-weight:500;transition:color .2s}
-        .nav-links a:hover{color:#7c3aed}
-        .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:120px 40px 80px;background:linear-gradient(160deg,#f5f3ff 0%,#ede9fe 30%,#dbeafe 70%,#f0f9ff 100%);position:relative;overflow:hidden}
-        .hero::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.08),transparent 70%);top:-200px;right:-100px}
-        .hero::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,.06),transparent 70%);bottom:-100px;left:-100px}
-        .hero-content{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:1}
-        .hero-text h1{font-size:3.2rem;font-weight:800;line-height:1.15;margin-bottom:20px;background:linear-gradient(135deg,#1e293b,#475569);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .hero-text h1 em{font-style:normal;background:linear-gradient(135deg,#7c3aed,#2563eb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .hero-text p{font-size:1.15rem;color:#64748b;line-height:1.7;margin-bottom:32px}
-        .hero-buttons{display:flex;gap:12px;flex-wrap:wrap}
-        .btn-hero{padding:14px 32px;border-radius:12px;font-size:1rem;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .3s}
-        .btn-hero-primary{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;box-shadow:0 4px 16px rgba(124,58,237,.3)}
-        .btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,58,237,.4)}
-        .btn-hero-outline{background:#fff;color:#7c3aed;border:2px solid #e9d5ff}
-        .btn-hero-outline:hover{background:#f5f3ff;border-color:#c4b5fd}
-        .hero-visual{display:flex;align-items:center;justify-content:center}
-        .hero-card{background:#fff;border-radius:20px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.08);max-width:400px;width:100%}
-        .hero-card .stat-row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f1f5f9}
-        .hero-card .stat-row:last-child{border:none}
-        .hero-card .stat-label{color:#94a3b8;font-size:.85rem}
-        .hero-card .stat-value{font-weight:700;color:#1e293b;font-size:1rem}
-        .hero-card .stat-value.green{color:#10b981}
-        .hero-card .stat-value.purple{color:#7c3aed}
-        .features{padding:100px 40px;background:#fff}
-        .section-title{text-align:center;margin-bottom:60px}
-        .section-title h2{font-size:2.2rem;font-weight:700;margin-bottom:12px;color:#1e293b}
-        .section-title p{font-size:1.05rem;color:#64748b;max-width:600px;margin:0 auto}
-        .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;max-width:1100px;margin:0 auto}
-        .feature-card{padding:32px;border-radius:16px;background:#f8fafc;border:1px solid #f1f5f9;transition:all .3s}
-        .feature-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.06);border-color:#e2e8f0}
-        .feature-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:16px}
-        .feature-card h3{font-size:1.1rem;font-weight:650;margin-bottom:8px;color:#1e293b}
-        .feature-card p{font-size:.9rem;color:#64748b;line-height:1.6}
-        .how-it-works{padding:100px 40px;background:linear-gradient(180deg,#faf5ff,#f8fafc)}
-        .steps{display:flex;gap:24px;max-width:1100px;margin:0 auto;position:relative}
-        .steps::before{content:'';position:absolute;top:40px;left:100px;right:100px;height:2px;background:linear-gradient(90deg,#c4b5fd,#93c5fd);z-index:0}
-        .step{flex:1;text-align:center;position:relative;z-index:1}
-        .step-num{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:1.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 24px rgba(124,58,237,.2)}
-        .step h3{font-size:1rem;font-weight:650;margin-bottom:6px;color:#1e293b}
-        .step p{font-size:.85rem;color:#64748b}
-        .cta-section{padding:80px 40px;text-align:center;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff}
-        .cta-section h2{font-size:2rem;font-weight:700;margin-bottom:12px}
-        .cta-section p{font-size:1.05rem;opacity:.85;margin-bottom:32px;max-width:500px;margin-left:auto;margin-right:auto}
-        .btn-cta{padding:16px 40px;border-radius:12px;background:#fff;color:#7c3aed;font-size:1.05rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .3s;box-shadow:0 4px 16px rgba(0,0,0,.15)}
-        .btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.25)}
-        .landing-footer{padding:40px;text-align:center;background:#0f172a;color:#94a3b8;font-size:.85rem}
-        .landing-footer a{color:#c4b5fd;text-decoration:none}
+        :root{--navy:#0f172a;--navy-light:#1e293b;--slate:#334155;--gray:#64748b;--light:#94a3b8;--lighter:#cbd5e1;--offwhite:#f8fafc;--white:#fff;--blue:#2563eb;--blue-dark:#1d4ed8;--blue-light:#3b82f6;--accent:#0ea5e9;--green:#059669;--border:#e2e8f0;--shadow-sm:0 1px 3px rgba(0,0,0,.06);--shadow:0 4px 16px rgba(0,0,0,.06);--shadow-lg:0 12px 40px rgba(0,0,0,.08)}
+        html{scroll-behavior:smooth}
+        body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--navy);background:var(--white);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+        /* ── NAV ── */
+        .nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 48px;height:72px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);border-bottom:1px solid transparent;transition:all .3s}
+        .nav.scrolled{border-bottom-color:var(--border);box-shadow:var(--shadow-sm)}
+        .nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--navy)}
+        .nav-brand-mark{width:36px;height:36px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--white);font-weight:800;font-size:.9rem;letter-spacing:-.5px}
+        .nav-brand-text{font-size:1.15rem;font-weight:700;letter-spacing:-.3px}
+        .nav-links{display:flex;align-items:center;gap:32px}
+        .nav-link{text-decoration:none;color:var(--gray);font-size:.875rem;font-weight:500;transition:color .2s;position:relative}
+        .nav-link:hover{color:var(--navy)}
+        .nav-cta{display:inline-flex;align-items:center;gap:6px;padding:9px 22px;border-radius:8px;font-size:.875rem;font-weight:600;text-decoration:none;transition:all .2s}
+        .nav-cta-outline{color:var(--blue);border:1.5px solid var(--border);background:transparent}
+        .nav-cta-outline:hover{border-color:var(--blue);background:rgba(37,99,235,.03)}
+        .nav-cta-solid{color:var(--white);background:var(--blue);border:1.5px solid var(--blue)}
+        .nav-cta-solid:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
+        .nav-mobile-btn{display:none;background:none;border:none;font-size:1.3rem;color:var(--navy);cursor:pointer}
+
+        /* ── HERO ── */
+        .hero{min-height:100vh;display:flex;align-items:center;padding:120px 48px 80px;background:var(--white);position:relative}
+        .hero-container{max-width:1200px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+        .hero-tag{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:40px;background:rgba(37,99,235,.06);color:var(--blue);font-size:.8rem;font-weight:600;margin-bottom:24px;letter-spacing:.3px;text-transform:uppercase}
+        .hero-title{font-size:3.5rem;font-weight:800;line-height:1.1;letter-spacing:-1.5px;color:var(--navy);margin-bottom:20px}
+        .hero-title span{color:var(--blue)}
+        .hero-desc{font-size:1.125rem;line-height:1.75;color:var(--gray);margin-bottom:36px;max-width:500px}
+        .hero-actions{display:flex;gap:14px;margin-bottom:48px}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 28px;border-radius:10px;font-size:.95rem;font-weight:600;text-decoration:none;transition:all .25s;border:none;cursor:pointer}
+        .btn-primary{background:var(--blue);color:var(--white);box-shadow:0 2px 8px rgba(37,99,235,.2)}
+        .btn-primary:hover{background:var(--blue-dark);box-shadow:0 6px 20px rgba(37,99,235,.3);transform:translateY(-1px)}
+        .btn-secondary{background:var(--offwhite);color:var(--navy);border:1.5px solid var(--border)}
+        .btn-secondary:hover{border-color:var(--lighter);background:var(--white);box-shadow:var(--shadow)}
+        .hero-stats{display:flex;gap:40px}
+        .hero-stat{text-align:left}
+        .hero-stat-num{font-size:1.75rem;font-weight:800;color:var(--navy);letter-spacing:-1px}
+        .hero-stat-label{font-size:.8rem;color:var(--light);font-weight:500;margin-top:2px}
+        .hero-visual{position:relative;display:flex;justify-content:center}
+        .hero-card-main{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow-lg);width:380px}
+        .hero-card-header{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+        .hero-card-icon{width:44px;height:44px;border-radius:10px;background:rgba(37,99,235,.08);display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:1.1rem}
+        .hero-card-title{font-size:.95rem;font-weight:600;color:var(--navy)}
+        .hero-card-sub{font-size:.78rem;color:var(--light)}
+        .hero-card-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9}
+        .hero-card-row:last-child{border:none}
+        .hero-card-label{font-size:.83rem;color:var(--gray)}
+        .hero-card-value{font-size:.9rem;font-weight:600;color:var(--navy)}
+        .hero-card-value.positive{color:var(--green)}
+        .hero-card-value.blue{color:var(--blue)}
+        .hero-card-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;background:rgba(5,150,105,.08);color:var(--green)}
+        .hero-float{position:absolute;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px}
+        .hero-float-1{top:-10px;right:-20px}
+        .hero-float-2{bottom:20px;left:-30px}
+        .hero-float-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+        .hero-float-text{font-size:.8rem;font-weight:600;color:var(--navy)}
+        .hero-float-sub{font-size:.72rem;color:var(--light)}
+
+        /* ── TRUST BAR ── */
+        .trust{padding:48px;background:var(--offwhite);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+        .trust-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap}
+        .trust-item{display:flex;align-items:center;gap:10px;color:var(--gray);font-size:.875rem;font-weight:500}
+        .trust-item i{color:var(--blue);font-size:1rem;opacity:.7}
+
+        /* ── SECTIONS ── */
+        .section{padding:100px 48px}
+        .section-alt{background:var(--offwhite)}
+        .section-header{text-align:center;max-width:640px;margin:0 auto 64px}
+        .section-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:40px;background:rgba(37,99,235,.06);color:var(--blue);font-size:.75rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:16px}
+        .section-title{font-size:2.25rem;font-weight:800;letter-spacing:-1px;margin-bottom:14px;color:var(--navy)}
+        .section-desc{font-size:1.05rem;color:var(--gray);line-height:1.7}
+
+        /* ── SERVICES ── */
+        .services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1200px;margin:0 auto}
+        .service-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:32px;transition:all .3s;position:relative;overflow:hidden}
+        .service-card:hover{border-color:var(--lighter);box-shadow:var(--shadow-lg);transform:translateY(-3px)}
+        .service-icon{width:48px;height:48px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:20px}
+        .service-card h3{font-size:1.05rem;font-weight:700;margin-bottom:8px;color:var(--navy)}
+        .service-card p{font-size:.875rem;color:var(--gray);line-height:1.65}
+        .service-tag{position:absolute;top:16px;right:16px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600}
+
+        /* ── HOW IT WORKS ── */
+        .steps-container{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:32px;position:relative}
+        .steps-container::before{content:'';position:absolute;top:32px;left:12%;right:12%;height:1px;background:var(--border)}
+        .step-item{text-align:center;position:relative;z-index:1}
+        .step-number{width:64px;height:64px;border-radius:50%;background:var(--white);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:var(--blue);margin:0 auto 20px;transition:all .3s}
+        .step-item:hover .step-number{background:var(--blue);color:var(--white);border-color:var(--blue)}
+        .step-item h3{font-size:.95rem;font-weight:700;margin-bottom:6px;color:var(--navy)}
+        .step-item p{font-size:.82rem;color:var(--gray);line-height:1.6}
+
+        /* ── BENEFITS ── */
+        .benefits-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+        .benefits-content h2{font-size:2rem;font-weight:800;letter-spacing:-.8px;margin-bottom:14px;color:var(--navy)}
+        .benefits-content p{font-size:1rem;color:var(--gray);line-height:1.7;margin-bottom:32px}
+        .benefit-list{display:flex;flex-direction:column;gap:18px}
+        .benefit-item{display:flex;gap:14px;align-items:flex-start}
+        .benefit-check{width:28px;height:28px;border-radius:7px;background:rgba(5,150,105,.08);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;margin-top:2px}
+        .benefit-text h4{font-size:.9rem;font-weight:600;color:var(--navy);margin-bottom:2px}
+        .benefit-text p{font-size:.82rem;color:var(--gray);line-height:1.6}
+        .benefits-visual{display:flex;flex-direction:column;gap:16px}
+        .benefit-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px;display:flex;align-items:center;gap:16px;transition:all .3s}
+        .benefit-card:hover{box-shadow:var(--shadow);border-color:var(--lighter)}
+        .benefit-card-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+        .benefit-card h4{font-size:.9rem;font-weight:600;color:var(--navy)}
+        .benefit-card p{font-size:.8rem;color:var(--gray);margin-top:2px}
+
+        /* ── PLANS ── */
+        .plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1000px;margin:0 auto}
+        .plan-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:32px;text-align:center;transition:all .3s;position:relative}
+        .plan-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px)}
+        .plan-card.featured{border-color:var(--blue);box-shadow:0 8px 32px rgba(37,99,235,.12)}
+        .plan-card.featured::before{content:'Mais Popular';position:absolute;top:-12px;left:50%;transform:translateX(-50%);padding:4px 16px;border-radius:20px;background:var(--blue);color:var(--white);font-size:.72rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+        .plan-name{font-size:.85rem;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+        .plan-price{font-size:2.5rem;font-weight:800;color:var(--navy);letter-spacing:-1.5px;margin-bottom:4px}
+        .plan-price span{font-size:.9rem;font-weight:500;color:var(--light)}
+        .plan-desc{font-size:.82rem;color:var(--light);margin-bottom:24px}
+        .plan-features{list-style:none;text-align:left;margin-bottom:28px}
+        .plan-features li{padding:8px 0;font-size:.85rem;color:var(--slate);display:flex;align-items:center;gap:10px;border-bottom:1px solid #f8fafc}
+        .plan-features li:last-child{border:none}
+        .plan-features li i{color:var(--green);font-size:.75rem}
+        .plan-btn{display:block;width:100%;padding:12px;border-radius:10px;font-size:.9rem;font-weight:600;text-decoration:none;text-align:center;transition:all .2s}
+        .plan-btn-outline{color:var(--blue);background:rgba(37,99,235,.04);border:1.5px solid var(--border)}
+        .plan-btn-outline:hover{border-color:var(--blue);background:rgba(37,99,235,.08)}
+        .plan-btn-solid{color:var(--white);background:var(--blue);border:1.5px solid var(--blue)}
+        .plan-btn-solid:hover{background:var(--blue-dark)}
+
+        /* ── FAQ ── */
+        .faq-list{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+        .faq-item{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:all .2s}
+        .faq-item.active{border-color:var(--lighter);box-shadow:var(--shadow-sm)}
+        .faq-question{width:100%;padding:18px 24px;background:none;border:none;text-align:left;font-size:.92rem;font-weight:600;color:var(--navy);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;font-family:inherit}
+        .faq-question i{color:var(--light);font-size:.75rem;transition:transform .25s}
+        .faq-item.active .faq-question i{transform:rotate(180deg);color:var(--blue)}
+        .faq-answer{max-height:0;overflow:hidden;transition:max-height .3s ease}
+        .faq-answer-inner{padding:0 24px 18px;font-size:.875rem;color:var(--gray);line-height:1.7}
+
+        /* ── CTA ── */
+        .cta{padding:100px 48px;background:var(--navy);text-align:center;position:relative;overflow:hidden}
+        .cta::before{content:'';position:absolute;top:-50%;right:-10%;width:500px;height:500px;border-radius:50%;background:rgba(37,99,235,.08)}
+        .cta::after{content:'';position:absolute;bottom:-40%;left:-5%;width:400px;height:400px;border-radius:50%;background:rgba(14,165,233,.06)}
+        .cta-inner{position:relative;z-index:1;max-width:600px;margin:0 auto}
+        .cta h2{font-size:2.25rem;font-weight:800;letter-spacing:-1px;color:var(--white);margin-bottom:14px}
+        .cta p{font-size:1.05rem;color:var(--light);margin-bottom:36px;line-height:1.7}
+        .cta-actions{display:flex;gap:14px;justify-content:center}
+        .btn-white{background:var(--white);color:var(--navy);font-weight:700}
+        .btn-white:hover{box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(-1px)}
+        .btn-ghost{background:transparent;color:var(--white);border:1.5px solid rgba(255,255,255,.2)}
+        .btn-ghost:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.05)}
+
+        /* ── FOOTER ── */
+        .footer{background:var(--navy-light);padding:64px 48px 32px;color:var(--light)}
+        .footer-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+        .footer-brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+        .footer-brand-mark{width:32px;height:32px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--white);font-weight:800;font-size:.78rem}
+        .footer-brand-text{font-size:1rem;font-weight:700;color:var(--white)}
+        .footer-desc{font-size:.83rem;line-height:1.7;color:var(--light);max-width:280px}
+        .footer-title{font-size:.78rem;font-weight:700;color:var(--lighter);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
+        .footer-links{list-style:none;display:flex;flex-direction:column;gap:10px}
+        .footer-links a{text-decoration:none;color:var(--light);font-size:.83rem;transition:color .2s}
+        .footer-links a:hover{color:var(--white)}
+        .footer-bottom{max-width:1200px;margin:0 auto;padding-top:24px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--gray)}
+        .footer-bottom a{color:var(--light);text-decoration:none}
+        .footer-bottom a:hover{color:var(--white)}
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:1024px){
+            .hero-container{gap:48px}
+            .hero-title{font-size:2.8rem}
+            .footer-grid{grid-template-columns:1fr 1fr}
+        }
         @media(max-width:768px){
-            .hero-content{grid-template-columns:1fr;text-align:center}
-            .hero-text h1{font-size:2.2rem}
-            .hero-buttons{justify-content:center}
+            .nav{padding:0 20px;height:64px}
+            .nav-links{position:fixed;top:64px;left:0;right:0;background:var(--white);flex-direction:column;padding:24px;gap:16px;border-bottom:1px solid var(--border);display:none;box-shadow:var(--shadow-lg)}
+            .nav-links.open{display:flex}
+            .nav-mobile-btn{display:block}
+            .hero{padding:100px 24px 60px}
+            .hero-container{grid-template-columns:1fr;text-align:center;gap:40px}
+            .hero-title{font-size:2.2rem}
+            .hero-desc{margin:0 auto 32px}
+            .hero-actions{justify-content:center}
+            .hero-stats{justify-content:center}
             .hero-visual{display:none}
-            .features-grid{grid-template-columns:1fr}
-            .steps{flex-direction:column}
-            .steps::before{display:none}
-            .landing-nav{padding:12px 20px}
-            .nav-links{gap:12px}
+            .section{padding:64px 24px}
+            .services-grid{grid-template-columns:1fr}
+            .steps-container{grid-template-columns:repeat(2,1fr)}
+            .steps-container::before{display:none}
+            .benefits-grid{grid-template-columns:1fr;gap:40px}
+            .plans-grid{grid-template-columns:1fr;max-width:400px}
+            .cta{padding:64px 24px}
+            .cta h2{font-size:1.75rem}
+            .cta-actions{flex-direction:column;align-items:center}
+            .footer{padding:48px 24px 24px}
+            .footer-grid{grid-template-columns:1fr;gap:32px}
+            .footer-bottom{flex-direction:column;gap:8px;text-align:center}
+            .trust{padding:32px 24px}
+            .trust-inner{gap:24px}
         }
     </style>
 </head>
 <body>
 
-<!-- Navbar -->
-<nav class="landing-nav" id="landingNav">
-    <div class="landing-logo"><i class="fas fa-shield-halved"></i><span>MI2</span></div>
+<!-- Navigation -->
+<nav class="nav" id="mainNav">
+    <a href="/" class="nav-brand">
+        <div class="nav-brand-mark">Credbusiness</div>
+        <span class="nav-brand-text">Credbusiness</span>
+    </a>
+    <button class="nav-mobile-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+        <i class="fas fa-bars"></i>
+    </button>
     <div class="nav-links">
-        <a href="#features">Serviços</a>
-        <a href="#como-funciona">Como Funciona</a>
-        <a href="login.html" class="btn-hero btn-hero-outline" style="padding:10px 24px;font-size:.85rem">Entrar</a>
-        <a href="register.html" class="btn-hero btn-hero-primary" style="padding:10px 24px;font-size:.85rem">Cadastre-se</a>
+        <a href="#servicos" class="nav-link">Servicos</a>
+        <a href="#como-funciona" class="nav-link">Como Funciona</a>
+        <a href="#planos" class="nav-link">Planos</a>
+        <a href="#faq" class="nav-link">FAQ</a>
+        <a href="login.html" class="nav-cta nav-cta-outline">Entrar</a>
+        <a href="register.html" class="nav-cta nav-cta-solid">Criar Conta</a>
     </div>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
-    <div class="hero-content">
+    <div class="hero-container">
         <div class="hero-text">
-            <h1>Limpe seu nome e <em>construa sua renda</em> com a MI2</h1>
-            <p>A plataforma completa para regularização de CPF e marketing multinível. Consulte seu CPF, limpe negativações e ganhe comissões indicando novos membros.</p>
-            <div class="hero-buttons">
-                <a href="register.html" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Começar Agora</a>
-                <a href="#como-funciona" class="btn-hero btn-hero-outline"><i class="fas fa-play-circle"></i> Como Funciona</a>
+            <div class="hero-tag"><i class="fas fa-shield-halved"></i> Consultoria Financeira Especializada</div>
+            <h1 class="hero-title">Recupere seu credito e <span>construa sua renda</span></h1>
+            <p class="hero-desc">Plataforma completa para regularizacao financeira de CPF e CNPJ. Consulte, conteste negativacoes e tenha acesso a oportunidades de renda por indicacao.</p>
+            <div class="hero-actions">
+                <a href="register.html" class="btn btn-primary">Comecar Agora <i class="fas fa-arrow-right"></i></a>
+                <a href="#como-funciona" class="btn btn-secondary">Saiba Mais</a>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-num">2.500+</div>
+                    <div class="hero-stat-label">Clientes atendidos</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-num">R$ 12M+</div>
+                    <div class="hero-stat-label">Em dividas contestadas</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-num">94%</div>
+                    <div class="hero-stat-label">Taxa de sucesso</div>
+                </div>
             </div>
         </div>
         <div class="hero-visual">
-            <div class="hero-card">
-                <div style="text-align:center;margin-bottom:20px">
-                    <i class="fas fa-chart-line" style="font-size:2.5rem;color:#7c3aed"></i>
-                    <h3 style="margin-top:8px;font-size:1.1rem">Painel do Parceiro</h3>
+            <div class="hero-card-main">
+                <div class="hero-card-header">
+                    <div class="hero-card-icon"><i class="fas fa-chart-line"></i></div>
+                    <div>
+                        <div class="hero-card-title">Painel do Cliente</div>
+                        <div class="hero-card-sub">Acompanhamento em tempo real</div>
+                    </div>
                 </div>
-                <div class="stat-row"><span class="stat-label">Indicados Diretos</span><span class="stat-value purple">47</span></div>
-                <div class="stat-row"><span class="stat-label">Equipe Total</span><span class="stat-value">183</span></div>
-                <div class="stat-row"><span class="stat-label">Ganhos do Mês</span><span class="stat-value green">R$ 3.240,00</span></div>
-                <div class="stat-row"><span class="stat-label">Nível</span><span class="stat-value purple">🥇 Diamante</span></div>
+                <div class="hero-card-row">
+                    <span class="hero-card-label">Status do CPF</span>
+                    <span class="hero-card-badge"><i class="fas fa-check"></i> Regularizado</span>
+                </div>
+                <div class="hero-card-row">
+                    <span class="hero-card-label">Negativacoes removidas</span>
+                    <span class="hero-card-value blue">3 de 3</span>
+                </div>
+                <div class="hero-card-row">
+                    <span class="hero-card-label">Economia total</span>
+                    <span class="hero-card-value positive">R$ 8.420,00</span>
+                </div>
+                <div class="hero-card-row">
+                    <span class="hero-card-label">Comissoes de rede</span>
+                    <span class="hero-card-value positive">R$ 1.240,00</span>
+                </div>
+            </div>
+            <div class="hero-float hero-float-1">
+                <div class="hero-float-icon" style="background:rgba(5,150,105,.08);color:var(--green)"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <div class="hero-float-text">Processo Concluido</div>
+                    <div class="hero-float-sub">Negativacao removida</div>
+                </div>
+            </div>
+            <div class="hero-float hero-float-2">
+                <div class="hero-float-icon" style="background:rgba(37,99,235,.08);color:var(--blue)"><i class="fas fa-users"></i></div>
+                <div>
+                    <div class="hero-float-text">+47 indicados</div>
+                    <div class="hero-float-sub">Rede ativa</div>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Features -->
-<section class="features" id="features">
-    <div class="section-title">
-        <h2>Tudo que você precisa em um só lugar</h2>
-        <p>Serviços profissionais de regularização financeira e oportunidade de renda multinível</p>
+<!-- Trust Bar -->
+<section class="trust">
+    <div class="trust-inner">
+        <div class="trust-item"><i class="fas fa-lock"></i> Dados protegidos com criptografia</div>
+        <div class="trust-item"><i class="fas fa-shield-halved"></i> Em conformidade com a LGPD</div>
+        <div class="trust-item"><i class="fas fa-building-columns"></i> Consulta direta Serasa, SPC e Boa Vista</div>
+        <div class="trust-item"><i class="fas fa-headset"></i> Suporte especializado</div>
     </div>
-    <div class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon" style="background:rgba(124,58,237,.1);color:#7c3aed"><i class="fas fa-broom"></i></div>
+</section>
+
+<!-- Services -->
+<section class="section" id="servicos">
+    <div class="section-header">
+        <div class="section-tag">Nossos Servicos</div>
+        <h2 class="section-title">Solucoes completas para sua saude financeira</h2>
+        <p class="section-desc">Ferramentas profissionais para regularizacao de credito, consulta de valores e oportunidade de renda.</p>
+    </div>
+    <div class="services-grid">
+        <div class="service-card">
+            <div class="service-icon" style="background:rgba(37,99,235,.07);color:var(--blue)"><i class="fas fa-file-shield"></i></div>
             <h3>Limpa Nome</h3>
-            <p>Consultamos Serasa, SPC e Boa Vista para identificar e contestar negativações indevidas no seu CPF.</p>
+            <p>Consultamos os principais birOs de credito para identificar e contestar negativacoes indevidas no seu CPF ou CNPJ.</p>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon" style="background:rgba(37,99,235,.1);color:#2563eb"><i class="fas fa-university"></i></div>
+        <div class="service-card">
+            <div class="service-icon" style="background:rgba(14,165,233,.07);color:var(--accent)"><i class="fas fa-building-columns"></i></div>
             <h3>Consulta Bacen (SVR)</h3>
-            <p>Descubra se você tem valores esquecidos no Banco Central e solicite o resgate de forma simples.</p>
+            <p>Descubra se voce possui valores esquecidos no Banco Central e solicite o resgate de forma simples e segura.</p>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-users"></i></div>
-            <h3>Rede Multinível</h3>
-            <p>Indique amigos e ganhe comissões em até 3 níveis de profundidade. Construa sua equipe.</p>
+        <div class="service-card">
+            <div class="service-icon" style="background:rgba(5,150,105,.07);color:var(--green)"><i class="fas fa-magnifying-glass-chart"></i></div>
+            <h3>Consulta CPF / CNPJ</h3>
+            <p>Analise completa da situacao cadastral, score de credito e historico de negativacoes junto aos orgaos de protecao.</p>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon" style="background:rgba(245,158,11,.1);color:#f59e0b"><i class="fas fa-star"></i></div>
-            <h3>Sistema de Graduação</h3>
-            <p>Suba de Prata para Ouro e Diamante. Quanto maior seu nível, maiores os bônus e benefícios.</p>
+        <div class="service-card">
+            <div class="service-icon" style="background:rgba(124,58,237,.07);color:#7c3aed"><i class="fas fa-network-wired"></i></div>
+            <h3>Programa de Indicacao</h3>
+            <p>Indique novos clientes e receba comissoes em ate 3 niveis. Construa sua rede e gere renda recorrente.</p>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon" style="background:rgba(239,68,68,.1);color:#ef4444"><i class="fas fa-wallet"></i></div>
-            <h3>Saques via PIX</h3>
-            <p>Solicite saques a partir de R$ 50,00 direto na sua conta PIX com processamento em até 3 dias úteis.</p>
+        <div class="service-card">
+            <div class="service-icon" style="background:rgba(245,158,11,.07);color:#f59e0b"><i class="fas fa-graduation-cap"></i></div>
+            <h3>Universidade Credbusiness</h3>
+            <p>Acesso a treinamentos em video sobre educacao financeira, uso da plataforma e estrategias de crescimento.</p>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon" style="background:rgba(99,102,241,.1);color:#6366f1"><i class="fas fa-graduation-cap"></i></div>
-            <h3>Universidade MI2</h3>
-            <p>Treinamentos em vídeo para você aprender a usar o sistema e crescer sua rede com estratégia.</p>
+        <div class="service-card">
+            <div class="service-icon" style="background:rgba(239,68,68,.07);color:#ef4444"><i class="fas fa-chart-pie"></i></div>
+            <h3>Relatorios e Acompanhamento</h3>
+            <p>Painel completo com relatorios detalhados de processos, comissoes, desempenho da rede e historico financeiro.</p>
         </div>
     </div>
 </section>
 
-<!-- How it works -->
-<section class="how-it-works" id="como-funciona">
-    <div class="section-title">
-        <h2>Como Funciona</h2>
-        <p>3 passos simples para começar</p>
+<!-- How it Works -->
+<section class="section section-alt" id="como-funciona">
+    <div class="section-header">
+        <div class="section-tag">Como Funciona</div>
+        <h2 class="section-title">Comece em 4 passos simples</h2>
+        <p class="section-desc">Um processo claro e transparente, do cadastro ate a resolucao do seu problema financeiro.</p>
     </div>
-    <div class="steps">
-        <div class="step">
-            <div class="step-num">1</div>
+    <div class="steps-container">
+        <div class="step-item">
+            <div class="step-number">1</div>
             <h3>Cadastre-se</h3>
-            <p>Crie sua conta gratuita e escolha o plano ideal para seu perfil</p>
+            <p>Crie sua conta gratuitamente em menos de 2 minutos</p>
         </div>
-        <div class="step">
-            <div class="step-num">2</div>
-            <h3>Use os Serviços</h3>
-            <p>Consulte CPF, limpe seu nome e descubra valores no Bacen</p>
+        <div class="step-item">
+            <div class="step-number">2</div>
+            <h3>Consulte</h3>
+            <p>Analise seu CPF ou CNPJ nos principais birOs de credito</p>
         </div>
-        <div class="step">
-            <div class="step-num">3</div>
-            <h3>Indique e Ganhe</h3>
-            <p>Compartilhe seu link, construa sua rede e receba comissões</p>
+        <div class="step-item">
+            <div class="step-number">3</div>
+            <h3>Conteste</h3>
+            <p>Inicie o processo de contestacao das negativacoes identificadas</p>
+        </div>
+        <div class="step-item">
+            <div class="step-number">4</div>
+            <h3>Acompanhe</h3>
+            <p>Monitore o progresso pelo painel e receba atualizacoes</p>
+        </div>
+    </div>
+</section>
+
+<!-- Benefits -->
+<section class="section">
+    <div class="benefits-grid">
+        <div class="benefits-content">
+            <h2>Por que escolher a Credbusiness</h2>
+            <p>Combinamos tecnologia, conhecimento juridico e atendimento humanizado para oferecer a melhor experiencia em recuperacao de credito.</p>
+            <div class="benefit-list">
+                <div class="benefit-item">
+                    <div class="benefit-check"><i class="fas fa-check"></i></div>
+                    <div class="benefit-text">
+                        <h4>Processo 100% digital</h4>
+                        <p>Tudo pelo painel online, sem burocracia e sem necessidade de deslocamento.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-check"><i class="fas fa-check"></i></div>
+                    <div class="benefit-text">
+                        <h4>Equipe especializada</h4>
+                        <p>Profissionais qualificados em direito do consumidor e recuperacao de credito.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-check"><i class="fas fa-check"></i></div>
+                    <div class="benefit-text">
+                        <h4>Transparencia total</h4>
+                        <p>Acompanhe cada etapa do processo em tempo real pelo seu painel.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-check"><i class="fas fa-check"></i></div>
+                    <div class="benefit-text">
+                        <h4>Resultados comprovados</h4>
+                        <p>Mais de 2.500 clientes atendidos com taxa de sucesso de 94%.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="benefits-visual">
+            <div class="benefit-card">
+                <div class="benefit-card-icon" style="background:rgba(37,99,235,.07);color:var(--blue)"><i class="fas fa-clock"></i></div>
+                <div>
+                    <h4>Atendimento rapido</h4>
+                    <p>Resposta em ate 24 horas uteis para todos os chamados</p>
+                </div>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-card-icon" style="background:rgba(5,150,105,.07);color:var(--green)"><i class="fas fa-hand-holding-dollar"></i></div>
+                <div>
+                    <h4>Saques via PIX</h4>
+                    <p>Comissoes disponiveis para saque a partir de R$ 50,00</p>
+                </div>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-card-icon" style="background:rgba(124,58,237,.07);color:#7c3aed"><i class="fas fa-trophy"></i></div>
+                <div>
+                    <h4>Sistema de graduacao</h4>
+                    <p>Evolua de nivel e desbloqueie beneficios exclusivos</p>
+                </div>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-card-icon" style="background:rgba(245,158,11,.07);color:#f59e0b"><i class="fas fa-chart-line"></i></div>
+                <div>
+                    <h4>Relatorios detalhados</h4>
+                    <p>Dashboard completo com metricas e historico de operacoes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Plans -->
+<section class="section section-alt" id="planos">
+    <div class="section-header">
+        <div class="section-tag">Planos</div>
+        <h2 class="section-title">Escolha o plano ideal para voce</h2>
+        <p class="section-desc">Opcoes flexiveis para cada necessidade, do basico ao completo.</p>
+    </div>
+    <div class="plans-grid">
+        <div class="plan-card">
+            <div class="plan-name">Basico</div>
+            <div class="plan-price">R$ 49<span>,90/mes</span></div>
+            <div class="plan-desc">Para quem esta comecando</div>
+            <ul class="plan-features">
+                <li><i class="fas fa-check"></i> Limpa Nome basico</li>
+                <li><i class="fas fa-check"></i> 1 consulta CPF por mes</li>
+                <li><i class="fas fa-check"></i> Suporte por email</li>
+                <li><i class="fas fa-check"></i> Programa de indicacao</li>
+                <li><i class="fas fa-check"></i> Painel de acompanhamento</li>
+            </ul>
+            <a href="register.html" class="plan-btn plan-btn-outline">Comecar</a>
+        </div>
+        <div class="plan-card featured">
+            <div class="plan-name">Plus</div>
+            <div class="plan-price">R$ 99<span>,90/mes</span></div>
+            <div class="plan-desc">O mais escolhido pelos clientes</div>
+            <ul class="plan-features">
+                <li><i class="fas fa-check"></i> Limpa Nome completo</li>
+                <li><i class="fas fa-check"></i> 5 consultas CPF por mes</li>
+                <li><i class="fas fa-check"></i> Suporte prioritario</li>
+                <li><i class="fas fa-check"></i> Relatorios detalhados</li>
+                <li><i class="fas fa-check"></i> Consulta Bacen (SVR)</li>
+            </ul>
+            <a href="register.html" class="plan-btn plan-btn-solid">Comecar</a>
+        </div>
+        <div class="plan-card">
+            <div class="plan-name">Premium</div>
+            <div class="plan-price">R$ 199<span>,90/mes</span></div>
+            <div class="plan-desc">Para quem busca o maximo</div>
+            <ul class="plan-features">
+                <li><i class="fas fa-check"></i> Limpa Nome VIP</li>
+                <li><i class="fas fa-check"></i> Consultas ilimitadas</li>
+                <li><i class="fas fa-check"></i> Suporte 24h dedicado</li>
+                <li><i class="fas fa-check"></i> Relatorios avancados</li>
+                <li><i class="fas fa-check"></i> Bacen completo + CNPJ</li>
+            </ul>
+            <a href="register.html" class="plan-btn plan-btn-outline">Comecar</a>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+    <div class="section-header">
+        <div class="section-tag">Duvidas Frequentes</div>
+        <h2 class="section-title">Perguntas frequentes</h2>
+        <p class="section-desc">Encontre respostas para as principais duvidas sobre nossos servicos.</p>
+    </div>
+    <div class="faq-list">
+        <div class="faq-item active">
+            <button class="faq-question">O que e o servico Limpa Nome?<i class="fas fa-chevron-down"></i></button>
+            <div class="faq-answer" style="max-height:200px">
+                <div class="faq-answer-inner">O Limpa Nome e um servico de consultoria financeira onde analisamos seu CPF ou CNPJ nos principais birOs de credito (Serasa, SPC, Boa Vista), identificamos negativacoes indevidas ou prescritas e realizamos a contestacao formal para remocao dessas restricoes.</div>
+            </div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question">Quanto tempo demora o processo?<i class="fas fa-chevron-down"></i></button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">O prazo varia conforme a complexidade do caso. Em media, processos simples sao resolvidos entre 15 a 45 dias. Voce acompanha todo o progresso em tempo real pelo seu painel na plataforma.</div>
+            </div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question">Como funciona o programa de indicacao?<i class="fas fa-chevron-down"></i></button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">Ao se cadastrar, voce recebe um link exclusivo de indicacao. Quando alguem se cadastra e adquire um plano atraves do seu link, voce recebe comissoes. O programa funciona em ate 3 niveis de profundidade, permitindo que voce construa uma rede e gere renda recorrente.</div>
+            </div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question">Como recebo minhas comissoes?<i class="fas fa-chevron-down"></i></button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">As comissoes sao creditadas automaticamente no seu saldo dentro da plataforma. Voce pode solicitar saques a partir de R$ 50,00 diretamente para sua chave PIX, com processamento em ate 3 dias uteis.</div>
+            </div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question">Meus dados estao seguros?<i class="fas fa-chevron-down"></i></button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">Sim. Todos os dados sao protegidos com criptografia de ponta a ponta e armazenados em conformidade com a Lei Geral de Protecao de Dados (LGPD). Nao compartilhamos informacoes pessoais com terceiros sem autorizacao.</div>
+            </div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-question">Posso cancelar a qualquer momento?<i class="fas fa-chevron-down"></i></button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">Sim. Nao ha fidelidade ou multa por cancelamento. Voce pode cancelar seu plano a qualquer momento diretamente pelo painel. Processos em andamento serao finalizados normalmente.</div>
+            </div>
         </div>
     </div>
 </section>
 
 <!-- CTA -->
-<section class="cta-section">
-    <h2>Pronto para começar?</h2>
-    <p>Cadastre-se gratuitamente e comece a limpar seu nome e construir sua renda hoje mesmo.</p>
-    <a href="register.html" class="btn-cta"><i class="fas fa-rocket"></i> Criar Conta Grátis</a>
+<section class="cta">
+    <div class="cta-inner">
+        <h2>Pronto para regularizar seu credito?</h2>
+        <p>Cadastre-se gratuitamente e tenha acesso imediato a nossa plataforma de consultoria financeira.</p>
+        <div class="cta-actions">
+            <a href="register.html" class="btn btn-white">Criar Conta Gratuita <i class="fas fa-arrow-right"></i></a>
+            <a href="login.html" class="btn btn-ghost">Ja tenho conta</a>
+        </div>
+    </div>
 </section>
 
 <!-- Footer -->
-<footer class="landing-footer">
-    <p>&copy; 2026 MI2 — Limpa Nome & Marketing Multinível. Todos os direitos reservados.</p>
-    <p style="margin-top:8px"><a href="login.html">Login</a> &nbsp;|&nbsp; <a href="register.html">Cadastro</a></p>
+<footer class="footer">
+    <div class="footer-grid">
+        <div>
+            <div class="footer-brand">
+                <div class="footer-brand-mark">Credbusiness</div>
+                <span class="footer-brand-text">Credbusiness</span>
+            </div>
+            <p class="footer-desc">Plataforma de consultoria financeira especializada em recuperacao de credito e regularizacao cadastral.</p>
+        </div>
+        <div>
+            <div class="footer-title">Plataforma</div>
+            <ul class="footer-links">
+                <li><a href="login.html">Entrar</a></li>
+                <li><a href="register.html">Criar Conta</a></li>
+                <li><a href="#servicos">Servicos</a></li>
+                <li><a href="#planos">Planos</a></li>
+            </ul>
+        </div>
+        <div>
+            <div class="footer-title">Institucional</div>
+            <ul class="footer-links">
+                <li><a href="#como-funciona">Como Funciona</a></li>
+                <li><a href="#faq">Duvidas Frequentes</a></li>
+                <li><a href="termos-de-uso.html">Termos de Uso</a></li>
+                <li><a href="politica-de-privacidade.html">Politica de Privacidade</a></li>
+            </ul>
+        </div>
+        <div>
+            <div class="footer-title">Contato</div>
+            <ul class="footer-links">
+                <li><a href="mailto:contato@credbusiness.com.br">contato@credbusiness.com.br</a></li>
+                <li><a href="#">Suporte</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <span>2026 Credbusiness. Todos os direitos reservados.</span>
+        <span><a href="termos-de-uso.html">Termos</a> &middot; <a href="politica-de-privacidade.html">Privacidade</a></span>
+    </div>
 </footer>
 
 <script>
-    // Navbar scroll effect
+    // Navbar scroll
     window.addEventListener('scroll', () => {
-        document.getElementById('landingNav').classList.toggle('scrolled', window.scrollY > 50);
+        document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    // FAQ toggle
+    document.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.parentElement;
+            const answer = item.querySelector('.faq-answer');
+            const isActive = item.classList.contains('active');
+
+            document.querySelectorAll('.faq-item').forEach(fi => {
+                fi.classList.remove('active');
+                fi.querySelector('.faq-answer').style.maxHeight = '0';
+            });
+
+            if (!isActive) {
+                item.classList.add('active');
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+            }
+        });
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(a.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelector('.nav-links').classList.remove('open');
+            }
+        });
     });
 
     // Auto-redirect if already logged in
@@ -205,8 +647,14 @@
             if (payload.exp * 1000 > Date.now()) {
                 window.location.href = payload.role === 'admin' || payload.role === 'superadmin'
                     ? 'admin/index.html' : 'pages/dashboard.html';
+            } else {
+                localStorage.removeItem('mi2_token');
+                localStorage.removeItem('mi2_currentUser');
             }
-        } catch {}
+        } catch {
+            localStorage.removeItem('mi2_token');
+            localStorage.removeItem('mi2_currentUser');
+        }
     }
 </script>
 </body>

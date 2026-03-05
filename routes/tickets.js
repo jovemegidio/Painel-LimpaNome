@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Tickets Routes
+   Credbusiness — Tickets Routes
    ═══════════════════════════════════════════ */
 
 const express = require('express');

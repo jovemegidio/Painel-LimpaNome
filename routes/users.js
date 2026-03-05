@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — User & Network Routes
+   Credbusiness — User & Network Routes
    GET  /api/users/me
    PUT  /api/users/me
    GET  /api/users/network

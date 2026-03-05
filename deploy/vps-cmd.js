@@ -9,7 +9,7 @@ const VPS = {
     readyTimeout: 30000
 };
 
-const cmd = process.argv[2] || 'pm2 logs mi2 --lines 30 --nostream';
+const cmd = process.argv[2] || 'pm2 logs credbusiness --lines 30 --nostream';
 
 const conn = new Client();
 conn.on('ready', () => {

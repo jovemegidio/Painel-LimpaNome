@@ -64,7 +64,7 @@ c.on('ready', () => {
   c.sftp((err, sftp) => {
     const ws = sftp.createWriteStream('/tmp/audit_db.js');
     ws.on('close', () => {
-      c.exec('cp /tmp/audit_db.js /var/www/mi2/audit_db.js && cd /var/www/mi2 && node audit_db.js && rm audit_db.js /tmp/audit_db.js', (err, stream) => {
+      c.exec('cp /tmp/audit_db.js /var/www/credbusiness/audit_db.js && cd /var/www/credbusiness && node audit_db.js && rm audit_db.js /tmp/audit_db.js', (err, stream) => {
         let out = '';
         stream.on('data', d => out += d);
         stream.stderr.on('data', d => out += '[ERR] ' + d);

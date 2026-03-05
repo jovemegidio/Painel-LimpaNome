@@ -1,5 +1,5 @@
 /* ========================================
-   MI2 - Sistema de Dados (API + Cache)
+   Credbusiness - Sistema de Dados (API + Cache)
    Backend API com cache localStorage
    ======================================== */
 
@@ -26,6 +26,11 @@ const DB = {
             if (res.status === 401) {
                 this.removeToken();
                 this.remove('currentUser');
+                return null;
+            }
+            const contentType = res.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                console.error('API non-JSON response:', res.status, url);
                 return null;
             }
             return await res.json();
@@ -72,9 +77,9 @@ const DB = {
 
             // Fallback settings para render imediato
             this.set('settings', {
-                siteName: 'MI2', siteTitle: 'MI2 — Escritório Virtual', logoText: 'MI2',
+                siteName: 'Credbusiness', siteTitle: 'Credbusiness — Escritório Virtual', logoText: 'Credbusiness',
                 faviconEmoji: '💎', primaryColor: '#6366f1', accentColor: '#10b981',
-                footerText: '© 2026 MI2', loginBg: 'css/Fundo/Fundo.jpg',
+                footerText: '© 2026 Credbusiness', loginBg: 'css/Fundo/Fundo.jpg',
                 commissionLevel1: 10, commissionLevel2: 5, commissionLevel3: 3,
                 minWithdraw: 50, maintenanceMode: false
             });
@@ -162,8 +167,17 @@ const DB = {
     getCurrentUser() {
         const session = this.get('currentUser');
         if (!session) return null;
-        // Verify we have a token
-        if (!this.getToken()) { this.remove('currentUser'); return null; }
+        // Verify we have a valid (non-expired) token
+        const token = this.getToken();
+        if (!token) { this.remove('currentUser'); return null; }
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.exp && payload.exp * 1000 < Date.now()) {
+                this.removeToken();
+                this.remove('currentUser');
+                return null;
+            }
+        } catch { this.removeToken(); this.remove('currentUser'); return null; }
 
         if (session.role === 'admin') {
             const admins = this.get('admins') || [];
@@ -399,9 +413,9 @@ const DB = {
     // ── Settings helpers ──
     getSettings() {
         const defaults = {
-            siteName: 'MI2', siteTitle: 'MI2 — Escritório Virtual', logoText: 'MI2',
+            siteName: 'Credbusiness', siteTitle: 'Credbusiness — Escritório Virtual', logoText: 'Credbusiness',
             faviconEmoji: '💎', primaryColor: '#6366f1', accentColor: '#10b981',
-            footerText: '© 2026 MI2', loginBg: 'css/Fundo/Fundo.jpg',
+            footerText: '© 2026 Credbusiness', loginBg: 'css/Fundo/Fundo.jpg',
             commissionLevel1: 10, commissionLevel2: 5, commissionLevel3: 3,
             minWithdraw: 50, maintenanceMode: false
         };

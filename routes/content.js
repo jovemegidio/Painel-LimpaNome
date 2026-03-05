@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Content Routes (News, Events, Packages, Plans, Settings)
+   Credbusiness — Content Routes (News, Events, Packages, Plans, Settings)
    ═══════════════════════════════════════════ */
 
 const express = require('express');

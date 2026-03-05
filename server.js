@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Escritório Virtual — Backend Server
+   Credbusiness — Escritório Virtual — Backend Server
    Express + SQLite + JWT + API REST
    ═══════════════════════════════════════════ */
 
@@ -141,7 +141,7 @@ const PORT = process.env.PORT || 3001;
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔══════════════════════════════════════════╗
-║     MI2 — Escritório Virtual             ║
+║     Credbusiness — Escritório Virtual             ║
 ║     Servidor rodando na porta ${PORT}       ║
 ║     http://localhost:${PORT}                ║
 ╚══════════════════════════════════════════╝

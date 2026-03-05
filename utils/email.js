@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Email Utility (Nodemailer)
+   Credbusiness — Email Utility (Nodemailer)
    ═══════════════════════════════════════════ */
 
 const nodemailer = require('nodemailer');
@@ -70,7 +70,7 @@ async function sendPasswordResetEmail(email, name, token) {
     const html = `
     <div style="max-width:500px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
         <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);padding:32px 24px;text-align:center">
-            <h1 style="color:#fff;margin:0;font-size:1.5rem">MI2</h1>
+            <h1 style="color:#fff;margin:0;font-size:1.5rem">Credbusiness</h1>
             <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:0.9rem">Escritório Virtual</p>
         </div>
         <div style="padding:32px 24px">
@@ -94,11 +94,11 @@ async function sendPasswordResetEmail(email, name, token) {
             </p>
         </div>
         <div style="background:#f8fafc;padding:16px 24px;text-align:center">
-            <p style="color:#94a3b8;font-size:0.72rem;margin:0">© 2026 MI2 — Escritório Virtual. Todos os direitos reservados.</p>
+            <p style="color:#94a3b8;font-size:0.72rem;margin:0">© 2026 Credbusiness — Escritório Virtual. Todos os direitos reservados.</p>
         </div>
     </div>`;
 
-    return sendEmail(email, 'MI2 — Redefinição de Senha', html);
+    return sendEmail(email, 'Credbusiness — Redefinição de Senha', html);
 }
 
 /**
@@ -108,7 +108,7 @@ async function send2FAEnabledEmail(email, name) {
     const html = `
     <div style="max-width:500px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
         <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);padding:32px 24px;text-align:center">
-            <h1 style="color:#fff;margin:0;font-size:1.5rem">MI2</h1>
+            <h1 style="color:#fff;margin:0;font-size:1.5rem">Credbusiness</h1>
             <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:0.9rem">Escritório Virtual</p>
         </div>
         <div style="padding:32px 24px">
@@ -122,11 +122,11 @@ async function send2FAEnabledEmail(email, name) {
             </p>
         </div>
         <div style="background:#f8fafc;padding:16px 24px;text-align:center">
-            <p style="color:#94a3b8;font-size:0.72rem;margin:0">© 2026 MI2 — Escritório Virtual</p>
+            <p style="color:#94a3b8;font-size:0.72rem;margin:0">© 2026 Credbusiness — Escritório Virtual</p>
         </div>
     </div>`;
 
-    return sendEmail(email, 'MI2 — 2FA Ativado na sua conta', html);
+    return sendEmail(email, 'Credbusiness — 2FA Ativado na sua conta', html);
 }
 
 module.exports = { sendEmail, sendPasswordResetEmail, send2FAEnabledEmail };

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MI2 — Cadastro</title>
+    <title>Credbusiness — Cadastro</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -12,7 +12,7 @@
     <div class="login-card" style="max-width:520px">
         <!-- Brand -->
         <div class="login-brand">
-            <div class="brand-icon">MI2</div>
+            <div class="brand-icon">Credbusiness</div>
             <h2>Criar sua conta</h2>
             <p>Preencha os dados para começar</p>
         </div>
@@ -152,9 +152,9 @@
 <script>
     DB.init();
     const _s = DB.getSettings();
-    document.title = (_s.siteName||'MI2') + ' — Cadastro';
+    document.title = (_s.siteName||'Credbusiness') + ' — Cadastro';
     const _bi = document.querySelector('.login-brand .brand-icon');
-    if (_bi) _bi.textContent = _s.logoText || 'MI2';
+    if (_bi) _bi.textContent = _s.logoText || 'Credbusiness';
 
     function setPersonType(type) {
         document.getElementById('docLabel').textContent = type === 'pf' ? 'CPF *' : 'CNPJ *';

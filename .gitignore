@@ -5,5 +5,7 @@ Thumbs.db
 .vscode/
 .env
 database/*.db
+database/*.db-shm
+database/*.db-wal
 *.old.js
 test-local.js

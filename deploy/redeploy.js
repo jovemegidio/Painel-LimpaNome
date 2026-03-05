@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const VPS = { host: '177.153.58.152', port: 22, username: 'root', password: 'Credbusiness2504A@', readyTimeout: 30000 };
-const APP_DIR = '/var/www/mi2';
+const APP_DIR = '/var/www/credbusiness';
 
 // Files to update
 const filesToUpload = [
@@ -114,7 +114,7 @@ c.on('ready', async () => {
 
     // 5. Restart PM2
     console.log('\n🔄 Reiniciando aplicação...');
-    out = await exec(c, `cd ${APP_DIR} && pm2 delete mi2 2>/dev/null; pm2 start ecosystem.config.js`);
+    out = await exec(c, `cd ${APP_DIR} && pm2 delete credbusiness 2>/dev/null; pm2 start ecosystem.config.js`);
     console.log('  ', out.substring(0, 200));
 
     // 6. Wait and check status
@@ -124,7 +124,7 @@ c.on('ready', async () => {
     console.log(out);
 
     // 7. Check logs
-    out = await exec(c, 'pm2 logs mi2 --lines 15 --nostream');
+    out = await exec(c, 'pm2 logs credbusiness --lines 15 --nostream');
     console.log('📋 Logs:');
     console.log(out);
 

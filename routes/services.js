@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   MI2 — Services Routes (Processes, Consultations, Transactions)
+   Credbusiness — Services Routes (Processes, Consultations, Transactions)
    ═══════════════════════════════════════════ */
 
 const express = require('express');
