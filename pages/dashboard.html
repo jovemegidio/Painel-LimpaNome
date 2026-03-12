@@ -326,12 +326,19 @@
         (async function checkMonthlyFee() {
             try {
                 const feeStatus = await DB.getMonthlyFeeStatus();
-                if (feeStatus && (!feeStatus.isPaid || feeStatus.accessBlocked)) {
+                if (!feeStatus) return;
+                const showAlert = feeStatus.accessBlocked || !feeStatus.isPaid || (feeStatus.daysUntilDue !== null && feeStatus.daysUntilDue <= 5);
+                if (showAlert) {
                     const alertEl = document.getElementById('monthlyFeeAlert');
                     alertEl.style.display = 'flex';
-                    const txt = feeStatus.accessBlocked
-                        ? `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} está vencida. Seu acesso foi bloqueado. Efetue o pagamento para reativar.`
-                        : `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} vence em breve. Efetue o pagamento para manter o acesso.`;
+                    let txt;
+                    if (feeStatus.accessBlocked) {
+                        txt = `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} está vencida. Seu acesso foi bloqueado. Efetue o pagamento para reativar.`;
+                    } else if (!feeStatus.isPaid) {
+                        txt = `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} está vencida. Efetue o pagamento para manter o acesso.`;
+                    } else {
+                        txt = `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} vence em ${feeStatus.daysUntilDue} dia${feeStatus.daysUntilDue !== 1 ? 's' : ''}. Efetue o pagamento para manter o acesso.`;
+                    }
                     document.getElementById('feeAlertText').textContent = txt;
                 }
             } catch {}

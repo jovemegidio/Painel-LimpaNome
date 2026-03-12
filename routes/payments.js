@@ -470,11 +470,13 @@ router.get('/monthly-fee/status', auth, (req, res) => {
         const now = new Date();
         const paidUntil = user.monthly_fee_paid_until ? new Date(user.monthly_fee_paid_until) : null;
         const isPaid = paidUntil && paidUntil >= now;
+        const daysUntilDue = paidUntil ? Math.ceil((paidUntil - now) / (1000 * 60 * 60 * 24)) : null;
 
         res.json({
             success: true,
             isPaid,
             paidUntil: user.monthly_fee_paid_until || null,
+            daysUntilDue,
             accessBlocked: !!user.access_blocked,
             monthlyFeeValue: monthlyFee
         });
@@ -858,13 +860,16 @@ function activatePackage(db, userId, pkg) {
     // Ativar acesso ao painel + atualizar nível
     db.prepare('UPDATE users SET has_package = 1 WHERE id = ?').run(userId);
 
-    // Primeiro pacote: 1 mês grátis de mensalidade
+    // Primeiro pacote: mês atual grátis — mensalidade cobrada a partir do mês seguinte
     if (isFirstPackage) {
-        const freeUntil = new Date();
-        freeUntil.setDate(freeUntil.getDate() + 30);
-        const freeUntilStr = freeUntil.toISOString().split('T')[0];
-        db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0 WHERE id = ?')
+        const now = new Date();
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0); // último dia do mês atual
+        const freeUntilStr = endOfMonth.toISOString().split('T')[0];
+        db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0, active = 1 WHERE id = ?')
             .run(freeUntilStr, userId);
+    } else {
+        // Pacotes subsequentes: apenas ativar conta (caso tenha sido desativada por admin)
+        db.prepare('UPDATE users SET active = 1 WHERE id = ? AND active = 0 AND has_package = 0').run(userId);
     }
     if (pkg.level_key) {
         const LEVEL_ORDER = { start: 1, bronze: 2, prata: 3, ouro: 4, diamante: 5 };
