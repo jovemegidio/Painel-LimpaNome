@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness Admin — Páginas Personalizadas</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .pages-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:20px}
+        .page-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all .2s}
+        .page-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+        .page-card-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border-light)}
+        .page-card-icon{width:40px;height:40px;border-radius:10px;background:rgba(99,102,246,.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1rem}
+        .page-card-info{flex:1;min-width:0}
+        .page-card-info h4{margin:0;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .page-card-info small{color:var(--text3);font-size:.78rem}
+        .page-card-body{padding:14px 20px;font-size:.82rem;color:var(--text2)}
+        .page-card-footer{padding:10px 20px;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center}
+        .page-card .badge-vis{font-size:.7rem;padding:3px 10px;border-radius:12px}
+        .badge-visible{background:rgba(16,185,129,.1);color:#10b981}
+        .badge-hidden{background:rgba(239,68,68,.1);color:#ef4444}
+        .editor-toolbar{display:flex;gap:6px;flex-wrap:wrap;padding:10px;background:var(--bg);border:1px solid var(--border);border-bottom:none;border-radius:var(--radius) var(--radius) 0 0}
+        .editor-toolbar button{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:.82rem;color:var(--text);transition:all .15s}
+        .editor-toolbar button:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .editor-area{min-height:300px;border:1px solid var(--border);border-radius:0 0 var(--radius) var(--radius);padding:16px;background:var(--surface);font-size:.9rem;line-height:1.6;outline:none}
+        .editor-area:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,246,.1)}
+        .slug-preview{font-size:.78rem;color:var(--text3);margin-top:4px}
+        .icon-picker{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;max-height:200px;overflow-y:auto;padding:8px}
+        .icon-picker-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .icon-picker-btn:hover,.icon-picker-btn.selected{background:var(--primary);color:#fff;border-color:var(--primary)}
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div><h2>Páginas Personalizadas</h2><p>Crie e gerencie páginas customizadas para o painel do usuário</p></div>
+            <button class="btn btn-primary" onclick="openEditor()"><i class="fas fa-plus"></i> Nova Página</button>
+        </div>
+        <div class="pages-grid" id="pagesGrid"></div>
+        <div id="emptyState" class="card" style="display:none;text-align:center;padding:48px;color:var(--text3)">
+            <i class="fas fa-file-circle-plus" style="font-size:48px;margin-bottom:16px;opacity:.4"></i>
+            <p style="font-size:1rem;margin-bottom:8px">Nenhuma página personalizada criada</p>
+            <p style="font-size:.85rem">Crie páginas com conteúdo personalizado que aparecerão no menu do usuário.</p>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-custom-pages', title: 'Páginas', admin: true });
+
+        const ICONS = [
+            'fa-file-alt','fa-info-circle','fa-book','fa-lightbulb','fa-bullhorn','fa-star',
+            'fa-heart','fa-shield-alt','fa-trophy','fa-flag','fa-bell','fa-bookmark',
+            'fa-map','fa-compass','fa-gift','fa-rocket','fa-gem','fa-crown',
+            'fa-graduation-cap','fa-briefcase','fa-handshake','fa-chart-line','fa-cog','fa-tools',
+            'fa-code','fa-globe','fa-link','fa-camera','fa-video','fa-music',
+            'fa-paint-brush','fa-palette','fa-pen','fa-envelope','fa-phone','fa-users',
+            'fa-user-tie','fa-building','fa-store','fa-truck','fa-plane','fa-bolt'
+        ];
+
+        const SECTIONS = ['Principal', 'Serviços', 'Informações', 'Rede MLM', 'Aprendizado', 'Ajuda', 'Personalizado'];
+
+        let pages = [];
+
+        async function loadPages() {
+            const data = await DB.api('GET', '/api/admin/custom-pages');
+            pages = Array.isArray(data) ? data : [];
+            render();
+        }
+
+        function render() {
+            const grid = document.getElementById('pagesGrid');
+            const empty = document.getElementById('emptyState');
+            if (pages.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            grid.innerHTML = pages.map(p => `
+                <div class="page-card">
+                    <div class="page-card-header">
+                        <div class="page-card-icon"><i class="fas ${p.icon || 'fa-file-alt'}"></i></div>
+                        <div class="page-card-info">
+                            <h4>${esc(p.title)}</h4>
+                            <small>/pages/custom-${esc(p.slug)}.html</small>
+                        </div>
+                    </div>
+                    <div class="page-card-body">
+                        <div style="display:flex;gap:12px;flex-wrap:wrap">
+                            <span><i class="fas fa-layer-group"></i> ${esc(p.section || 'Personalizado')}</span>
+                            <span><i class="fas fa-sort-numeric-down"></i> Ordem: ${p.sort_order || 0}</span>
+                        </div>
+                    </div>
+                    <div class="page-card-footer">
+                        <span class="badge-vis ${p.visible ? 'badge-visible' : 'badge-hidden'}">${p.visible ? 'Visível' : 'Oculta'}</span>
+                        <div style="display:flex;gap:6px">
+                            <button class="btn btn-sm btn-outline" onclick="openEditor(${p.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-outline" onclick="toggleVisibility(${p.id})" title="${p.visible ? 'Ocultar' : 'Mostrar'}"><i class="fas ${p.visible ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
+                            <button class="btn btn-sm btn-outline text-danger" onclick="deletePage(${p.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        function openEditor(id) {
+            const page = id ? pages.find(p => p.id === id) : null;
+            const isNew = !page;
+            const selectedIcon = page ? page.icon || 'fa-file-alt' : 'fa-file-alt';
+
+            Layout.openModal(isNew ? 'Nova Página' : 'Editar Página', `
+                <div style="display:grid;gap:14px;max-width:800px">
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2"><label>Título *</label>
+                            <input class="form-control" id="pgTitle" value="${page ? esc(page.title) : ''}" placeholder="Ex: Sobre Nós" oninput="updateSlugPreview()">
+                        </div>
+                        <div class="form-group" style="flex:1"><label>Slug *</label>
+                            <input class="form-control" id="pgSlug" value="${page ? esc(page.slug) : ''}" placeholder="sobre-nos" oninput="updateSlugPreview()">
+                            <div class="slug-preview" id="slugPreview"></div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1"><label>Seção do Menu</label>
+                            <select class="form-control" id="pgSection">
+                                ${SECTIONS.map(s => `<option value="${s}" ${page && page.section === s ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1"><label>Ordem</label>
+                            <input type="number" class="form-control" id="pgOrder" value="${page ? page.sort_order : 0}" min="0">
+                        </div>
+                        <div class="form-group" style="flex:1"><label>Visibilidade</label>
+                            <select class="form-control" id="pgVisible">
+                                <option value="1" ${!page || page.visible ? 'selected' : ''}>Visível</option>
+                                <option value="0" ${page && !page.visible ? 'selected' : ''}>Oculta</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Ícone</label>
+                        <div class="icon-picker" id="iconPicker">
+                            ${ICONS.map(ic => `<button type="button" class="icon-picker-btn ${ic === selectedIcon ? 'selected' : ''}" data-icon="${ic}" onclick="selectIcon(this,'${ic}')"><i class="fas ${ic}"></i></button>`).join('')}
+                        </div>
+                        <input type="hidden" id="pgIcon" value="${selectedIcon}">
+                    </div>
+                    <div class="form-group"><label>Conteúdo</label>
+                        <div class="editor-toolbar">
+                            <button type="button" onclick="execCmd('bold')" title="Negrito"><i class="fas fa-bold"></i></button>
+                            <button type="button" onclick="execCmd('italic')" title="Itálico"><i class="fas fa-italic"></i></button>
+                            <button type="button" onclick="execCmd('underline')" title="Sublinhado"><i class="fas fa-underline"></i></button>
+                            <button type="button" onclick="execCmd('strikeThrough')" title="Tachado"><i class="fas fa-strikethrough"></i></button>
+                            <span style="border-left:1px solid var(--border);margin:0 4px"></span>
+                            <button type="button" onclick="execCmd('formatBlock','H2')" title="Título">H2</button>
+                            <button type="button" onclick="execCmd('formatBlock','H3')" title="Subtítulo">H3</button>
+                            <button type="button" onclick="execCmd('formatBlock','P')" title="Parágrafo">P</button>
+                            <span style="border-left:1px solid var(--border);margin:0 4px"></span>
+                            <button type="button" onclick="execCmd('insertUnorderedList')" title="Lista"><i class="fas fa-list-ul"></i></button>
+                            <button type="button" onclick="execCmd('insertOrderedList')" title="Lista Numerada"><i class="fas fa-list-ol"></i></button>
+                            <span style="border-left:1px solid var(--border);margin:0 4px"></span>
+                            <button type="button" onclick="insertLink()" title="Link"><i class="fas fa-link"></i></button>
+                            <button type="button" onclick="insertImage()" title="Imagem"><i class="fas fa-image"></i></button>
+                            <button type="button" onclick="insertVideo()" title="Vídeo YouTube"><i class="fab fa-youtube"></i></button>
+                            <span style="border-left:1px solid var(--border);margin:0 4px"></span>
+                            <button type="button" onclick="toggleSource()" title="Código HTML"><i class="fas fa-code"></i></button>
+                        </div>
+                        <div id="pgContent" class="editor-area" contenteditable="true">${page ? page.content : '<p>Escreva o conteúdo da página aqui...</p>'}</div>
+                        <textarea id="pgContentSource" style="display:none;width:100%;min-height:300px;border:1px solid var(--border);border-radius:0 0 var(--radius) var(--radius);padding:16px;font-family:monospace;font-size:.85rem;resize:vertical"></textarea>
+                    </div>
+                </div>
+            `, `
+                <button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="savePage(${id || 'null'})">${isNew ? 'Criar Página' : 'Salvar Alterações'}</button>
+            `);
+            updateSlugPreview();
+        }
+
+        function selectIcon(btn, icon) {
+            document.querySelectorAll('.icon-picker-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('pgIcon').value = icon;
+        }
+
+        function updateSlugPreview() {
+            const title = document.getElementById('pgTitle')?.value || '';
+            const slugInput = document.getElementById('pgSlug');
+            if (slugInput && !slugInput.value && title) {
+                const autoSlug = title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+                slugInput.placeholder = autoSlug;
+            }
+            const slug = slugInput?.value || slugInput?.placeholder || '';
+            const preview = document.getElementById('slugPreview');
+            if (preview) preview.textContent = slug ? `URL: /pages/custom-${slug}.html` : '';
+        }
+
+        let sourceMode = false;
+        function toggleSource() {
+            const editor = document.getElementById('pgContent');
+            const source = document.getElementById('pgContentSource');
+            if (!sourceMode) {
+                source.value = editor.innerHTML;
+                editor.style.display = 'none';
+                source.style.display = 'block';
+            } else {
+                editor.innerHTML = source.value;
+                source.style.display = 'none';
+                editor.style.display = 'block';
+            }
+            sourceMode = !sourceMode;
+        }
+
+        function execCmd(cmd, val) {
+            document.execCommand(cmd, false, val || null);
+            document.getElementById('pgContent').focus();
+        }
+
+        function insertLink() {
+            const url = prompt('URL do link:');
+            if (url) execCmd('createLink', url);
+        }
+
+        function insertImage() {
+            const url = prompt('URL da imagem:');
+            if (url) execCmd('insertImage', url);
+        }
+
+        function insertVideo() {
+            const url = prompt('URL do vídeo YouTube:');
+            if (!url) return;
+            const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
+            if (!match) { Layout.toast('URL do YouTube inválida', 'error'); return; }
+            const iframe = `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin:16px 0"><iframe src="https://www.youtube.com/embed/${match[1]}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe></div>`;
+            document.getElementById('pgContent').focus();
+            document.execCommand('insertHTML', false, iframe);
+        }
+
+        async function savePage(id) {
+            const title = document.getElementById('pgTitle').value.trim();
+            let slug = document.getElementById('pgSlug').value.trim();
+            if (!slug && title) slug = title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+            if (!title || !slug) return Layout.toast('Título e slug são obrigatórios', 'error');
+
+            const content = sourceMode ? document.getElementById('pgContentSource').value : document.getElementById('pgContent').innerHTML;
+            const body = {
+                title,
+                slug,
+                icon: document.getElementById('pgIcon').value,
+                content,
+                section: document.getElementById('pgSection').value,
+                sort_order: parseInt(document.getElementById('pgOrder').value) || 0,
+                visible: document.getElementById('pgVisible').value === '1'
+            };
+
+            const result = id
+                ? await DB.api('PUT', `/api/admin/custom-pages/${id}`, body)
+                : await DB.api('POST', '/api/admin/custom-pages', body);
+
+            if (result && result.success) {
+                Layout.closeModal();
+                Layout.toast(id ? 'Página atualizada!' : 'Página criada!', 'success');
+                loadPages();
+            } else {
+                Layout.toast(result?.error || 'Erro ao salvar página', 'error');
+            }
+        }
+
+        async function toggleVisibility(id) {
+            const page = pages.find(p => p.id === id);
+            if (!page) return;
+            const result = await DB.api('PUT', `/api/admin/custom-pages/${id}`, { visible: !page.visible });
+            if (result?.success) {
+                Layout.toast(page.visible ? 'Página ocultada' : 'Página visível', 'success');
+                loadPages();
+            }
+        }
+
+        async function deletePage(id) {
+            const page = pages.find(p => p.id === id);
+            if (!confirm(`Excluir a página "${page?.title}"? Esta ação não pode ser desfeita.`)) return;
+            const result = await DB.api('DELETE', `/api/admin/custom-pages/${id}`);
+            if (result?.success) {
+                Layout.toast('Página excluída', 'success');
+                loadPages();
+            }
+        }
+
+        loadPages();
+    </script>
+</body>
+</html>

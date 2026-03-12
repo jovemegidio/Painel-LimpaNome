@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Senha Financeira</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Senha Financeira</h2><p>Configure uma senha de segurança para operações financeiras</p></div>
+
+        <div class="grid-2 mb-24">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-lock"></i> <span id="formTitle">Definir Senha Financeira</span></h3></div>
+                <div class="card-body">
+                    <div class="form-group" id="currentPwGroup" style="display:none">
+                        <label>Senha Financeira Atual</label>
+                        <input type="password" class="form-control" id="currentPassword" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <div class="form-group">
+                        <label>Nova Senha Financeira (4-6 dígitos)</label>
+                        <input type="password" class="form-control" id="newPassword" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmar Senha Financeira</label>
+                        <input type="password" class="form-control" id="confirmPassword" placeholder="••••" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="saveFinancialPassword()"><i class="fas fa-save"></i> Salvar Senha Financeira</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-shield-alt"></i> Sobre a Senha Financeira</h3></div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-16"><i class="fas fa-info-circle"></i> A senha financeira é uma camada extra de segurança exigida em saques e transferências.</div>
+                    <ul class="activity-list">
+                        <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-check-circle"></i></div><div class="activity-info"><div class="title">Status</div><div class="desc" id="statusText">Verificando...</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-key"></i></div><div class="activity-info"><div class="title">Onde é usada</div><div class="desc">Saques, transferências entre carteiras</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon orange"><i class="fas fa-hashtag"></i></div><div class="activity-info"><div class="title">Formato</div><div class="desc">4 a 6 dígitos numéricos</div></div></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'senha-financeira', title: 'Senha Financeira' });
+
+        (async () => {
+            const data = await DB.api('GET', '/api/wallet/financial-password/status');
+            if (data && data.hasFinancialPassword) {
+                document.getElementById('formTitle').textContent = 'Alterar Senha Financeira';
+                document.getElementById('currentPwGroup').style.display = '';
+                document.getElementById('statusText').innerHTML = '<span style="color:var(--success)"><i class="fas fa-check"></i> Configurada</span>';
+            } else {
+                document.getElementById('statusText').innerHTML = '<span style="color:var(--warning)"><i class="fas fa-exclamation-triangle"></i> Não configurada</span>';
+            }
+        })();
+
+        async function saveFinancialPassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!newPassword || newPassword.length < 4 || newPassword.length > 6) {
+                Layout.toast('Senha deve ter entre 4 e 6 dígitos', 'error'); return;
+            }
+            if (!/^\d+$/.test(newPassword)) {
+                Layout.toast('Senha deve conter apenas números', 'error'); return;
+            }
+            if (newPassword !== confirmPassword) {
+                Layout.toast('Senhas não conferem', 'error'); return;
+            }
+
+            const body = { password: newPassword };
+            if (currentPassword) body.currentPassword = currentPassword;
+
+            const result = await DB.api('POST', '/api/wallet/financial-password', body);
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
+            if (result.error) { Layout.toast(result.error, 'error'); return; }
+            Layout.toast('Senha financeira salva!', 'success');
+            setTimeout(() => location.reload(), 1000);
+        }
+    </script>
+</body>
+</html>

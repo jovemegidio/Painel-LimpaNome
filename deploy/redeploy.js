@@ -1,8 +1,16 @@
 const { Client } = require('ssh2');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const VPS = { host: '177.153.58.152', port: 22, username: 'root', password: 'Credbusiness2504A@', readyTimeout: 30000 };
+const VPS = {
+    host: process.env.VPS_HOST || '177.153.58.152',
+    port: Number(process.env.VPS_PORT) || 22,
+    username: process.env.VPS_USER || 'root',
+    password: process.env.VPS_PASSWORD,
+    readyTimeout: 30000
+};
+if (!VPS.password) { console.error('❌ VPS_PASSWORD não definida no .env'); process.exit(1); }
 const APP_DIR = '/var/www/credbusiness';
 
 // Files to update
@@ -29,6 +37,7 @@ const filesToUpload = [
     { local: 'package.json', remote: `${APP_DIR}/package.json` },
     { local: 'utils/email.js', remote: `${APP_DIR}/utils/email.js` },
     { local: 'middleware/auth.js', remote: `${APP_DIR}/middleware/auth.js` },
+    { local: 'middleware/csrf.js', remote: `${APP_DIR}/middleware/csrf.js` },
     { local: 'ecosystem.config.js', remote: `${APP_DIR}/ecosystem.config.js` },
     { local: 'index.html', remote: `${APP_DIR}/index.html` },
     { local: 'login.html', remote: `${APP_DIR}/login.html` },
@@ -75,6 +84,32 @@ const filesToUpload = [
     { local: 'admin/settings.html', remote: `${APP_DIR}/admin/settings.html` },
     { local: 'admin/tickets.html', remote: `${APP_DIR}/admin/tickets.html` },
     { local: 'admin/processes.html', remote: `${APP_DIR}/admin/processes.html` },
+    { local: 'admin/landing.html', remote: `${APP_DIR}/admin/landing.html` },
+    { local: 'admin/university.html', remote: `${APP_DIR}/admin/university.html` },
+    { local: 'admin/faq.html', remote: `${APP_DIR}/admin/faq.html` },
+    { local: 'admin/audit.html', remote: `${APP_DIR}/admin/audit.html` },
+    { local: 'admin/downloads.html', remote: `${APP_DIR}/admin/downloads.html` },
+    { local: 'routes/wallet.js', remote: `${APP_DIR}/routes/wallet.js` },
+    { local: 'pages/meu-pix.html', remote: `${APP_DIR}/pages/meu-pix.html` },
+    { local: 'pages/senha-financeira.html', remote: `${APP_DIR}/pages/senha-financeira.html` },
+    { local: 'pages/carteira-transferir.html', remote: `${APP_DIR}/pages/carteira-transferir.html` },
+    { local: 'pages/carteira-depositar.html', remote: `${APP_DIR}/pages/carteira-depositar.html` },
+    { local: 'pages/carteira-saques.html', remote: `${APP_DIR}/pages/carteira-saques.html` },
+    { local: 'pages/downloads.html', remote: `${APP_DIR}/pages/downloads.html` },
+    { local: 'pages/eventos-compras.html', remote: `${APP_DIR}/pages/eventos-compras.html` },
+    { local: 'pages/eventos-ingressos.html', remote: `${APP_DIR}/pages/eventos-ingressos.html` },
+    { local: 'pages/rede-clientes.html', remote: `${APP_DIR}/pages/rede-clientes.html` },
+    { local: 'pages/relatorios-graduacao.html', remote: `${APP_DIR}/pages/relatorios-graduacao.html` },
+    { local: 'pages/conta-endereco.html', remote: `${APP_DIR}/pages/conta-endereco.html` },
+    { local: 'pages/conta-documentos.html', remote: `${APP_DIR}/pages/conta-documentos.html` },
+    { local: 'pages/contratos.html', remote: `${APP_DIR}/pages/contratos.html` },
+    { local: 'pages/assinaturas.html', remote: `${APP_DIR}/pages/assinaturas.html` },
+    { local: 'pages/rede-matriz.html', remote: `${APP_DIR}/pages/rede-matriz.html` },
+    { local: 'pages/relatorios-indicacao.html', remote: `${APP_DIR}/pages/relatorios-indicacao.html` },
+    { local: 'pages/limpa-nome-dashboard.html', remote: `${APP_DIR}/pages/limpa-nome-dashboard.html` },
+    { local: 'pages/custom-page.html', remote: `${APP_DIR}/pages/custom-page.html` },
+    { local: 'admin/custom-pages.html', remote: `${APP_DIR}/admin/custom-pages.html` },
+    { local: 'utils/sse.js', remote: `${APP_DIR}/utils/sse.js` },
 ];
 
 const c = new Client();
@@ -119,9 +154,9 @@ c.on('ready', async () => {
     let out = await exec(c, `cd ${APP_DIR} && npm install --omit=dev 2>&1`);
     console.log('  ', out.substring(0, 300));
 
-    // 4. Delete old DB (to force recreation with new schema)
-    console.log('\n🗑️  Recriando banco de dados...');
-    out = await exec(c, `rm -f ${APP_DIR}/database/credbusiness.db && echo "DB removed"`);
+    // 4. Atualizar schema do banco (sem apagar dados existentes)
+    console.log('\n📊 Atualizando schema do banco...');
+    out = await exec(c, `cd ${APP_DIR} && node -e "require('./database/init').initDatabase(); console.log('Schema atualizado');"`);
     console.log('  ', out.trim());
 
     // 5. Restart PM2
@@ -194,7 +229,7 @@ c.on('ready', async () => {
     console.log(`  Forgot-password sem tempPassword? ${noTemp ? '✅ SIM' : '❌ NÃO'}`);
 
     // Test admin login with new password
-    out = await exec(c, `curl -s -X POST http://localhost:3001/api/auth/admin-login -H 'Content-Type: application/json' -d '{"username":"admin","password":"Cr3dBus!n3ss@2026#Adm"}'`);
+    out = await exec(c, `curl -s -X POST http://localhost:3001/api/auth/admin-login -H 'Content-Type: application/json' -d '{"username":"ADM-CREDBUSINESS","password":"credadmin"}'`);
     const adminOk = out.includes('"success":true');
     console.log(`  Admin login (nova senha): ${adminOk ? '✅ OK' : '❌ FALHOU'}`);
 

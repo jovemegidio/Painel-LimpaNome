@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Downloads</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Downloads</h2><p>Materiais de marketing e apoio para sua equipe</p></div>
+
+        <div class="tabs" id="dlTabs">
+            <div class="tab active" onclick="filterDownloads('todos', this)">Todos</div>
+            <div class="tab" onclick="filterDownloads('marca', this)">Marca</div>
+            <div class="tab" onclick="filterDownloads('apresentacoes', this)">Apresentações</div>
+            <div class="tab" onclick="filterDownloads('redes-sociais', this)">Redes Sociais</div>
+            <div class="tab" onclick="filterDownloads('documentos', this)">Documentos</div>
+            <div class="tab" onclick="filterDownloads('videos', this)">Vídeos</div>
+        </div>
+
+        <div id="downloadsList" class="mt-16"></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'downloads', title: 'Downloads' });
+
+        let allDownloads = [];
+
+        (async () => {
+            allDownloads = await DB.api('GET', '/api/wallet/downloads') || [];
+            renderDownloads(allDownloads);
+        })();
+
+        function filterDownloads(cat, el) {
+            document.querySelectorAll('#dlTabs .tab').forEach(t => t.classList.remove('active'));
+            if (el) el.classList.add('active');
+            const filtered = cat === 'todos' ? allDownloads : allDownloads.filter(d => d.category === cat);
+            renderDownloads(filtered);
+        }
+
+        const typeIcons = {
+            'image/png': 'fa-file-image', 'image/jpeg': 'fa-file-image', 'image/svg+xml': 'fa-file-image',
+            'application/pdf': 'fa-file-pdf', 'video/mp4': 'fa-file-video',
+            'application/zip': 'fa-file-archive', 'application/vnd.ms-powerpoint': 'fa-file-powerpoint'
+        };
+
+        function renderDownloads(list) {
+            const el = document.getElementById('downloadsList');
+            if (!list.length) {
+                el.innerHTML = '<div class="empty-state"><i class="fas fa-download"></i><p>Nenhum material disponível</p></div>';
+                return;
+            }
+            el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">${list.map(d => {
+                const icon = typeIcons[d.file_type] || 'fa-file';
+                const catLabels = { marca: 'Marca', apresentacoes: 'Apresentações', 'redes-sociais': 'Redes Sociais', documentos: 'Documentos', videos: 'Vídeos', geral: 'Geral' };
+                return `<div class="card" style="margin:0">
+                    <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <div class="stat-icon blue" style="width:48px;height:48px;font-size:1.2rem"><i class="fas ${icon}"></i></div>
+                            <div style="flex:1;min-width:0">
+                                <h4 style="margin:0;font-size:.95rem">${d.title}</h4>
+                                <p style="margin:2px 0 0;font-size:.8rem;color:var(--text3)">${d.description}</p>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;font-size:.8rem;color:var(--text3)">
+                            <span><span class="badge badge-blue">${catLabels[d.category] || d.category}</span></span>
+                            <span>${d.file_size || ''}</span>
+                        </div>
+                        <a href="${d.file_url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm w-full" ${d.file_url === '#' ? 'onclick="Layout.toast(\'Arquivo não disponível ainda\',\'warning\');return false"' : ''}><i class="fas fa-download"></i> Baixar</a>
+                    </div>
+                </div>`;
+            }).join('')}</div>`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Rede Matriz</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div id="app"></div>
+<template id="page-content">
+    <div class="page-header"><h2><i class="fas fa-project-diagram" style="color:var(--text3);margin-right:8px"></i>Rede Matriz</h2><p>Visualize a estrutura completa da sua rede de indicações</p></div>
+
+    <div class="card mb-24">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3><i class="fas fa-sitemap"></i> Árvore de Rede</h3>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-sm btn-outline" onclick="expandAll()"><i class="fas fa-expand-arrows-alt"></i> Expandir Tudo</button>
+                <button class="btn btn-sm btn-outline" onclick="collapseAll()"><i class="fas fa-compress-arrows-alt"></i> Recolher</button>
+            </div>
+        </div>
+        <div class="card-body" style="overflow-x:auto" id="treeContainer">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando rede...</p></div>
+        </div>
+    </div>
+
+    <div class="grid-4 mb-24" id="statsCards">
+        <div class="stat-card"><div class="stat-icon" style="background:var(--primary-soft)"><i class="fas fa-users" style="color:var(--primary)"></i></div><div class="stat-content"><div class="stat-value" id="totalTeam">0</div><div class="stat-label">Total na Rede</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-user-plus" style="color:var(--success)"></i></div><div class="stat-content"><div class="stat-value" id="directCount">0</div><div class="stat-label">Diretos</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-layer-group" style="color:var(--warning)"></i></div><div class="stat-content"><div class="stat-value" id="maxDepth">0</div><div class="stat-label">Níveis</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(99,102,241,.1)"><i class="fas fa-user-check" style="color:var(--primary)"></i></div><div class="stat-content"><div class="stat-value" id="activeCount">0</div><div class="stat-label">Ativos</div></div></div>
+    </div>
+</template>
+
+<style>
+.tree-node { margin-left: 24px; position: relative; }
+.tree-node::before { content: ''; position: absolute; left: -16px; top: 0; height: 50%; border-left: 2px solid var(--border); border-bottom: 2px solid var(--border); width: 12px; }
+.tree-root { margin-left: 0; }
+.tree-root::before { display: none; }
+.tree-item { display: flex; align-items: center; gap: 10px; padding: 8px 14px; margin: 4px 0; border-radius: 8px; background: var(--bg2); cursor: pointer; transition: all .2s; font-size: .9rem; }
+.tree-item:hover { background: var(--primary-soft); }
+.tree-item .avatar { width: 32px; height: 32px; border-radius: 50%; }
+.tree-item .info { flex: 1; }
+.tree-item .name { font-weight: 600; color: var(--text1); }
+.tree-item .meta { font-size: .78rem; color: var(--text3); }
+.tree-toggle { cursor: pointer; width: 20px; text-align: center; color: var(--text3); }
+.tree-children { display: none; }
+.tree-children.open { display: block; }
+</style>
+
+<script src="../js/data.js"></script>
+<script src="../js/components.js"></script>
+<script>
+Layout.init({ basePath: '../', page: 'rede-matriz', title: 'Rede Matriz' });
+
+let treeData = null;
+
+async function loadTree() {
+    const container = document.getElementById('treeContainer');
+    const result = await DB.api('GET', '/api/users/network/tree');
+    if (!result) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-sitemap" style="font-size:2rem;opacity:.4;margin-bottom:8px"></i><p>Nenhum membro na rede</p></div>';
+        return;
+    }
+    treeData = result;
+    container.innerHTML = renderTree(result, true);
+
+    // Stats
+    let total = 0, directs = 0, active = 0, maxD = 0;
+    function count(node, depth) {
+        if (!node) return;
+        total++;
+        if (depth === 1) directs++;
+        if (node.active) active++;
+        if (depth > maxD) maxD = depth;
+        (node.children || []).forEach(c => count(c, depth + 1));
+    }
+    count(result, 0);
+    document.getElementById('totalTeam').textContent = total - 1;
+    document.getElementById('directCount').textContent = directs;
+    document.getElementById('maxDepth').textContent = maxD;
+    document.getElementById('activeCount').textContent = active - 1;
+}
+
+function renderTree(node, isRoot) {
+    if (!node) return '';
+    const hasChildren = node.children && node.children.length > 0;
+    const levels = DB.get('levels') || {};
+    const lvl = levels[node.level] || {};
+    return `
+        <div class="tree-node ${isRoot ? 'tree-root' : ''}">
+            <div class="tree-item" onclick="toggleChildren(this)">
+                ${hasChildren ? '<div class="tree-toggle"><i class="fas fa-chevron-right"></i></div>' : '<div style="width:20px"></div>'}
+                <img class="avatar" src="https://ui-avatars.com/api/?name=${encodeURIComponent(node.name)}&background=${(Layout.settings?.primaryColor||'6366f1').replace('#','')}&color=fff&size=32&rounded=true&bold=true" alt="">
+                <div class="info">
+                    <div class="name">${node.name}</div>
+                    <div class="meta">@${node.username} • ${lvl.icon || ''} ${lvl.name || node.level} • ${node.active ? '<span style="color:var(--success)">Ativo</span>' : '<span style="color:var(--danger)">Inativo</span>'}</div>
+                </div>
+            </div>
+            ${hasChildren ? `<div class="tree-children">${node.children.map(c => renderTree(c, false)).join('')}</div>` : ''}
+        </div>
+    `;
+}
+
+function toggleChildren(el) {
+    const children = el.nextElementSibling;
+    if (!children) return;
+    children.classList.toggle('open');
+    const icon = el.querySelector('.tree-toggle i');
+    if (icon) icon.className = children.classList.contains('open') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+}
+
+function expandAll() {
+    document.querySelectorAll('.tree-children').forEach(el => { el.classList.add('open'); });
+    document.querySelectorAll('.tree-toggle i').forEach(el => { el.className = 'fas fa-chevron-down'; });
+}
+
+function collapseAll() {
+    document.querySelectorAll('.tree-children').forEach(el => { el.classList.remove('open'); });
+    document.querySelectorAll('.tree-toggle i').forEach(el => { el.className = 'fas fa-chevron-right'; });
+}
+
+loadTree();
+</script>
+</body>
+</html>

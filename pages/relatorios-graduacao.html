@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Relatório de Graduação</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Relatório de Graduação</h2><p>Acompanhe sua evolução nos níveis da plataforma</p></div>
+
+        <!-- Current status -->
+        <div class="card mb-24">
+            <div class="card-header"><h3><i class="fas fa-trophy"></i> Meu Nível Atual</h3></div>
+            <div class="card-body">
+                <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+                    <div style="text-align:center">
+                        <div id="currentIcon" style="font-size:3rem"></div>
+                        <div id="currentName" style="font-weight:700;font-size:1.2rem;margin-top:4px"></div>
+                    </div>
+                    <div style="flex:1;min-width:200px">
+                        <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:4px">
+                            <span id="pointsLabel"></span>
+                            <span id="progressLabel"></span>
+                        </div>
+                        <div class="progress-bar" style="height:12px;background:var(--bg2);border-radius:6px;overflow:hidden">
+                            <div id="progressBar" style="height:100%;border-radius:6px;transition:width .5s"></div>
+                        </div>
+                        <p id="nextLevelInfo" style="font-size:.85rem;color:var(--text3);margin-top:8px"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level progression -->
+        <div class="card mb-24">
+            <div class="card-header"><h3><i class="fas fa-layer-group"></i> Níveis do Sistema</h3></div>
+            <div class="card-body" id="levelsGrid"></div>
+        </div>
+
+        <!-- History -->
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-history"></i> Histórico de Graduações</h3></div>
+            <div class="card-body"><div class="table-wrap" id="historyTable"></div></div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'relatorios-graduacao', title: 'Relatório de Graduação' });
+
+        (async () => {
+            const data = await DB.api('GET', '/api/wallet/graduation');
+            if (!data) { Layout.toast('Erro ao carregar dados', 'error'); return; }
+
+            // Current level
+            const current = data.levels.find(l => l.key === data.currentLevel) || {};
+            document.getElementById('currentIcon').innerHTML = '<i class="fas ' + (current.icon || 'fa-award') + '" style="color:' + (current.color || '#6366f1') + '"></i>';
+            document.getElementById('currentName').textContent = current.name || 'Prata';
+            document.getElementById('pointsLabel').textContent = `${data.points} pontos`;
+
+            if (data.nextLevel) {
+                document.getElementById('progressLabel').textContent = `${data.progress.toFixed(0)}%`;
+                document.getElementById('progressBar').style.width = data.progress + '%';
+                document.getElementById('progressBar').style.background = `linear-gradient(90deg, ${current.color || '#6366f1'}, var(--primary))`;
+                document.getElementById('nextLevelInfo').textContent = `Faltam ${data.nextLevel.pointsNeeded} pontos para ${data.nextLevel.name}`;
+            } else {
+                document.getElementById('progressLabel').textContent = '100%';
+                document.getElementById('progressBar').style.width = '100%';
+                document.getElementById('progressBar').style.background = current.color || 'var(--primary)';
+                document.getElementById('nextLevelInfo').textContent = 'Você atingiu o nível máximo!';
+            }
+
+            // Levels grid
+            document.getElementById('levelsGrid').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">${data.levels.map(l => `
+                <div style="text-align:center;padding:20px 12px;border-radius:12px;border:2px solid ${l.achieved ? l.color : 'var(--border)'};background:${l.achieved ? l.color + '10' : 'var(--bg1)'}">
+                    <div style="font-size:2rem;color:${l.color}"><i class="fas ${l.icon}"></i></div>
+                    <div style="font-weight:700;margin-top:4px;color:${l.color}">${l.name}</div>
+                    <div style="font-size:.8rem;color:var(--text3)">${l.minPoints} pontos</div>
+                    <div style="margin-top:8px">${l.achieved ? '<span class="badge badge-green"><i class="fas fa-check"></i> Alcançado</span>' : '<span class="badge badge-gray">Pendente</span>'}</div>
+                </div>
+            `).join('')}</div>`;
+
+            // History
+            const history = data.history || [];
+            const histTable = document.getElementById('historyTable');
+            if (!history.length) {
+                histTable.innerHTML = '<div class="table-empty"><i class="fas fa-history"></i><p>Nenhuma mudança de nível registrada</p></div>';
+                return;
+            }
+
+            const levelMap = {};
+            data.levels.forEach(l => { levelMap[l.key] = l; });
+
+            histTable.innerHTML = `<table>
+                <thead><tr><th>Data</th><th>De</th><th>Para</th><th>Pontos</th></tr></thead>
+                <tbody>${history.map(h => {
+                    const from = levelMap[h.from_level] || {};
+                    const to = levelMap[h.to_level] || {};
+                    return `<tr>
+                        <td>${h.created_at ? new Date(h.created_at).toLocaleDateString('pt-BR') : ''}</td>
+                        <td>${h.from_level ? `<span style="color:${from.color || '#999'}"><i class="fas ${from.icon || 'fa-circle'}"></i> ${from.name || h.from_level}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+                        <td><span style="color:${to.color || '#999'}"><i class="fas ${to.icon || 'fa-circle'}"></i> ${to.name || h.to_level}</span></td>
+                        <td>${h.points_at_change}</td>
+                    </tr>`;
+                }).join('')}</tbody>
+            </table>`;
+        })();
+    </script>
+</body>
+</html>

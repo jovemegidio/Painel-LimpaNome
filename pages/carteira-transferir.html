@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Transferir</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Transferir</h2><p>Transfira saldo para outro usuário da plataforma</p></div>
+
+        <div class="grid-3 mb-24">
+            <div class="fin-card"><div class="fin-icon stat-icon blue"><i class="fas fa-wallet"></i></div><div><h4>Saldo Disponível</h4><div class="amount text-accent" id="balance"></div></div></div>
+        </div>
+
+        <div class="grid-2 mb-24">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-paper-plane"></i> Nova Transferência</h3></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Usuário de Destino (username)</label>
+                        <input class="form-control" id="toUsername" placeholder="Digite o username do destinatário">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" class="form-control" id="amount" placeholder="0.00" min="1" step="0.01">
+                    </div>
+                    <div class="form-group" id="finPwGroup" style="display:none">
+                        <label>Senha Financeira</label>
+                        <input type="password" class="form-control" id="financialPassword" placeholder="••••" maxlength="6" inputmode="numeric">
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="doTransfer()"><i class="fas fa-paper-plane"></i> Transferir</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-info-circle"></i> Informações</h3></div>
+                <div class="card-body">
+                    <ul class="activity-list">
+                        <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-bolt"></i></div><div class="activity-info"><div class="title">Instantâneo</div><div class="desc">Transferências são processadas em tempo real</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-money-bill"></i></div><div class="activity-info"><div class="title">Valor mínimo</div><div class="desc">R$ 1,00 por transferência</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon orange"><i class="fas fa-shield-alt"></i></div><div class="activity-info"><div class="title">Segurança</div><div class="desc">Requer senha financeira se configurada</div></div></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'carteira-transferir', title: 'Transferir' });
+        document.getElementById('balance').textContent = 'R$ ' + fmt(Layout.user.balance);
+
+        (async () => {
+            const data = await DB.api('GET', '/api/wallet/financial-password/status');
+            if (data && data.hasFinancialPassword) {
+                document.getElementById('finPwGroup').style.display = '';
+            }
+        })();
+
+        async function doTransfer() {
+            const username = document.getElementById('toUsername').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const financialPassword = document.getElementById('financialPassword').value;
+
+            if (!username) { Layout.toast('Informe o usuário de destino', 'error'); return; }
+            if (!amount || amount < 1) { Layout.toast('Valor mínimo: R$ 1,00', 'error'); return; }
+            if (amount > Layout.user.balance) { Layout.toast('Saldo insuficiente', 'error'); return; }
+            if (!confirm(`Confirmar transferência de R$ ${fmt(amount)} para @${username}?`)) return;
+
+            Layout.toast('Processando...', 'info');
+            const result = await DB.api('POST', '/api/wallet/transfer', { username, amount, financialPassword });
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
+            if (result.error) { Layout.toast(result.error, 'error'); return; }
+            Layout.toast(result.message || 'Transferência realizada!', 'success');
+            await DB.syncData();
+            setTimeout(() => location.reload(), 1500);
+        }
+    </script>
+</body>
+</html>

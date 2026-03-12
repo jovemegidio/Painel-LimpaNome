@@ -9,16 +9,83 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 
 const { initDatabase } = require('./database/init');
+const { addClient, clientCount } = require('./utils/sse');
+const jwt = require('jsonwebtoken');
 
 // ── Iniciar banco de dados ──
 initDatabase();
 
+// ── Backup automático diário do SQLite ──
+const DB_PATH = path.join(__dirname, 'database', 'credbusiness.db');
+const BACKUP_DIR = path.join(__dirname, 'backups');
+
+function runDailyBackup() {
+    try {
+        if (!fs.existsSync(DB_PATH)) return;
+        if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+        const date = new Date().toISOString().slice(0, 10);
+        const backupFile = path.join(BACKUP_DIR, `credbusiness_${date}.db`);
+        fs.copyFileSync(DB_PATH, backupFile);
+        // Manter apenas últimos 7 backups
+        const files = fs.readdirSync(BACKUP_DIR).filter(f => f.startsWith('credbusiness_') && f.endsWith('.db')).sort();
+        while (files.length > 7) { fs.unlinkSync(path.join(BACKUP_DIR, files.shift())); }
+        console.log(`[Backup] ${date} — OK (${(fs.statSync(backupFile).size / 1024 / 1024).toFixed(1)}MB)`);
+    } catch (err) {
+        console.error('[Backup] Erro:', err.message);
+    }
+}
+
+// Backup ao iniciar + a cada 24h
+runDailyBackup();
+setInterval(runDailyBackup, 24 * 60 * 60 * 1000);
+
+// ── Verificação automática de mensalidades vencidas ──
+function checkMonthlyFees() {
+    try {
+        const { getDB } = require('./database/init');
+        const db = getDB();
+        const today = new Date().toISOString().slice(0, 10);
+
+        // Bloquear usuários com mensalidade vencida (que tenham pacote ativo e não estejam já bloqueados)
+        const overdue = db.prepare(
+            "UPDATE users SET access_blocked = 1 WHERE has_package = 1 AND access_blocked = 0 AND monthly_fee_paid_until IS NOT NULL AND monthly_fee_paid_until < ?"
+        ).run(today);
+
+        if (overdue.changes > 0) {
+            console.log(`[Mensalidade] ${overdue.changes} usuário(s) bloqueado(s) por mensalidade vencida`);
+
+            // Notificar usuários bloqueados
+            const blocked = db.prepare(
+                "SELECT id FROM users WHERE has_package = 1 AND access_blocked = 1 AND monthly_fee_paid_until < ?"
+            ).all(today);
+
+            const { createNotification } = require('./utils/notifications');
+            for (const u of blocked) {
+                try {
+                    createNotification(u.id, 'warning', 'Mensalidade vencida',
+                        'Sua mensalidade está vencida e seu acesso foi bloqueado. Efetue o pagamento para reativar.');
+                } catch {}
+            }
+        }
+    } catch (err) {
+        console.error('[Mensalidade] Erro verificação:', err.message);
+    }
+}
+
+// Verificar mensalidades ao iniciar + a cada 1 hora
+setTimeout(checkMonthlyFees, 10000); // 10s após iniciar
+setInterval(checkMonthlyFees, 60 * 60 * 1000);
+
 // ── App Express ──
 const app = express();
+
+// ── Trust proxy (behind Nginx) ──
+app.set('trust proxy', 1);
 
 // ── Segurança ──
 app.use(helmet({
@@ -26,10 +93,11 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+            scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
             imgSrc: ["'self'", "data:", "blob:", "https:"],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"]
         }
@@ -44,7 +112,15 @@ const allowedOrigins = [
     `http://${process.env.DOMAIN || 'localhost'}`,
     `https://${process.env.DOMAIN || 'localhost'}`,
     'http://localhost:3001',
-    'http://127.0.0.1:3001'
+    'http://127.0.0.1:3001',
+    'http://177.153.58.152',
+    'https://177.153.58.152',
+    'http://mkt-credbusiness.vps-kinghost.net',
+    'https://mkt-credbusiness.vps-kinghost.net',
+    'http://credbusinessconsultoria.com.br',
+    'https://credbusinessconsultoria.com.br',
+    'http://www.credbusinessconsultoria.com.br',
+    'https://www.credbusinessconsultoria.com.br'
 ];
 app.use(cors({
     origin: (origin, cb) => {
@@ -56,26 +132,63 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '200kb' }));
+app.use(cookieParser());
+
+// ── CSRF Protection ──
+const { csrfProtection } = require('./middleware/csrf');
+app.use(csrfProtection({ skipPaths: [
+    '/api/payments/webhook',
+    '/api/auth/login',
+    '/api/auth/admin-login',
+    '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password'
+] }));
 
 // ── Rate Limiting ──
+// Custom keyGenerator to avoid ERR_ERL_INVALID_IP_ADDRESS behind Nginx proxy
+const getClientIp = (req) => {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) return String(forwarded).split(',')[0].trim().replace(/^\//, '');
+    return req.ip || req.socket?.remoteAddress || '127.0.0.1';
+};
+
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => req.path === '/api/payments/webhook', // Webhook sem rate limit
-    message: { error: 'Muitas requisições. Tente novamente em alguns minutos.' }
+    keyGenerator: getClientIp,
+    skip: (req) => req.path === '/api/payments/webhook',
+    message: { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
+    validate: { ip: false }
 });
 app.use('/api/', limiter);
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 15,
-    message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' }
+    keyGenerator: getClientIp,
+    message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+    validate: { ip: false }
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/admin-login', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
+
+// ── Favicon (emoji dinâmico das settings) ──
+app.get('/favicon.ico', (req, res) => {
+    const { getDB } = require('./database/init');
+    let emoji = '💎';
+    try {
+        const row = getDB().prepare("SELECT value FROM settings WHERE key = 'faviconEmoji'").get();
+        if (row && row.value) emoji = row.value;
+    } catch {}
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${emoji}</text></svg>`;
+    res.set('Content-Type', 'image/svg+xml');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(svg);
+});
 
 // ── Health Check ──
 app.get('/api/health', (req, res) => {
@@ -96,6 +209,38 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/lgpd', require('./routes/lgpd'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/wallet', require('./routes/wallet'));
+
+// ── SSE (Server-Sent Events) — Real-time updates ──
+app.get('/api/sse', (req, res) => {
+    // EventSource can't send headers, so accept token via query
+    const token = req.query.token;
+    if (!token) return res.status(401).json({ error: 'Token não fornecido' });
+
+    let decoded;
+    try {
+        const { EFFECTIVE_JWT_SECRET } = require('./middleware/auth');
+        decoded = jwt.verify(token, EFFECTIVE_JWT_SECRET);
+    } catch {
+        return res.status(401).json({ error: 'Token inválido' });
+    }
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no' // Nginx: disable buffering
+    });
+    res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
+
+    // Keep-alive every 30s
+    const keepAlive = setInterval(() => {
+        try { res.write(': keepalive\n\n'); } catch { clearInterval(keepAlive); }
+    }, 30000);
+
+    addClient(decoded.id, res);
+    req.on('close', () => clearInterval(keepAlive));
+});
 
 // ── Servir SOMENTE arquivos do frontend (whitelist) ──
 const publicDirs = ['css', 'js', 'pages', 'admin'];
@@ -119,6 +264,17 @@ publicFiles.forEach(file => {
     });
 });
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// ── Custom pages: /pages/custom-{slug}.html → serve template ──
+app.get('/pages/custom-*.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages', 'custom-page.html'));
+});
+
+// ── Sponsor URL: /register/:sponsor → redirect to register.html?ref=sponsor ──
+app.get('/register/:sponsor', (req, res) => {
+    const sponsor = encodeURIComponent(req.params.sponsor);
+    res.redirect(`/register.html?ref=${sponsor}`);
+});
 
 // ── Fallback ──
 app.get('*', (req, res) => {
@@ -161,3 +317,5 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 });
 server.timeout = 30000;
 server.keepAliveTimeout = 65000;
+
+module.exports = app;

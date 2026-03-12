@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Relatório de Indicações</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div id="app"></div>
+<template id="page-content">
+    <div class="page-header"><h2><i class="fas fa-share-alt" style="color:var(--text3);margin-right:8px"></i>Relatório de Indicações</h2><p>Acompanhe suas indicações e comissões geradas</p></div>
+
+    <div class="grid-4 mb-24">
+        <div class="stat-card"><div class="stat-icon" style="background:var(--primary-soft)"><i class="fas fa-user-plus" style="color:var(--primary)"></i></div><div class="stat-content"><div class="stat-value" id="sTotalDir">0</div><div class="stat-label">Total Indicados</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-user-check" style="color:var(--success)"></i></div><div class="stat-content"><div class="stat-value" id="sActiveDir">0</div><div class="stat-label">Indicados Ativos</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-coins" style="color:var(--warning)"></i></div><div class="stat-content"><div class="stat-value" id="sTotalComm">R$ 0,00</div><div class="stat-label">Total Comissões</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(99,102,241,.1)"><i class="fas fa-chart-line" style="color:var(--primary)"></i></div><div class="stat-content"><div class="stat-value" id="sMonthComm">R$ 0,00</div><div class="stat-label">Comissões no Mês</div></div></div>
+    </div>
+
+    <div class="card mb-24">
+        <div class="card-header"><h3><i class="fas fa-link"></i> Seu Link de Indicação</h3></div>
+        <div class="card-body">
+            <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" class="form-control" id="refLink" readonly style="flex:1;font-size:.88rem">
+                <button class="btn btn-primary" onclick="copyLink()"><i class="fas fa-copy"></i> Copiar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly chart -->
+    <div class="card mb-24">
+        <div class="card-header"><h3><i class="fas fa-chart-bar"></i> Comissões Mensais</h3></div>
+        <div class="card-body" id="monthlyChart" style="min-height:200px">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div>
+        </div>
+    </div>
+
+    <!-- Directs List -->
+    <div class="card mb-24">
+        <div class="card-header"><h3><i class="fas fa-users"></i> Indicados Diretos</h3></div>
+        <div class="card-body" id="directsList">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div>
+        </div>
+    </div>
+
+    <!-- Commissions History -->
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-history"></i> Histórico de Comissões</h3></div>
+        <div class="card-body" id="commissionsList">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div>
+        </div>
+    </div>
+</template>
+
+<script src="../js/data.js"></script>
+<script src="../js/components.js"></script>
+<script>
+Layout.init({ basePath: '../', page: 'relatorios-indicacao', title: 'Relatório de Indicações' });
+
+const user = DB.getCurrentUser();
+document.getElementById('refLink').value = `${window.location.origin}/register.html?ref=${user?.username || ''}`;
+
+function copyLink() {
+    const input = document.getElementById('refLink');
+    navigator.clipboard.writeText(input.value).then(() => Layout.toast('Link copiado!', 'success')).catch(() => {
+        input.select(); document.execCommand('copy'); Layout.toast('Link copiado!', 'success');
+    });
+}
+
+async function loadReport() {
+    const data = await DB.getReferralReport();
+    if (!data) return;
+
+    // Stats
+    document.getElementById('sTotalDir').textContent = data.totalDirects || 0;
+    document.getElementById('sActiveDir').textContent = data.activeDirects || 0;
+    document.getElementById('sTotalComm').textContent = `R$ ${Number(data.totalCommissions || 0).toFixed(2)}`;
+
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    const monthData = (data.monthlyStats || []).find(m => m.month === thisMonth);
+    document.getElementById('sMonthComm').textContent = `R$ ${Number(monthData?.total || 0).toFixed(2)}`;
+
+    // Monthly chart (simple bar chart)
+    const chart = document.getElementById('monthlyChart');
+    const months = data.monthlyStats || [];
+    if (months.length === 0) {
+        chart.innerHTML = '<div class="empty-state"><p>Nenhuma comissão registrada</p></div>';
+    } else {
+        const maxVal = Math.max(...months.map(m => m.total));
+        chart.innerHTML = `<div style="display:flex;align-items:flex-end;gap:6px;height:180px;padding-bottom:24px;border-bottom:1px solid var(--border)">
+            ${months.reverse().map(m => {
+                const pct = maxVal > 0 ? (m.total / maxVal * 100) : 0;
+                const label = m.month.split('-')[1] + '/' + m.month.split('-')[0].slice(2);
+                return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                    <div style="font-size:.7rem;color:var(--text2);font-weight:600">R$${m.total.toFixed(0)}</div>
+                    <div style="width:100%;max-width:40px;height:${Math.max(pct, 5)}%;background:var(--primary);border-radius:4px 4px 0 0;transition:height .3s"></div>
+                    <div style="font-size:.7rem;color:var(--text3)">${label}</div>
+                </div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    // Directs list
+    const directs = data.directs || [];
+    const directsList = document.getElementById('directsList');
+    if (directs.length === 0) {
+        directsList.innerHTML = '<div class="empty-state"><p>Nenhum indicado direto</p></div>';
+    } else {
+        directsList.innerHTML = `<table class="table"><thead><tr><th>Nome</th><th>Usuário</th><th>Nível</th><th>Status</th><th>Data Cadastro</th></tr></thead><tbody>
+            ${directs.map(d => `<tr>
+                <td><strong>${d.name}</strong></td>
+                <td>@${d.username}</td>
+                <td>${d.level}</td>
+                <td>${d.active ? '<span class="badge badge-success">Ativo</span>' : '<span class="badge badge-danger">Inativo</span>'}</td>
+                <td>${new Date(d.created_at).toLocaleDateString('pt-BR')}</td>
+            </tr>`).join('')}
+        </tbody></table>`;
+    }
+
+    // Commissions history
+    const commissions = data.commissions || [];
+    const commList = document.getElementById('commissionsList');
+    if (commissions.length === 0) {
+        commList.innerHTML = '<div class="empty-state"><p>Nenhuma comissão registrada</p></div>';
+    } else {
+        commList.innerHTML = `<table class="table"><thead><tr><th>De</th><th>Nível</th><th>Valor</th><th>Tipo</th><th>Data</th></tr></thead><tbody>
+            ${commissions.map(c => `<tr>
+                <td>${c.from_name} <small style="color:var(--text3)">@${c.from_username}</small></td>
+                <td>Nível ${c.level}</td>
+                <td style="font-weight:600;color:var(--success)">R$ ${Number(c.amount).toFixed(2)}</td>
+                <td>${c.source_type || 'direto'}</td>
+                <td>${new Date(c.date).toLocaleDateString('pt-BR')}</td>
+            </tr>`).join('')}
+        </tbody></table>`;
+    }
+}
+
+loadReport();
+</script>
+</body>
+</html>

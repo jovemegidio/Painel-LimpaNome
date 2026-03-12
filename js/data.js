@@ -21,12 +21,20 @@ const DB = {
                 headers: { 'Content-Type': 'application/json' }
             };
             if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+            // CSRF token from cookie for non-GET requests without Bearer
+            if (method !== 'GET' && !token) {
+                const csrfToken = document.cookie.split('; ').find(c => c.startsWith('csrf_token='));
+                if (csrfToken) opts.headers['x-csrf-token'] = csrfToken.split('=')[1];
+            }
             if (data && method !== 'GET') opts.body = JSON.stringify(data);
             const res = await fetch(this.API_URL + url, opts);
-            if (res.status === 401) {
+            if (res.status === 401 && token) {
+                // Token expirado/inválido — limpar sessão (mas não em requisições de login)
                 this.removeToken();
                 this.remove('currentUser');
-                return null;
+                if (!url.startsWith('/api/auth/')) {
+                    return null;
+                }
             }
             const contentType = res.headers.get('content-type') || '';
             if (!contentType.includes('application/json')) {
@@ -81,7 +89,7 @@ const DB = {
                 faviconEmoji: '💎', primaryColor: '#6366f1', accentColor: '#10b981',
                 footerText: '© 2026 Credbusiness', loginBg: 'css/Fundo/Fundo.jpg',
                 commissionLevel1: 10, commissionLevel2: 5, commissionLevel3: 3,
-                minWithdraw: 50, maintenanceMode: false
+                minWithdraw: 100, withdrawFee: 2.50, monthlyFee: 95, maintenanceMode: false
             });
         }
     },
@@ -91,6 +99,11 @@ const DB = {
         const data = await this.api('GET', '/api/sync');
         if (!data) return false;
 
+        // Limpar dados anteriores para evitar misturar admin/usuário
+        const dataKeys = ['users','admins','levels','plans','packages','limpanome_processes','transactions','news','events','tickets','notifications','unreadNotifications','customPages'];
+        dataKeys.forEach(k => this.remove(k));
+
+        if (data.role) this.set('syncRole', data.role);
         if (data.users) this.set('users', data.users);
         if (data.levels) this.set('levels', data.levels);
         if (data.plans) this.set('plans', data.plans);
@@ -104,7 +117,11 @@ const DB = {
         if (data.admins) this.set('admins', data.admins);
         if (data.notifications) this.set('notifications', data.notifications);
         if (data.unreadNotifications !== undefined) this.set('unreadNotifications', data.unreadNotifications);
+        if (data.customPages) this.set('customPages', data.customPages);
         this.set('initialized', true);
+
+        // Connect SSE for real-time updates
+        this.connectSSE();
 
         return true;
     },
@@ -157,11 +174,12 @@ const DB = {
     },
 
     logout() {
+        this._closeSSE();
         this.removeToken();
         this.remove('currentUser');
         // Keep settings for login page branding
         const settings = this.get('settings');
-        const keys = ['users','admins','levels','plans','packages','limpanome_processes','transactions','news','events','tickets','initialized','notifications','unreadNotifications'];
+        const keys = ['users','admins','levels','plans','packages','limpanome_processes','transactions','news','events','tickets','initialized','notifications','unreadNotifications','customPages'];
         keys.forEach(k => this.remove(k));
         if (settings) this.set('settings', settings);
     },
@@ -246,6 +264,19 @@ const DB = {
         }
 
         this.set('users', users);
+        // Sync to backend
+        this.apiBackground('POST', '/api/admin/users', {
+            username: userData.username || userData.email,
+            password: userData.password,
+            name: userData.name,
+            email: userData.email,
+            phone: userData.phone,
+            cpf: userData.cpf,
+            level: userData.level,
+            plan: userData.plan,
+            sponsor_id: userData.sponsor,
+            active: userData.active !== false
+        });
         return newUser;
     },
 
@@ -373,7 +404,7 @@ const DB = {
         if (idx !== -1) {
             proc[idx] = { ...proc[idx], ...data, updatedAt: new Date().toISOString().split('T')[0] };
             this.set('limpanome_processes', proc);
-            this.apiBackground('PUT', `/api/services/processes/${id}`, data);
+            this.apiBackground('PUT', `/api/admin/processes/${id}`, data);
         }
     },
 
@@ -419,7 +450,7 @@ const DB = {
             faviconEmoji: '💎', primaryColor: '#6366f1', accentColor: '#10b981',
             footerText: '© 2026 Credbusiness', loginBg: 'css/Fundo/Fundo.jpg',
             commissionLevel1: 10, commissionLevel2: 5, commissionLevel3: 3,
-            minWithdraw: 50, maintenanceMode: false
+            minWithdraw: 100, withdrawFee: 2.50, monthlyFee: 95, maintenanceMode: false, hiddenPages: 'assinaturas'
         };
         return { ...defaults, ...(this.get('settings') || {}) };
     },
@@ -656,6 +687,214 @@ const DB = {
 
     async requestWithdraw(amount, pixKey) {
         return await this.api('POST', '/api/services/transactions/withdraw', { amount, pixKey });
+    },
+
+    // ── Mensalidade ──
+    async getMonthlyFeeStatus() {
+        return await this.api('GET', '/api/payments/monthly-fee/status');
+    },
+
+    async payMonthlyFee(method) {
+        return await this.api('POST', '/api/payments/monthly-fee/pay', { method });
+    },
+
+    // ── Wallet (PIX, Financial Password, Transfer, Deposit) ──
+    async getPixInfo() {
+        return await this.api('GET', '/api/wallet/pix') || {};
+    },
+
+    async updatePix(pix_key, pix_type) {
+        return await this.api('PUT', '/api/wallet/pix', { pix_key, pix_type });
+    },
+
+    async getFinancialPasswordStatus() {
+        return await this.api('GET', '/api/wallet/financial-password/status') || {};
+    },
+
+    async setFinancialPassword(password, currentPassword) {
+        return await this.api('POST', '/api/wallet/financial-password', { password, currentPassword });
+    },
+
+    async walletTransfer(username, amount, financialPassword) {
+        return await this.api('POST', '/api/wallet/transfer', { username, amount, financialPassword });
+    },
+
+    async walletDeposit(amount, method) {
+        return await this.api('POST', '/api/wallet/deposit', { amount, method });
+    },
+
+    async getWithdrawals() {
+        return await this.api('GET', '/api/wallet/withdrawals') || [];
+    },
+
+    // ── Downloads ──
+    async getDownloads() {
+        return await this.api('GET', '/api/wallet/downloads') || [];
+    },
+
+    // ── Event Orders & Tickets ──
+    async buyEventTicket(eventId, quantity) {
+        return await this.api('POST', `/api/wallet/events/${eventId}/buy`, { quantity });
+    },
+
+    async getEventOrders() {
+        return await this.api('GET', '/api/wallet/events/orders') || [];
+    },
+
+    async getEventTickets() {
+        return await this.api('GET', '/api/wallet/events/tickets') || [];
+    },
+
+    // ── Network Clients ──
+    async getNetworkClients() {
+        return await this.api('GET', '/api/wallet/network/clients') || {};
+    },
+
+    // ── Graduation Report ──
+    async getGraduationReport() {
+        return await this.api('GET', '/api/wallet/graduation') || {};
+    },
+
+    // ── Address ──
+    async getAddress() {
+        return await this.api('GET', '/api/users/address') || {};
+    },
+
+    async updateAddress(data) {
+        return await this.api('PUT', '/api/users/address', data);
+    },
+
+    // ── User Documents (KYC) ──
+    async getUserDocuments() {
+        return await this.api('GET', '/api/users/documents') || [];
+    },
+
+    async uploadUserDocument(type, file) {
+        try {
+            const token = this.getToken();
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', type);
+            const res = await fetch(`${this.API_URL}/api/users/documents`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+            return await res.json();
+        } catch (e) {
+            console.error('Upload error:', e);
+            return null;
+        }
+    },
+
+    async deleteUserDocument(id) {
+        return await this.api('DELETE', `/api/users/documents/${id}`);
+    },
+
+    // ── Contracts ──
+    async getContracts() {
+        return await this.api('GET', '/api/users/contracts') || [];
+    },
+
+    async getContract(id) {
+        return await this.api('GET', `/api/users/contracts/${id}`);
+    },
+
+    async acceptContract(id) {
+        return await this.api('POST', `/api/users/contracts/${id}/accept`);
+    },
+
+    // ── Subscriptions ──
+    async getSubscriptions() {
+        return await this.api('GET', '/api/users/subscriptions') || [];
+    },
+
+    async getSubscription(id) {
+        return await this.api('GET', `/api/users/subscriptions/${id}`);
+    },
+
+    // ── Referral Report ──
+    async getReferralReport() {
+        return await this.api('GET', '/api/users/referral-report') || {};
+    },
+
+    // ── Limpa Nome Dashboard ──
+    async getLimpaNomeDashboard() {
+        return await this.api('GET', '/api/users/limpanome-dashboard') || {};
+    },
+
+    // ═══════════════════════════════════════════
+    //   SSE — Real-time updates
+    // ═══════════════════════════════════════════
+    _sse: null,
+    _sseRetryTimer: null,
+    _sseListeners: {},
+
+    /**
+     * Connect to SSE endpoint for real-time admin → user updates
+     */
+    connectSSE() {
+        if (this._sse) return; // already connected
+        const token = this.getToken();
+        if (!token) return;
+
+        // EventSource doesn't support custom headers, pass token via query
+        const url = `${this.API_URL}/api/sse?token=${encodeURIComponent(token)}`;
+        const es = new EventSource(url);
+        this._sse = es;
+
+        // Listen for all entity update events
+        const entities = ['users', 'user_updated', 'processes', 'transactions', 'tickets',
+                          'packages', 'news', 'events', 'settings', 'notifications',
+                          'university', 'landing', 'downloads', 'faqs', 'custom_pages'];
+
+        entities.forEach(entity => {
+            es.addEventListener(entity, (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    this._handleSSE(entity, data);
+                } catch { /* ignore parse errors */ }
+            });
+        });
+
+        es.onerror = () => {
+            this._closeSSE();
+            // Reconnect after 5s
+            this._sseRetryTimer = setTimeout(() => this.connectSSE(), 5000);
+        };
+    },
+
+    /**
+     * Handle an SSE event: re-sync relevant data from server
+     */
+    _handleSSE(entity, data) {
+        // Debounce: avoid multiple rapid syncs
+        if (this._sseSyncPending) return;
+        this._sseSyncPending = true;
+
+        setTimeout(() => {
+            this._sseSyncPending = false;
+            this.syncData().then(() => {
+                // Dispatch custom DOM event so pages can react
+                window.dispatchEvent(new CustomEvent('realtime-update', {
+                    detail: { entity, ...data }
+                }));
+            });
+        }, 300);
+    },
+
+    /**
+     * Close SSE connection
+     */
+    _closeSSE() {
+        if (this._sse) {
+            this._sse.close();
+            this._sse = null;
+        }
+        if (this._sseRetryTimer) {
+            clearTimeout(this._sseRetryTimer);
+            this._sseRetryTimer = null;
+        }
     }
 };
 

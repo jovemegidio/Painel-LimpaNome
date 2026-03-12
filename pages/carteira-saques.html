@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Histórico de Saques</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Histórico de Saques</h2><p>Acompanhe o status dos seus saques</p></div>
+
+        <div class="grid-3 mb-24">
+            <div class="fin-card"><div class="fin-icon stat-icon red"><i class="fas fa-arrow-up"></i></div><div><h4>Total Sacado</h4><div class="amount text-danger" id="totalWithdrawn"></div></div></div>
+            <div class="fin-card"><div class="fin-icon stat-icon orange"><i class="fas fa-clock"></i></div><div><h4>Saques Pendentes</h4><div class="amount text-warning" id="pendingCount"></div></div></div>
+            <div class="fin-card"><div class="fin-icon stat-icon blue"><i class="fas fa-wallet"></i></div><div><h4>Saldo Disponível</h4><div class="amount text-accent" id="balance"></div></div></div>
+        </div>
+
+        <!-- Withdraw Form -->
+        <div class="grid-2 mb-24">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-money-bill-wave"></i> Solicitar Saque</h3></div>
+                <div class="card-body">
+                    <div class="form-group"><label>Valor (R$)</label><input type="number" class="form-control" id="withdrawAmount" placeholder="0.00" min="100" step="0.01"></div>
+                    <div class="form-group"><label>Chave PIX</label><input class="form-control" id="withdrawPix" placeholder="CPF, email, telefone ou chave aleatória"></div>
+                    <button class="btn btn-success w-full" onclick="requestWithdraw()"><i class="fas fa-paper-plane"></i> Solicitar Saque</button>
+                    <p class="form-hint">Saque mínimo: R$ 100,00 • Taxa: R$ 2,50 • Limite: 1 saque por mês</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-info-circle"></i> Informações</h3></div>
+                <div class="card-body">
+                    <ul class="activity-list">
+                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-clock"></i></div><div class="activity-info"><div class="title">Prazo de processamento</div><div class="desc">Saques são processados em até 3 dias úteis</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-shield-alt"></i></div><div class="activity-info"><div class="title">Segurança</div><div class="desc">Todas as transações são protegidas</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon orange"><i class="fas fa-percent"></i></div><div class="activity-info"><div class="title">Taxa de Saque</div><div class="desc">Taxa fixa de R$ 2,50 por saque</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon red"><i class="fas fa-calendar-alt"></i></div><div class="activity-info"><div class="title">Limite Mensal</div><div class="desc">Apenas 1 saque permitido por mês (mínimo R$ 100,00)</div></div></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-history"></i> Meus Saques</h3></div>
+            <div class="card-body"><div class="table-wrap" id="withdrawTable"></div></div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'carteira-saques', title: 'Histórico de Saques' });
+
+        (async () => {
+            const withdrawals = await DB.api('GET', '/api/wallet/withdrawals') || [];
+            const totalWithdrawn = withdrawals.reduce((s, t) => s + Math.abs(t.amount), 0);
+            const pending = withdrawals.filter(t => t.status === 'pendente' || t.status === 'processando');
+
+            document.getElementById('totalWithdrawn').textContent = 'R$ ' + fmt(totalWithdrawn);
+            document.getElementById('pendingCount').textContent = pending.length;
+            document.getElementById('balance').textContent = 'R$ ' + fmt(Layout.user.balance);
+
+            const table = document.getElementById('withdrawTable');
+            if (!withdrawals.length) {
+                table.innerHTML = '<div class="table-empty"><i class="fas fa-receipt"></i><p>Nenhum saque realizado</p></div>';
+                return;
+            }
+
+            table.innerHTML = `<table>
+                <thead><tr><th>Data</th><th>Valor</th><th>Descrição</th><th>Status</th></tr></thead>
+                <tbody>${withdrawals.map(w => `<tr>
+                    <td>${w.date}</td>
+                    <td style="font-weight:700;color:var(--danger)">R$ ${fmt(Math.abs(w.amount))}</td>
+                    <td>${w.description}</td>
+                    <td><span class="badge badge-${w.status==='concluido'||w.status==='concluído'?'green':w.status==='pendente'||w.status==='processando'?'orange':w.status==='falhou'||w.status==='cancelado'?'red':'gray'}">${w.status}</span></td>
+                </tr>`).join('')}</tbody>
+            </table>`;
+        })();
+
+        async function requestWithdraw() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const pix = document.getElementById('withdrawPix').value.trim();
+            if (!amount || amount < 100) { Layout.toast('Saque mínimo: R$ 100,00', 'error'); return; }
+            if (!pix) { Layout.toast('Informe a chave PIX', 'error'); return; }
+            if ((amount + 2.50) > Layout.user.balance) { Layout.toast('Saldo insuficiente (valor + taxa de R$ 2,50)', 'error'); return; }
+            if (!confirm(`Confirmar saque de R$ ${fmt(amount)} para PIX: ${pix}?\nTaxa: R$ 2,50 — Total debitado: R$ ${fmt(amount + 2.50)}`)) return;
+
+            Layout.toast('Processando saque...', 'info');
+            const result = await DB.api('POST', '/api/services/transactions/withdraw', { amount, pixKey: pix });
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
+            if (result.error || !result.success) { Layout.toast(result.error || 'Erro ao solicitar saque', 'error'); return; }
+
+            Layout.toast(result.message || 'Saque solicitado com sucesso!', 'success');
+            await DB.syncData();
+            setTimeout(() => location.reload(), 1500);
+        }
+    </script>
+</body>
+</html>

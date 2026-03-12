@@ -11,7 +11,10 @@
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Relatório de Vendas</h2><p>Acompanhe o desempenho de vendas da sua rede</p></div>
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2>Relatório de Vendas</h2><p>Acompanhe o desempenho de vendas da sua rede</p></div>
+            <button class="btn btn-outline" onclick="exportVendasPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+        </div>
         <div class="stats-grid" id="salesStats"></div>
         <div class="card" style="margin-top:24px">
             <div class="card-header"><h3><i class="fas fa-chart-area"></i> Vendas dos Últimos 6 Meses</h3></div>
@@ -60,6 +63,14 @@
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f1f5f9' }, beginAtZero: true, ticks: { callback: v => 'R$ ' + v } } } }
         });
+
+        function exportVendasPDF() {
+            ExportPDF.download('vendas', 'Relatório de Vendas',
+                ['Mês', 'Vendas (R$)'],
+                months.map((m, i) => [m, 'R$ ' + fmt(monthData[i])]),
+                { summary: [{ label: 'Total Vendas', value: 'R$ ' + fmt(totalVendas), color: '#28a745' }, { label: 'Pacotes Vendidos', value: txs.length, color: '#007bff' }, { label: 'Membros Rede', value: network.directs.length + network.team.length, color: '#6366f1' }] }
+            );
+        }
     </script>
 </body>
 </html>

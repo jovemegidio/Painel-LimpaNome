@@ -6,11 +6,33 @@
     <title>Credbusiness Admin — Transações</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .tx-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .tx-detail-item{padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
+        .tx-detail-item label{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px}
+        .tx-detail-item span{font-size:.9rem;font-weight:600;color:var(--text1)}
+        .tx-detail-item.full{grid-column:1/-1}
+        .tx-amount-positive{color:#10b981!important}
+        .tx-amount-negative{color:#ef4444!important}
+        .user-lookup{position:relative}
+        .user-lookup-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;max-height:180px;overflow-y:auto;z-index:10;box-shadow:var(--shadow-lg);display:none}
+        .user-lookup-results.show{display:block}
+        .user-lookup-item{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);font-size:.85rem}
+        .user-lookup-item:hover{background:var(--primary-light)}
+        .user-lookup-item .ulk-avatar{width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;flex-shrink:0}
+        .user-lookup-item .ulk-info{line-height:1.3}
+        .user-lookup-item .ulk-name{font-weight:600}
+        .user-lookup-item .ulk-meta{font-size:.75rem;color:var(--text3)}
+        .tx-row-actions{display:flex;gap:4px}
+    </style>
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Transações</h2><p>Histórico completo de movimentações financeiras</p></div>
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2><i class="fas fa-exchange-alt" style="margin-right:8px;opacity:.4"></i>Transações</h2><p>Gerencie todas as movimentações financeiras do sistema</p></div>
+            <button class="btn btn-primary" onclick="openTxModal()"><i class="fas fa-plus"></i> Nova Transação</button>
+        </div>
 
         <div class="stats-grid" id="statsGrid"></div>
 
@@ -19,23 +41,112 @@
                 <h3>Todas as Transações</h3>
                 <button class="btn btn-outline btn-sm" onclick="exportTx()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
             </div>
-            <div class="card-header" style="border-top:none;padding-top:0"> style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                    <div class="form-group" style="margin:0"><label style="font-size:.75rem">De</label><input type="date" class="form-control" id="dateFrom" onchange="renderTable()" style="max-width:160px"></div>
-                    <div class="form-group" style="margin:0"><label style="font-size:.75rem">Até</label><input type="date" class="form-control" id="dateTo" onchange="renderTable()" style="max-width:160px"></div>
-                    <select id="filterType" class="form-control" style="max-width:180px" onchange="renderTable()">
-                        <option value="">Todos os Tipos</option>
-                        <option value="compra">Compra</option>
-                        <option value="bonus">Bônus</option>
-                        <option value="comissao">Comissão</option>
-                        <option value="saque">Saque</option>
-                    </select>
-                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar usuário..." style="max-width:200px" oninput="renderTable()">
-                </div>
+            <div class="card-header" style="border-top:none;padding-top:0;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                <div class="form-group" style="margin:0"><label style="font-size:.75rem">De</label><input type="date" class="form-control" id="dateFrom" onchange="loadTransactions()" style="max-width:160px"></div>
+                <div class="form-group" style="margin:0"><label style="font-size:.75rem">Até</label><input type="date" class="form-control" id="dateTo" onchange="loadTransactions()" style="max-width:160px"></div>
+                <select id="filterType" class="form-control" style="max-width:180px" onchange="loadTransactions()">
+                    <option value="">Todos os Tipos</option>
+                    <option value="compra">Compra</option><option value="bonus">Bônus</option>
+                    <option value="comissao">Comissão</option><option value="saque">Saque</option>
+                    <option value="ajuste_admin">Ajuste Admin</option><option value="deposito">Depósito</option>
+                </select>
+                <select id="filterStatus" class="form-control" style="max-width:160px" onchange="loadTransactions()">
+                    <option value="">Todos os Status</option>
+                    <option value="creditado">Creditado</option><option value="aprovado">Aprovado</option>
+                    <option value="pendente">Pendente</option><option value="cancelado">Cancelado</option>
+                </select>
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar usuário ou descrição..." style="max-width:240px" oninput="searchDebounce()">
             </div>
             <div class="card-body" style="overflow-x:auto">
                 <table class="table" id="txTable"><thead><tr>
-                    <th>ID</th><th>Data</th><th>Usuário</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th>
+                    <th>ID</th><th>Data</th><th>Usuário</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th style="width:140px">Ações</th>
                 </tr></thead><tbody></tbody></table>
+                <div id="txPagination" style="display:flex;justify-content:center;gap:4px;padding:16px"></div>
+            </div>
+        </div>
+
+        <!-- Modal Criar/Editar Transação -->
+        <div id="txModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:16px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+                <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                    <h3 id="txModalTitle" style="font-weight:700"><i class="fas fa-receipt" style="margin-right:8px;opacity:.4"></i>Nova Transação</h3>
+                    <button onclick="closeTxModal()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">&times;</button>
+                </div>
+                <form onsubmit="saveTx(event)" style="padding:24px">
+                    <input type="hidden" id="txEditId">
+
+                    <div class="form-group user-lookup">
+                        <label><i class="fas fa-user" style="margin-right:4px;opacity:.4"></i>Usuário</label>
+                        <input type="text" id="txUserSearch" class="form-control" placeholder="Digite o nome, email ou ID do usuário..." oninput="searchUser(this.value)" autocomplete="off">
+                        <input type="hidden" id="txUserId" required>
+                        <div id="txUserResults" class="user-lookup-results"></div>
+                        <div id="txUserSelected" style="display:none;margin-top:8px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:.85rem">
+                            <i class="fas fa-check-circle" style="color:#10b981;margin-right:6px"></i>
+                            <span id="txUserSelectedName"></span>
+                            <button type="button" onclick="clearUserSelection()" style="float:right;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                        <div class="form-group">
+                            <label><i class="fas fa-tag" style="margin-right:4px;opacity:.4"></i>Tipo</label>
+                            <select id="txType" class="form-control" required>
+                                <option value="compra">💳 Compra</option>
+                                <option value="bonus">🎁 Bônus</option>
+                                <option value="comissao">💰 Comissão</option>
+                                <option value="saque">📤 Saque</option>
+                                <option value="ajuste_admin">⚙️ Ajuste Admin</option>
+                                <option value="deposito">📥 Depósito</option>
+                                <option value="estorno">↩️ Estorno</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-dollar-sign" style="margin-right:4px;opacity:.4"></i>Valor (R$)</label>
+                            <input type="number" id="txAmount" class="form-control" required step="0.01" min="0.01" placeholder="0,00">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-align-left" style="margin-right:4px;opacity:.4"></i>Descrição</label>
+                        <input type="text" id="txDesc" class="form-control" required placeholder="Ex: Comissão de venda do pacote Ouro">
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                        <div class="form-group">
+                            <label><i class="fas fa-flag" style="margin-right:4px;opacity:.4"></i>Status</label>
+                            <select id="txStatus" class="form-control">
+                                <option value="creditado">✅ Creditado</option>
+                                <option value="aprovado">✅ Aprovado</option>
+                                <option value="pendente">⏳ Pendente</option>
+                                <option value="cancelado">❌ Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-link" style="margin-right:4px;opacity:.4"></i>Referência</label>
+                            <input type="text" id="txReference" class="form-control" placeholder="(opcional)">
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+                        <button type="button" class="btn btn-outline" onclick="closeTxModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="txSaveBtn"><i class="fas fa-save" style="margin-right:6px"></i>Salvar Transação</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Detalhes da Transação -->
+        <div id="txDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:16px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+                <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                    <h3 style="font-weight:700"><i class="fas fa-receipt" style="margin-right:8px;opacity:.4"></i>Detalhes da Transação</h3>
+                    <button onclick="closeDetailModal()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">&times;</button>
+                </div>
+                <div id="txDetailContent" style="padding:24px"></div>
+                <div style="padding:0 24px 20px;display:flex;gap:12px;justify-content:flex-end">
+                    <button class="btn btn-outline" onclick="closeDetailModal()">Fechar</button>
+                    <button class="btn btn-primary" id="txDetailEditBtn" onclick="editFromDetail()"><i class="fas fa-edit" style="margin-right:6px"></i>Editar</button>
+                </div>
             </div>
         </div>
     </template>
@@ -44,17 +155,55 @@
     <script>
         Layout.init({ basePath: '../', page: 'admin-transactions', title: 'Transações', admin: true });
 
+        let txData = [];
+        let txPage = 1;
+        let txTotalPages = 1;
+        let currentDetailTx = null;
+        let _searchTimer = null;
+
+        function searchDebounce() {
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(() => { txPage = 1; loadTransactions(); }, 400);
+        }
+
+        async function loadTransactions() {
+            const params = new URLSearchParams();
+            params.set('page', txPage);
+            params.set('limit', 20);
+            const type = document.getElementById('filterType').value;
+            const status = document.getElementById('filterStatus').value;
+            const search = document.getElementById('searchInput').value.trim();
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+            if (type) params.set('type', type);
+            if (status) params.set('status', status);
+            if (search) params.set('search', search);
+            if (from) params.set('from', from);
+            if (to) params.set('to', to);
+
+            const res = await DB.api('GET', '/api/admin/transactions?' + params);
+            if (!res) return;
+            txData = res.transactions || [];
+            txTotalPages = res.totalPages || 1;
+            txPage = res.page || 1;
+            renderStats();
+            renderTable();
+        }
+
         function renderStats() {
-            const txs = DB.getTransactions();
-            const compras = txs.filter(t => t.type === 'compra').reduce((s, t) => s + t.amount, 0);
-            const saques = txs.filter(t => t.type === 'saque').reduce((s, t) => s + t.amount, 0);
-            const comissoes = txs.filter(t => t.type === 'comissao').reduce((s, t) => s + t.amount, 0);
-            const bonus = txs.filter(t => t.type === 'bonus').reduce((s, t) => s + t.amount, 0);
+            // Stats from all loaded data + quick totals
+            DB.api('GET', '/api/admin/transactions?limit=1').then(r => {
+                if (!r) return;
+            });
+            const compras = txData.filter(t => t.type === 'compra').reduce((s, t) => s + Math.abs(t.amount), 0);
+            const saques = txData.filter(t => t.type === 'saque').reduce((s, t) => s + Math.abs(t.amount), 0);
+            const comissoes = txData.filter(t => t.type === 'comissao').reduce((s, t) => s + Math.abs(t.amount), 0);
+            const bonus = txData.filter(t => t.type === 'bonus').reduce((s, t) => s + Math.abs(t.amount), 0);
             const items = [
-                { icon: 'fa-shopping-cart', color: '#007bff', label: 'Total Compras', value: fmt(compras) },
-                { icon: 'fa-hand-holding-usd', color: '#dc3545', label: 'Total Saques', value: fmt(saques) },
-                { icon: 'fa-percentage', color: '#28a745', label: 'Total Comissões', value: fmt(comissoes) },
-                { icon: 'fa-gift', color: '#f59e0b', label: 'Total Bônus', value: fmt(bonus) }
+                { icon: 'fa-shopping-cart', color: '#6366f1', label: 'Compras (página)', value: 'R$ ' + fmt(compras) },
+                { icon: 'fa-hand-holding-usd', color: '#ef4444', label: 'Saques (página)', value: 'R$ ' + fmt(saques) },
+                { icon: 'fa-percentage', color: '#10b981', label: 'Comissões (página)', value: 'R$ ' + fmt(comissoes) },
+                { icon: 'fa-gift', color: '#f59e0b', label: 'Bônus (página)', value: 'R$ ' + fmt(bonus) }
             ];
             document.getElementById('statsGrid').innerHTML = items.map(s => `
                 <div class="stat-card">
@@ -64,48 +213,194 @@
         }
 
         function renderTable() {
-            const typeFilter = document.getElementById('filterType').value;
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const from = document.getElementById('dateFrom').value;
-            const to = document.getElementById('dateTo').value;
-            let txs = DB.getTransactions();
-            if (typeFilter) txs = txs.filter(t => t.type === typeFilter);
-            if (from) txs = txs.filter(t => t.date >= from);
-            if (to) txs = txs.filter(t => t.date <= to + 'T23:59:59');
-            if (search) txs = txs.filter(t => {
-                const u = DB.getUser(t.userId);
-                return u && u.name.toLowerCase().includes(search);
-            });
-            txs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const typeColors = { compra: 'primary', bonus: 'warning', comissao: 'success', saque: 'danger', ajuste_admin: 'secondary', deposito: 'info', estorno: 'danger' };
+            const typeIcons = { compra: 'fa-shopping-cart', bonus: 'fa-gift', comissao: 'fa-percentage', saque: 'fa-arrow-up', ajuste_admin: 'fa-wrench', deposito: 'fa-arrow-down', estorno: 'fa-undo' };
+            const tbody = document.querySelector('#txTable tbody');
+            tbody.innerHTML = txData.length ? txData.map(t => {
+                const isSaque = ['saque','estorno'].includes(t.type);
+                return `<tr style="cursor:pointer" ondblclick="viewTransaction(${t.id})">
+                    <td><strong>#${t.id}</strong></td>
+                    <td>${new Date(t.date).toLocaleDateString('pt-BR')}</td>
+                    <td>${esc(t.user_name || 'ID: '+t.user_id)}</td>
+                    <td><span class="badge badge-${typeColors[t.type] || 'secondary'}"><i class="fas ${typeIcons[t.type]||'fa-exchange-alt'}" style="margin-right:4px"></i>${t.type}</span></td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.description||'')}">${esc(t.description||'—')}</td>
+                    <td style="font-weight:700" class="${isSaque?'tx-amount-negative':'tx-amount-positive'}">${isSaque?'- ':'+ '}R$ ${fmt(Math.abs(t.amount))}</td>
+                    <td><span class="badge badge-${t.status==='creditado'||t.status==='aprovado'?'success':t.status==='pendente'?'warning':'danger'}">${t.status}</span></td>
+                    <td class="tx-row-actions">
+                        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();viewTransaction(${t.id})" title="Detalhes"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editTransaction(${t.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteTransaction(${t.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px">Nenhuma transação encontrada</td></tr>';
 
-            const typeMap = { compra: 'primary', bonus: 'warning', comissao: 'success', saque: 'danger' };
-            Paginator.create('txTable', txs, 20, function(pageTxs) {
-                const tbody = document.querySelector('#txTable tbody');
-                tbody.innerHTML = pageTxs.length ? pageTxs.map(t => {
-                    const u = DB.getUser(t.userId);
-                    return `<tr>
-                        <td>#${t.id}</td>
-                        <td>${new Date(t.date).toLocaleDateString('pt-BR')}</td>
-                        <td>${u ? u.name : '—'}</td>
-                        <td><span class="badge badge-${typeMap[t.type] || 'secondary'}">${t.type}</span></td>
-                        <td>${t.description}</td>
-                        <td style="font-weight:600;color:${t.type==='saque'?'#dc3545':'#28a745'}">${t.type==='saque'?'- ':'+ '}${fmt(t.amount)}</td>
-                        <td><span class="badge badge-${t.status==='aprovado'?'success':t.status==='pendente'?'warning':'danger'}">${t.status}</span></td>
-                    </tr>`;
-                }).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b">Nenhuma transação encontrada</td></tr>';
-            });
+            // Pagination
+            const pg = document.getElementById('txPagination');
+            if (txTotalPages <= 1) { pg.innerHTML = ''; return; }
+            let html = `<button class="btn btn-sm btn-outline" ${txPage<=1?'disabled':''} onclick="goPage(${txPage-1})"><i class="fas fa-chevron-left"></i></button>`;
+            for (let i = Math.max(1,txPage-2); i <= Math.min(txTotalPages,txPage+2); i++) {
+                html += `<button class="btn btn-sm ${i===txPage?'btn-primary':'btn-outline'}" onclick="goPage(${i})">${i}</button>`;
+            }
+            html += `<button class="btn btn-sm btn-outline" ${txPage>=txTotalPages?'disabled':''} onclick="goPage(${txPage+1})"><i class="fas fa-chevron-right"></i></button>`;
+            pg.innerHTML = html;
         }
 
-        renderStats();
-        renderTable();
+        function goPage(p) { txPage = p; loadTransactions(); }
+
+        // ── User Lookup ──
+        let _userSearchTimer = null;
+        function searchUser(q) {
+            clearTimeout(_userSearchTimer);
+            if (q.length < 2) { document.getElementById('txUserResults').classList.remove('show'); return; }
+            _userSearchTimer = setTimeout(async () => {
+                const res = await DB.api('GET', '/api/admin/users?search=' + encodeURIComponent(q) + '&limit=8');
+                if (!res || !res.users) return;
+                const div = document.getElementById('txUserResults');
+                div.innerHTML = res.users.map(u => `
+                    <div class="user-lookup-item" onclick="selectUser(${u.id},'${esc(u.name)} (#${u.id})')">
+                        <div class="ulk-avatar">${(u.name||'?')[0].toUpperCase()}</div>
+                        <div class="ulk-info">
+                            <div class="ulk-name">${esc(u.name)}</div>
+                            <div class="ulk-meta">${esc(u.email)} · ID: ${u.id} · Saldo: R$ ${fmt(u.balance||0)}</div>
+                        </div>
+                    </div>`).join('');
+                div.classList.add('show');
+            }, 300);
+        }
+
+        function selectUser(id, label) {
+            document.getElementById('txUserId').value = id;
+            document.getElementById('txUserSearch').style.display = 'none';
+            document.getElementById('txUserResults').classList.remove('show');
+            document.getElementById('txUserSelectedName').textContent = label;
+            document.getElementById('txUserSelected').style.display = '';
+        }
+
+        function clearUserSelection() {
+            document.getElementById('txUserId').value = '';
+            document.getElementById('txUserSearch').value = '';
+            document.getElementById('txUserSearch').style.display = '';
+            document.getElementById('txUserSelected').style.display = 'none';
+        }
+
+        // ── Modal Criar/Editar ──
+        function openTxModal(tx) {
+            document.getElementById('txEditId').value = tx ? tx.id : '';
+            document.getElementById('txModalTitle').innerHTML = tx
+                ? '<i class="fas fa-edit" style="margin-right:8px;opacity:.4"></i>Editar Transação #' + tx.id
+                : '<i class="fas fa-plus-circle" style="margin-right:8px;opacity:.4"></i>Nova Transação';
+            document.getElementById('txSaveBtn').innerHTML = tx
+                ? '<i class="fas fa-save" style="margin-right:6px"></i>Salvar Alterações'
+                : '<i class="fas fa-plus" style="margin-right:6px"></i>Criar Transação';
+
+            if (tx) {
+                selectUser(tx.user_id, (tx.user_name || 'ID: ' + tx.user_id) + ' (#' + tx.user_id + ')');
+                document.getElementById('txType').value = tx.type;
+                document.getElementById('txAmount').value = Math.abs(tx.amount);
+                document.getElementById('txDesc').value = tx.description || '';
+                document.getElementById('txStatus').value = tx.status;
+                document.getElementById('txReference').value = tx.reference_type || '';
+            } else {
+                clearUserSelection();
+                document.getElementById('txType').value = 'ajuste_admin';
+                document.getElementById('txAmount').value = '';
+                document.getElementById('txDesc').value = '';
+                document.getElementById('txStatus').value = 'creditado';
+                document.getElementById('txReference').value = '';
+            }
+            document.getElementById('txModal').style.display = 'flex';
+        }
+
+        function closeTxModal() {
+            document.getElementById('txModal').style.display = 'none';
+            document.getElementById('txUserResults').classList.remove('show');
+        }
+
+        async function saveTx(e) {
+            e.preventDefault();
+            const editId = document.getElementById('txEditId').value;
+            const data = {
+                user_id: parseInt(document.getElementById('txUserId').value),
+                type: document.getElementById('txType').value,
+                amount: parseFloat(document.getElementById('txAmount').value),
+                description: document.getElementById('txDesc').value.trim(),
+                status: document.getElementById('txStatus').value
+            };
+            if (!data.user_id) { Layout.toast('Selecione um usuário', 'error'); return; }
+
+            let res;
+            if (editId) {
+                res = await DB.api('PUT', '/api/admin/transactions/' + editId, data);
+            } else {
+                res = await DB.api('POST', '/api/admin/transactions', data);
+            }
+            if (res && res.success) {
+                Layout.toast(editId ? 'Transação atualizada!' : 'Transação criada com sucesso!', 'success');
+                closeTxModal();
+                loadTransactions();
+            } else {
+                Layout.toast(res?.error || 'Erro ao salvar transação', 'error');
+            }
+        }
+
+        // ── View/Edit/Delete ──
+        function viewTransaction(id) {
+            const tx = txData.find(t => t.id === id);
+            if (!tx) return;
+            currentDetailTx = tx;
+            const isSaque = ['saque','estorno'].includes(tx.type);
+            const typeLabels = { compra:'Compra', bonus:'Bônus', comissao:'Comissão', saque:'Saque', ajuste_admin:'Ajuste Admin', deposito:'Depósito', estorno:'Estorno' };
+            const statusLabels = { creditado:'Creditado', aprovado:'Aprovado', pendente:'Pendente', cancelado:'Cancelado' };
+            document.getElementById('txDetailContent').innerHTML = `
+                <div style="text-align:center;margin-bottom:20px">
+                    <div style="font-size:2rem;font-weight:800;${isSaque?'color:#ef4444':'color:#10b981'}">${isSaque?'- ':'+ '}R$ ${fmt(Math.abs(tx.amount))}</div>
+                    <div style="font-size:.85rem;color:var(--text3);margin-top:4px">Transação #${tx.id}</div>
+                </div>
+                <div class="tx-detail-grid">
+                    <div class="tx-detail-item"><label>Usuário</label><span>${esc(tx.user_name||'—')} (ID: ${tx.user_id})</span></div>
+                    <div class="tx-detail-item"><label>Data</label><span>${new Date(tx.date).toLocaleString('pt-BR')}</span></div>
+                    <div class="tx-detail-item"><label>Tipo</label><span>${typeLabels[tx.type]||tx.type}</span></div>
+                    <div class="tx-detail-item"><label>Status</label><span>${statusLabels[tx.status]||tx.status}</span></div>
+                    <div class="tx-detail-item full"><label>Descrição</label><span>${esc(tx.description||'Sem descrição')}</span></div>
+                    ${tx.reference_type ? `<div class="tx-detail-item full"><label>Referência</label><span>${esc(tx.reference_type)}</span></div>` : ''}
+                </div>`;
+            document.getElementById('txDetailModal').style.display = 'flex';
+        }
+
+        function closeDetailModal() { document.getElementById('txDetailModal').style.display = 'none'; }
+        function editFromDetail() { closeDetailModal(); if (currentDetailTx) openTxModal(currentDetailTx); }
+        function editTransaction(id) { const tx = txData.find(t => t.id === id); if (tx) openTxModal(tx); }
+
+        async function deleteTransaction(id) {
+            if (!confirm('Deseja excluir esta transação? O saldo do usuário será revertido se aplicável.')) return;
+            const res = await DB.api('DELETE', '/api/admin/transactions/' + id);
+            if (res && res.success) {
+                Layout.toast('Transação excluída', 'success');
+                loadTransactions();
+            } else {
+                Layout.toast(res?.error || 'Erro ao excluir', 'error');
+            }
+        }
 
         function exportTx() {
-            const txs = DB.getTransactions();
-            ExportCSV.download('transacoes',
-                ['ID', 'Data', 'Usuário', 'Tipo', 'Descrição', 'Valor', 'Status'],
-                txs.map(t => { const u = DB.getUser(t.userId); return [t.id, t.date, u ? u.name : '', t.type, t.description, t.amount, t.status]; })
-            );
+            const headers = ['ID', 'Data', 'Usuário', 'Tipo', 'Descrição', 'Valor', 'Status'];
+            const rows = txData.map(t => [t.id, t.date, t.user_name||'', t.type, t.description||'', t.amount, t.status]);
+            ExportCSV.download('transacoes', headers, rows);
         }
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        // Real-time updates
+        window.onRealtimeUpdate = function(detail) {
+            if (['transactions','user_updated'].includes(detail.entity)) loadTransactions();
+        };
+
+        // Click outside modal to close
+        document.getElementById('txModal').addEventListener('click', function(e) { if (e.target === this) closeTxModal(); });
+        document.getElementById('txDetailModal').addEventListener('click', function(e) { if (e.target === this) closeDetailModal(); });
+        document.addEventListener('click', function(e) { if (!e.target.closest('.user-lookup')) document.getElementById('txUserResults')?.classList.remove('show'); });
+
+        loadTransactions();
     </script>
 </body>
 </html>

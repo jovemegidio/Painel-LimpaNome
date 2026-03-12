@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Minhas Assinaturas</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div id="app"></div>
+<template id="page-content">
+    <div class="page-header"><h2><i class="fas fa-sync-alt" style="color:var(--text3);margin-right:8px"></i>Minhas Assinaturas</h2><p>Gerencie seus planos e assinaturas recorrentes</p></div>
+
+    <div id="subsList">
+        <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando assinaturas...</p></div>
+    </div>
+</template>
+
+<script src="../js/data.js"></script>
+<script src="../js/components.js"></script>
+<script>
+Layout.init({ basePath: '../', page: 'assinaturas', title: 'Minhas Assinaturas' });
+
+const statusMap = { ativa: { label: 'Ativa', badge: 'badge-success', icon: 'fa-check-circle' }, cancelada: { label: 'Cancelada', badge: 'badge-danger', icon: 'fa-times-circle' }, suspensa: { label: 'Suspensa', badge: 'badge-warning', icon: 'fa-pause-circle' }, vencida: { label: 'Vencida', badge: 'badge-secondary', icon: 'fa-clock' } };
+
+async function loadSubscriptions() {
+    const subs = await DB.getSubscriptions();
+    const container = document.getElementById('subsList');
+    if (!subs || subs.length === 0) {
+        container.innerHTML = `<div class="card"><div class="card-body"><div class="empty-state"><i class="fas fa-credit-card" style="font-size:2.5rem;opacity:.4;margin-bottom:12px"></i><p>Você não possui assinaturas ativas.</p><a href="meu-plano.html" class="btn btn-primary mt-12"><i class="fas fa-rocket"></i> Escolher um Plano</a></div></div></div>`;
+        return;
+    }
+
+    container.innerHTML = subs.map(s => {
+        const st = statusMap[s.status] || statusMap.ativa;
+        const features = s.plan_features || [];
+        return `
+        <div class="card mb-16">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                <h3><i class="fas fa-crown" style="color:var(--warning)"></i> ${s.plan_name}</h3>
+                <span class="badge ${st.badge}"><i class="fas ${st.icon}"></i> ${st.label}</span>
+            </div>
+            <div class="card-body">
+                <div class="grid-3 mb-16">
+                    <div><small style="color:var(--text3)">Valor</small><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">R$ ${Number(s.plan_price).toFixed(2)}<span style="font-size:.7rem;font-weight:400;color:var(--text3)">/mês</span></div></div>
+                    <div><small style="color:var(--text3)">Início</small><div>${s.start_date ? new Date(s.start_date).toLocaleDateString('pt-BR') : '—'}</div></div>
+                    <div><small style="color:var(--text3)">Próxima Cobrança</small><div>${s.next_billing ? new Date(s.next_billing).toLocaleDateString('pt-BR') : '—'}</div></div>
+                </div>
+                ${features.length > 0 ? `
+                <div style="margin-top:12px"><strong style="font-size:.85rem;color:var(--text2)">Recursos inclusos:</strong>
+                <ul style="margin-top:6px;padding-left:20px;color:var(--text2);font-size:.88rem;line-height:1.8">${features.map(f => `<li><i class="fas fa-check" style="color:var(--success);margin-right:6px;font-size:.75rem"></i>${f}</li>`).join('')}</ul></div>
+                ` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+loadSubscriptions();
+</script>
+</body>
+</html>

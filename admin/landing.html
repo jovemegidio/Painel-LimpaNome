@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness Admin — Landing Page</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .landing-tabs{display:flex;gap:4px;background:var(--bg);border-radius:var(--radius);padding:4px;margin-bottom:24px;flex-wrap:wrap}
+        .landing-tab{padding:10px 18px;border-radius:var(--radius);cursor:pointer;font-size:.85rem;font-weight:600;border:none;background:transparent;color:var(--text2);transition:all .2s}
+        .landing-tab.active{background:var(--primary);color:#fff;box-shadow:var(--shadow-primary)}
+        .landing-tab:hover:not(.active){background:var(--bg-hover)}
+        .landing-section{display:none}.landing-section.active{display:block}
+        .preview-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:12px;font-size:.85rem;color:var(--text3)}
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div>
+                <h2><i class="fas fa-globe" style="margin-right:8px;opacity:.6"></i>Landing Page</h2>
+                <p>Edite o conteúdo da página inicial do site</p>
+            </div>
+            <div style="display:flex;gap:12px">
+                <a href="../index.html" target="_blank" class="btn btn-outline"><i class="fas fa-external-link-alt"></i> Ver Site</a>
+                <button class="btn btn-primary" onclick="saveAll()"><i class="fas fa-save"></i> Salvar Tudo</button>
+            </div>
+        </div>
+
+        <div class="landing-tabs">
+            <button class="landing-tab active" onclick="switchTab('hero',this)"><i class="fas fa-star"></i> Hero</button>
+            <button class="landing-tab" onclick="switchTab('stats',this)"><i class="fas fa-chart-bar"></i> Estatísticas</button>
+            <button class="landing-tab" onclick="switchTab('services',this)"><i class="fas fa-concierge-bell"></i> Serviços</button>
+            <button class="landing-tab" onclick="switchTab('steps',this)"><i class="fas fa-list-ol"></i> Como Funciona</button>
+            <button class="landing-tab" onclick="switchTab('plans',this)"><i class="fas fa-tags"></i> Planos</button>
+            <button class="landing-tab" onclick="switchTab('faq',this)"><i class="fas fa-question-circle"></i> FAQ</button>
+            <button class="landing-tab" onclick="switchTab('cta',this)"><i class="fas fa-bullhorn"></i> CTA</button>
+        </div>
+
+        <!-- HERO -->
+        <div class="landing-section active" id="sec-hero">
+            <div class="card"><div class="card-header"><h3><i class="fas fa-star"></i> Seção Hero (Topo)</h3></div><div class="card-body">
+                <div class="form-group"><label>Tag (destaque)</label><input type="text" id="heroTag" class="form-control" placeholder="Ex: Consultoria Financeira Especializada"></div>
+                <div class="form-group"><label>Título (use {destaque} para colorido)</label><input type="text" id="heroTitle" class="form-control" placeholder="Ex: Recupere seu crédito e {construa sua renda}"></div>
+                <div class="form-group"><label>Descrição</label><textarea id="heroDesc" class="form-control" rows="3" placeholder="Texto de apresentação"></textarea></div>
+                <div class="form-group"><label>Botão Principal (texto)</label><input type="text" id="heroBtnText" class="form-control" placeholder="Ex: Começar Agora"></div>
+                <div class="form-group"><label>Botão Secundário (texto)</label><input type="text" id="heroBtn2Text" class="form-control" placeholder="Ex: Saiba Mais"></div>
+            </div></div>
+        </div>
+
+        <!-- STATS -->
+        <div class="landing-section" id="sec-stats">
+            <div class="card"><div class="card-header"><h3><i class="fas fa-chart-bar"></i> Estatísticas do Hero</h3></div><div class="card-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="form-group"><label>Stat 1 — Número</label><input type="text" id="stat1Num" class="form-control" placeholder="Ex: 2.500+"></div>
+                    <div class="form-group"><label>Stat 1 — Label</label><input type="text" id="stat1Label" class="form-control" placeholder="Ex: Clientes atendidos"></div>
+                    <div class="form-group"><label>Stat 2 — Número</label><input type="text" id="stat2Num" class="form-control" placeholder="Ex: R$ 12M+"></div>
+                    <div class="form-group"><label>Stat 2 — Label</label><input type="text" id="stat2Label" class="form-control" placeholder="Ex: Em dívidas contestadas"></div>
+                    <div class="form-group"><label>Stat 3 — Número</label><input type="text" id="stat3Num" class="form-control" placeholder="Ex: 94%"></div>
+                    <div class="form-group"><label>Stat 3 — Label</label><input type="text" id="stat3Label" class="form-control" placeholder="Ex: Taxa de sucesso"></div>
+                </div>
+            </div></div>
+        </div>
+
+        <!-- SERVICES -->
+        <div class="landing-section" id="sec-services">
+            <div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-concierge-bell"></i> Serviços</h3><button class="btn btn-sm btn-primary" onclick="addService()"><i class="fas fa-plus"></i> Adicionar</button></div>
+                <div class="card-body">
+                    <div class="form-group"><label>Título da Seção</label><input type="text" id="servicesTitle" class="form-control" placeholder="Ex: Soluções completas para sua saúde financeira"></div>
+                    <div id="servicesList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEPS -->
+        <div class="landing-section" id="sec-steps">
+            <div class="card"><div class="card-header"><h3><i class="fas fa-list-ol"></i> Como Funciona (Passos)</h3></div><div class="card-body">
+                <div class="form-group"><label>Título da Seção</label><input type="text" id="stepsTitle" class="form-control" placeholder="Ex: Comece em 4 passos simples"></div>
+                <div id="stepsList"></div>
+                <button class="btn btn-sm btn-outline" onclick="addStep()" style="margin-top:12px"><i class="fas fa-plus"></i> Adicionar Passo</button>
+            </div></div>
+        </div>
+
+        <!-- PLANS -->
+        <div class="landing-section" id="sec-plans">
+            <div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-tags"></i> Planos da Landing</h3><button class="btn btn-sm btn-primary" onclick="addLandingPlan()"><i class="fas fa-plus"></i> Adicionar</button></div>
+                <div class="card-body">
+                    <div class="form-group"><label>Título da Seção</label><input type="text" id="plansTitle" class="form-control" placeholder="Ex: Escolha o plano ideal para você"></div>
+                    <div id="plansList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="landing-section" id="sec-faq">
+            <div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-question-circle"></i> FAQ da Landing</h3><button class="btn btn-sm btn-primary" onclick="addFaqItem()"><i class="fas fa-plus"></i> Adicionar</button></div>
+                <div class="card-body">
+                    <div class="form-group"><label>Título da Seção</label><input type="text" id="faqTitle" class="form-control" placeholder="Ex: Perguntas frequentes"></div>
+                    <div id="faqList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="landing-section" id="sec-cta">
+            <div class="card"><div class="card-header"><h3><i class="fas fa-bullhorn"></i> Seção CTA (Call to Action)</h3></div><div class="card-body">
+                <div class="form-group"><label>Título</label><input type="text" id="ctaTitle" class="form-control" placeholder="Ex: Pronto para regularizar seu crédito?"></div>
+                <div class="form-group"><label>Descrição</label><textarea id="ctaDesc" class="form-control" rows="2" placeholder="Texto de chamada"></textarea></div>
+                <div class="form-group"><label>Botão Principal</label><input type="text" id="ctaBtn" class="form-control" placeholder="Ex: Criar Conta Gratuita"></div>
+            </div></div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-landing', title: 'Landing Page', admin: true });
+
+        let landingData = {};
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.landing-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.landing-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('sec-' + tab).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        async function loadData() {
+            const data = await DB.api('GET', '/api/admin/landing');
+            if (data) landingData = data;
+
+            document.getElementById('heroTag').value = landingData.heroTag || '';
+            document.getElementById('heroTitle').value = landingData.heroTitle || '';
+            document.getElementById('heroDesc').value = landingData.heroDesc || '';
+            document.getElementById('heroBtnText').value = landingData.heroBtnText || '';
+            document.getElementById('heroBtn2Text').value = landingData.heroBtn2Text || '';
+
+            document.getElementById('stat1Num').value = (landingData.stats && landingData.stats[0] && landingData.stats[0].num) || '';
+            document.getElementById('stat1Label').value = (landingData.stats && landingData.stats[0] && landingData.stats[0].label) || '';
+            document.getElementById('stat2Num').value = (landingData.stats && landingData.stats[1] && landingData.stats[1].num) || '';
+            document.getElementById('stat2Label').value = (landingData.stats && landingData.stats[1] && landingData.stats[1].label) || '';
+            document.getElementById('stat3Num').value = (landingData.stats && landingData.stats[2] && landingData.stats[2].num) || '';
+            document.getElementById('stat3Label').value = (landingData.stats && landingData.stats[2] && landingData.stats[2].label) || '';
+
+            document.getElementById('servicesTitle').value = landingData.servicesTitle || '';
+            document.getElementById('stepsTitle').value = landingData.stepsTitle || '';
+            document.getElementById('plansTitle').value = landingData.plansTitle || '';
+            document.getElementById('faqTitle').value = landingData.faqTitle || '';
+
+            document.getElementById('ctaTitle').value = landingData.ctaTitle || '';
+            document.getElementById('ctaDesc').value = landingData.ctaDesc || '';
+            document.getElementById('ctaBtn').value = landingData.ctaBtn || '';
+
+            renderServices();
+            renderSteps();
+            renderPlans();
+            renderFaqItems();
+        }
+
+        function collectData() {
+            landingData.heroTag = document.getElementById('heroTag').value.trim();
+            landingData.heroTitle = document.getElementById('heroTitle').value.trim();
+            landingData.heroDesc = document.getElementById('heroDesc').value.trim();
+            landingData.heroBtnText = document.getElementById('heroBtnText').value.trim();
+            landingData.heroBtn2Text = document.getElementById('heroBtn2Text').value.trim();
+            landingData.stats = [
+                { num: document.getElementById('stat1Num').value.trim(), label: document.getElementById('stat1Label').value.trim() },
+                { num: document.getElementById('stat2Num').value.trim(), label: document.getElementById('stat2Label').value.trim() },
+                { num: document.getElementById('stat3Num').value.trim(), label: document.getElementById('stat3Label').value.trim() }
+            ];
+            landingData.servicesTitle = document.getElementById('servicesTitle').value.trim();
+            landingData.stepsTitle = document.getElementById('stepsTitle').value.trim();
+            landingData.plansTitle = document.getElementById('plansTitle').value.trim();
+            landingData.faqTitle = document.getElementById('faqTitle').value.trim();
+            landingData.ctaTitle = document.getElementById('ctaTitle').value.trim();
+            landingData.ctaDesc = document.getElementById('ctaDesc').value.trim();
+            landingData.ctaBtn = document.getElementById('ctaBtn').value.trim();
+
+            // Collect services
+            landingData.services = [];
+            document.querySelectorAll('.svc-item').forEach(el => {
+                landingData.services.push({
+                    icon: el.querySelector('.svc-icon').value,
+                    title: el.querySelector('.svc-title').value,
+                    desc: el.querySelector('.svc-desc').value
+                });
+            });
+
+            // Collect steps
+            landingData.steps = [];
+            document.querySelectorAll('.step-item-edit').forEach(el => {
+                landingData.steps.push({
+                    title: el.querySelector('.step-title').value,
+                    desc: el.querySelector('.step-desc').value
+                });
+            });
+
+            // Collect plans
+            landingData.landingPlans = [];
+            document.querySelectorAll('.lp-item').forEach(el => {
+                landingData.landingPlans.push({
+                    name: el.querySelector('.lp-name').value,
+                    price: el.querySelector('.lp-price').value,
+                    desc: el.querySelector('.lp-desc').value,
+                    features: el.querySelector('.lp-features').value,
+                    featured: el.querySelector('.lp-featured').checked
+                });
+            });
+
+            // Collect FAQ
+            landingData.landingFaq = [];
+            document.querySelectorAll('.lfaq-item').forEach(el => {
+                landingData.landingFaq.push({
+                    q: el.querySelector('.lfaq-q').value,
+                    a: el.querySelector('.lfaq-a').value
+                });
+            });
+        }
+
+        async function saveAll() {
+            collectData();
+            const res = await DB.api('PUT', '/api/admin/landing', landingData);
+            if (res && res.success) {
+                Layout.toast('Landing page salva! As alterações serão aplicadas no site.', 'success');
+            } else {
+                Layout.toast('Erro ao salvar', 'error');
+            }
+        }
+
+        // ── Services ──
+        function renderServices() {
+            const svcs = landingData.services || [];
+            document.getElementById('servicesList').innerHTML = svcs.length ? svcs.map((s, i) => svcHtml(s, i)).join('') : '<p style="color:var(--text3);text-align:center">Nenhum serviço. Use o botão "Adicionar" para criar.</p>';
+        }
+        function svcHtml(s, i) {
+            return `<div class="svc-item" style="background:var(--bg);padding:16px;border-radius:var(--radius);margin-bottom:12px;border:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>Serviço ${i + 1}</strong><button class="btn btn-sm btn-danger" onclick="removeService(${i})"><i class="fas fa-trash"></i></button></div>
+                <div style="display:grid;grid-template-columns:120px 1fr;gap:12px">
+                    <div class="form-group"><label>Ícone (FA)</label><input type="text" class="form-control svc-icon" value="${s.icon || ''}" placeholder="fa-shield"></div>
+                    <div class="form-group"><label>Título</label><input type="text" class="form-control svc-title" value="${s.title || ''}"></div>
+                </div>
+                <div class="form-group"><label>Descrição</label><textarea class="form-control svc-desc" rows="2">${s.desc || ''}</textarea></div>
+            </div>`;
+        }
+        function addService() { collectData(); landingData.services = landingData.services || []; landingData.services.push({ icon: '', title: '', desc: '' }); renderServices(); }
+        function removeService(i) { collectData(); landingData.services.splice(i, 1); renderServices(); }
+
+        // ── Steps ──
+        function renderSteps() {
+            const steps = landingData.steps || [];
+            document.getElementById('stepsList').innerHTML = steps.length ? steps.map((s, i) => `<div class="step-item-edit" style="background:var(--bg);padding:12px;border-radius:var(--radius);margin-bottom:8px;border:1px solid var(--border);display:flex;gap:12px;align-items:center">
+                <span style="font-weight:700;color:var(--primary);font-size:1.2rem;min-width:30px">${i + 1}</span>
+                <input type="text" class="form-control step-title" value="${s.title || ''}" placeholder="Título" style="max-width:200px">
+                <input type="text" class="form-control step-desc" value="${s.desc || ''}" placeholder="Descrição">
+                <button class="btn btn-sm btn-danger" onclick="removeStep(${i})"><i class="fas fa-trash"></i></button>
+            </div>`).join('') : '<p style="color:var(--text3)">Nenhum passo</p>';
+        }
+        function addStep() { collectData(); landingData.steps = landingData.steps || []; landingData.steps.push({ title: '', desc: '' }); renderSteps(); }
+        function removeStep(i) { collectData(); landingData.steps.splice(i, 1); renderSteps(); }
+
+        // ── Plans ──
+        function renderPlans() {
+            const plans = landingData.landingPlans || [];
+            document.getElementById('plansList').innerHTML = plans.length ? plans.map((p, i) => `<div class="lp-item" style="background:var(--bg);padding:16px;border-radius:var(--radius);margin-bottom:12px;border:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>Plano ${i + 1}</strong><div style="display:flex;gap:8px;align-items:center"><label style="font-size:.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" class="lp-featured" ${p.featured ? 'checked' : ''}> Destaque</label><button class="btn btn-sm btn-danger" onclick="removePlan(${i})"><i class="fas fa-trash"></i></button></div></div>
+                <div style="display:grid;grid-template-columns:1fr 120px;gap:12px">
+                    <div class="form-group"><label>Nome</label><input type="text" class="form-control lp-name" value="${p.name || ''}"></div>
+                    <div class="form-group"><label>Preço</label><input type="text" class="form-control lp-price" value="${p.price || ''}"></div>
+                </div>
+                <div class="form-group"><label>Descrição curta</label><input type="text" class="form-control lp-desc" value="${p.desc || ''}"></div>
+                <div class="form-group"><label>Recursos (vírgula)</label><textarea class="form-control lp-features" rows="2">${p.features || ''}</textarea></div>
+            </div>`).join('') : '<p style="color:var(--text3)">Nenhum plano</p>';
+        }
+        function addLandingPlan() { collectData(); landingData.landingPlans = landingData.landingPlans || []; landingData.landingPlans.push({ name: '', price: '', desc: '', features: '', featured: false }); renderPlans(); }
+        function removePlan(i) { collectData(); landingData.landingPlans.splice(i, 1); renderPlans(); }
+
+        // ── FAQ ──
+        function renderFaqItems() {
+            const faqs = landingData.landingFaq || [];
+            document.getElementById('faqList').innerHTML = faqs.length ? faqs.map((f, i) => `<div class="lfaq-item" style="background:var(--bg);padding:12px;border-radius:var(--radius);margin-bottom:8px;border:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>Pergunta ${i + 1}</strong><button class="btn btn-sm btn-danger" onclick="removeFaqItem(${i})"><i class="fas fa-trash"></i></button></div>
+                <div class="form-group"><label>Pergunta</label><input type="text" class="form-control lfaq-q" value="${f.q || ''}"></div>
+                <div class="form-group"><label>Resposta</label><textarea class="form-control lfaq-a" rows="2">${f.a || ''}</textarea></div>
+            </div>`).join('') : '<p style="color:var(--text3)">Nenhuma pergunta</p>';
+        }
+        function addFaqItem() { collectData(); landingData.landingFaq = landingData.landingFaq || []; landingData.landingFaq.push({ q: '', a: '' }); renderFaqItems(); }
+        function removeFaqItem(i) { collectData(); landingData.landingFaq.splice(i, 1); renderFaqItems(); }
+
+        loadData();
+    </script>
+</body>
+</html>

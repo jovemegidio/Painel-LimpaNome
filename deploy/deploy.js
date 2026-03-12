@@ -6,15 +6,17 @@
 const { Client } = require('ssh2');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-// ── Configuração VPS ──
+// ── Configuração VPS (credenciais via .env) ──
 const VPS = {
-    host: '177.153.58.152',
-    port: 22,
-    username: 'root',
-    password: 'Credbusiness2504A@',
+    host: process.env.VPS_HOST || '177.153.58.152',
+    port: Number(process.env.VPS_PORT) || 22,
+    username: process.env.VPS_USER || 'root',
+    password: process.env.VPS_PASSWORD,
     readyTimeout: 30000
 };
+if (!VPS.password) { console.error('❌ VPS_PASSWORD não definida no .env'); process.exit(1); }
 
 const APP_DIR = '/var/www/credbusiness';
 const LOCAL_DIR = path.join(__dirname, '..');
@@ -158,9 +160,22 @@ async function deploy() {
 
             // ═══ ETAPA 4: Criar .env na VPS ═══
             console.log('⚙️  ETAPA 4: Configurando .env...');
+            // Preservar JWT_SECRET existente para não invalidar tokens dos usuários
+            let existingJwtSecret = '';
+            try {
+                const existingEnv = await new Promise((resolve, reject) => {
+                    sftp.readFile(`${APP_DIR}/.env`, 'utf8', (err, data) => {
+                        if (err) resolve(''); else resolve(data);
+                    });
+                });
+                const match = existingEnv.match(/^JWT_SECRET=(.+)$/m);
+                if (match && match[1]) existingJwtSecret = match[1];
+            } catch {}
+            const jwtSecret = existingJwtSecret || `credbusiness_jwt_PROD_${require('crypto').randomBytes(32).toString('hex')}`;
+
             const envContent = `PORT=3001
 NODE_ENV=production
-JWT_SECRET=credbusiness_jwt_PROD_${Date.now()}_credbusiness_s3cret
+JWT_SECRET=${jwtSecret}
 JWT_EXPIRES_IN=7d
 DB_PATH=./database/credbusiness.db
 DOMAIN=mkt-credbusiness.vps-kinghost.net

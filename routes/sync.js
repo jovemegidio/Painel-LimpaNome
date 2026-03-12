@@ -72,7 +72,8 @@ router.get('/', auth, (req, res) => {
             events,
             tickets: allTickets,
             settings,
-            notifications: [] // Admin doesn't have personal notifications
+            notifications: [],
+            customPages: db.prepare('SELECT * FROM custom_pages ORDER BY sort_order ASC, id ASC').all()
         });
     }
 
@@ -118,6 +119,9 @@ router.get('/', auth, (req, res) => {
     const notifications = db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(user.id);
     const unreadNotifications = db.prepare('SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND read = 0').get(user.id).c;
 
+    // Custom pages (visible only)
+    const customPages = db.prepare('SELECT id,slug,title,icon,section,sort_order FROM custom_pages WHERE visible = 1 ORDER BY sort_order ASC, id ASC').all();
+
     res.json({
         role: 'user',
         currentUserId: user.id,
@@ -132,7 +136,8 @@ router.get('/', auth, (req, res) => {
         tickets,
         settings,
         notifications,
-        unreadNotifications
+        unreadNotifications,
+        customPages
     });
 });
 

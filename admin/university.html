@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness Admin — Universidade</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2>Gerenciar Cursos</h2><p>Universidade Credbusiness — Adicione, edite e organize cursos</p></div>
+            <button class="btn btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Novo Curso</button>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="coursesTable"><thead><tr>
+                    <th>ID</th><th>Título</th><th>Categoria</th><th>Duração</th><th>Ordem</th><th>Status</th><th style="width:120px">Ações</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="courseModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:12px;width:580px;max-width:95vw;padding:24px;max-height:90vh;overflow-y:auto">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                    <h3 id="modalTitle">Novo Curso</h3>
+                    <button onclick="closeModal()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+                <form id="courseForm" onsubmit="saveCourse(event)">
+                    <input type="hidden" id="editId">
+                    <div class="form-group"><label>Título</label><input type="text" id="courseTitle" class="form-control" required></div>
+                    <div class="form-group"><label>Descrição</label><textarea id="courseDesc" class="form-control" rows="3"></textarea></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Categoria</label>
+                            <select id="courseCat" class="form-control">
+                                <option value="geral">Geral</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="financeiro">Financeiro</option>
+                                <option value="vendas">Vendas</option>
+                                <option value="lideranca">Liderança</option>
+                                <option value="plataforma">Plataforma</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Duração</label><input type="text" id="courseDuration" class="form-control" placeholder="Ex: 15min"></div>
+                    </div>
+                    <div class="form-group"><label>URL do Vídeo</label><input type="url" id="courseVideo" class="form-control" placeholder="https://youtube.com/..."></div>
+                    <div class="form-group"><label>Thumbnail URL</label><input type="url" id="courseThumb" class="form-control" placeholder="https://..."></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Ordem</label><input type="number" id="courseOrder" class="form-control" min="0" value="0"></div>
+                        <div class="form-group"><label>Status</label>
+                            <select id="courseActive" class="form-control">
+                                <option value="1">Ativo</option>
+                                <option value="0">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px">
+                        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-university', title: 'Universidade', admin: true });
+
+        let courses = [];
+
+        async function loadCourses() {
+            const data = await DB.api('GET', '/api/admin/university/courses');
+            if (data) courses = data;
+            renderTable();
+        }
+
+        function renderTable() {
+            const catColors = { geral: 'secondary', marketing: 'primary', financeiro: 'success', vendas: 'warning', lideranca: 'info', plataforma: 'purple' };
+            const tbody = document.querySelector('#coursesTable tbody');
+            tbody.innerHTML = courses.length ? courses.map(c => `<tr>
+                <td>${c.id}</td>
+                <td><strong>${c.title}</strong></td>
+                <td><span class="badge badge-${catColors[c.category] || 'secondary'}">${c.category}</span></td>
+                <td>${c.duration || '—'}</td>
+                <td>${c.sort_order}</td>
+                <td><span class="badge badge-${c.active ? 'success' : 'danger'}">${c.active ? 'Ativo' : 'Inativo'}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="editCourse(${c.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b">Nenhum curso cadastrado</td></tr>';
+        }
+
+        function openModal() {
+            document.getElementById('courseModal').style.display = 'flex';
+            document.getElementById('courseForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('modalTitle').textContent = 'Novo Curso';
+            document.getElementById('courseActive').value = '1';
+        }
+        function closeModal() { document.getElementById('courseModal').style.display = 'none'; }
+
+        function editCourse(id) {
+            const c = courses.find(x => x.id === id);
+            if (!c) return;
+            document.getElementById('courseModal').style.display = 'flex';
+            document.getElementById('modalTitle').textContent = 'Editar Curso';
+            document.getElementById('editId').value = c.id;
+            document.getElementById('courseTitle').value = c.title;
+            document.getElementById('courseDesc').value = c.description || '';
+            document.getElementById('courseCat').value = c.category || 'geral';
+            document.getElementById('courseDuration').value = c.duration || '';
+            document.getElementById('courseVideo').value = c.video_url || '';
+            document.getElementById('courseThumb').value = c.thumbnail || '';
+            document.getElementById('courseOrder').value = c.sort_order || 0;
+            document.getElementById('courseActive').value = c.active ? '1' : '0';
+        }
+
+        async function saveCourse(e) {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const data = {
+                title: document.getElementById('courseTitle').value.trim(),
+                description: document.getElementById('courseDesc').value.trim(),
+                category: document.getElementById('courseCat').value,
+                duration: document.getElementById('courseDuration').value.trim(),
+                video_url: document.getElementById('courseVideo').value.trim(),
+                thumbnail: document.getElementById('courseThumb').value.trim(),
+                sort_order: parseInt(document.getElementById('courseOrder').value) || 0,
+                active: document.getElementById('courseActive').value === '1'
+            };
+
+            const res = id
+                ? await DB.api('PUT', '/api/admin/university/courses/' + id, data)
+                : await DB.api('POST', '/api/admin/university/courses', data);
+
+            if (res && res.success) {
+                Layout.toast('Curso salvo!', 'success');
+                closeModal();
+                loadCourses();
+            } else {
+                Layout.toast('Erro ao salvar', 'error');
+            }
+        }
+
+        async function deleteCourse(id) {
+            if (!confirm('Excluir este curso?')) return;
+            const res = await DB.api('DELETE', '/api/admin/university/courses/' + id);
+            if (res && res.success) {
+                Layout.toast('Curso excluído', 'success');
+                loadCourses();
+            }
+        }
+
+        loadCourses();
+    </script>
+</body>
+</html>

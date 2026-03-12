@@ -5,6 +5,7 @@
 const express = require('express');
 const { getDB } = require('../database/init');
 const { auth } = require('../middleware/auth');
+const { processNetworkCommissions, checkAutoGraduation } = require('./payments');
 
 const router = express.Router();
 
@@ -59,18 +60,49 @@ router.get('/levels', auth, (req, res) => {
     }
 });
 
-// ── Packages ──
+// ── Packages (filtrados pelo nível do usuário) ──
 router.get('/packages', auth, (req, res) => {
     try {
         const db = getDB();
-        res.json(db.prepare('SELECT * FROM packages WHERE active = 1').all());
+        const user = db.prepare('SELECT level FROM users WHERE id = ?').get(req.user.id);
+        const userLevel = user ? user.level : 'start';
+        const packages = db.prepare('SELECT * FROM packages WHERE active = 1 AND level_key = ? ORDER BY names_count ASC').all(userLevel);
+        // Calcular preço por nome para opção personalizada
+        const pricePerName = packages.length > 0 ? Math.round((packages[0].price / (packages[0].names_count || 1)) * 100) / 100 : 250;
+        res.json({ packages, pricePerName, level: userLevel });
     } catch (err) {
         console.error('Erro packages:', err.message);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
-// ── Comprar Pacote (com comissão multi-nível ATÔMICA) ──
+// ── Custom Pages (public for logged users) ──
+router.get('/custom-pages', auth, (req, res) => {
+    try {
+        const db = getDB();
+        res.json(db.prepare('SELECT id,slug,title,icon,content,section,sort_order FROM custom_pages WHERE visible = 1 ORDER BY sort_order ASC, id ASC').all());
+    } catch (err) {
+        console.error('Erro custom-pages:', err.message);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+router.get('/custom-pages/:slug', auth, (req, res) => {
+    try {
+        const db = getDB();
+        const page = db.prepare('SELECT id,slug,title,icon,content,section FROM custom_pages WHERE slug = ? AND visible = 1').get(req.params.slug);
+        if (!page) return res.status(404).json({ error: 'Página não encontrada' });
+        res.json(page);
+    } catch (err) {
+        console.error('Erro custom-page:', err.message);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// ── Hierarquia de níveis (decadência: Diamante → Start) ──
+const LEVEL_ORDER = { start: 1, bronze: 2, prata: 3, ouro: 4, diamante: 5 };
+
+// ── Comprar Pacote (comissão fixa R$30 por indicação) ──
 router.post('/packages/:id/buy', auth, (req, res) => {
     try {
         const db = getDB();
@@ -81,81 +113,62 @@ router.post('/packages/:id/buy', auth, (req, res) => {
         const buyPackage = db.transaction(() => {
             const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
 
-            // Verificar se tem saldo suficiente
+            // Validar cascata de nível: patrocinador deve ter nível superior ao do pacote
+            if (user.sponsor_id && pkg.level_key) {
+                const sponsor = db.prepare('SELECT level FROM users WHERE id = ?').get(user.sponsor_id);
+                if (sponsor) {
+                    const sponsorRank = LEVEL_ORDER[sponsor.level] || 0;
+                    const packageRank = LEVEL_ORDER[pkg.level_key] || 0;
+                    if (sponsorRank > 0 && packageRank >= sponsorRank) {
+                        throw new Error('LEVEL_CASCADE');
+                    }
+                }
+            }
+
+            // Verificar saldo
             if (user.balance < pkg.price) {
                 throw new Error('INSUFFICIENT_BALANCE');
             }
 
-            // 1. Registrar compra (status pendente até pagamento confirmado)
+            // 1. Registrar compra
             const purchase = db.prepare(`INSERT INTO user_packages (user_id, package_id, purchased_at, status, payment_status) VALUES (?, ?, date('now'), 'ativo', 'confirmado')`)
                 .run(req.user.id, pkg.id);
 
-            // 2. Debitar saldo e adicionar pontos
-            db.prepare('UPDATE users SET balance = balance - ?, points = points + ? WHERE id = ?').run(pkg.price, pkg.points, req.user.id);
+            // 2. Debitar saldo, adicionar pontos e créditos de nomes
+            const namesCredit = pkg.names_count || 0;
+            db.prepare('UPDATE users SET balance = balance - ?, points = points + ?, names_available = names_available + ? WHERE id = ?').run(pkg.price, pkg.points, namesCredit, req.user.id);
 
             // 3. Registrar transação de compra
             db.prepare(`INSERT INTO transactions (user_id, type, amount, description, reference_type, reference_id, date, status) VALUES (?, 'compra', ?, ?, 'package', ?, date('now'), 'concluido')`)
                 .run(req.user.id, -pkg.price, `Compra: ${pkg.name}`, purchase.lastInsertRowid);
 
-            // 4. Check level upgrade
-            const updatedUser = db.prepare('SELECT points FROM users WHERE id = ?').get(req.user.id);
-            const levels = db.prepare('SELECT * FROM levels ORDER BY min_points DESC').all();
-            for (const level of levels) {
-                if (updatedUser.points >= level.min_points) {
-                    db.prepare('UPDATE users SET level = ? WHERE id = ?').run(level.key, req.user.id);
-                    break;
+            // 4. Atualizar nível do usuário com base no pacote + ativar acesso
+            if (pkg.level_key) {
+                const newRank = LEVEL_ORDER[pkg.level_key] || 0;
+                const currentRank = LEVEL_ORDER[user.level] || 0;
+                if (newRank > currentRank) {
+                    db.prepare('UPDATE users SET level = ? WHERE id = ?').run(pkg.level_key, req.user.id);
                 }
             }
-
-            // 5. ═══ COMISSÃO MULTI-NÍVEL (3 níveis) ═══
-            const settings = {};
-            db.prepare('SELECT * FROM settings').all().forEach(s => { settings[s.key] = s.value; });
-
-            const commissionRates = [
-                Number(settings.commissionLevel1) || 10,
-                Number(settings.commissionLevel2) || 5,
-                Number(settings.commissionLevel3) || 3
-            ];
-
-            let currentUserId = user.id;
-            for (let lvl = 0; lvl < commissionRates.length; lvl++) {
-                const currentUser = db.prepare('SELECT sponsor_id FROM users WHERE id = ?').get(currentUserId);
-                if (!currentUser || !currentUser.sponsor_id) break;
-
-                const sponsorId = currentUser.sponsor_id;
-                const sponsor = db.prepare('SELECT id, active FROM users WHERE id = ?').get(sponsorId);
-                if (!sponsor || !sponsor.active) break;
-
-                const rate = commissionRates[lvl];
-                const bonusAmount = Math.round((pkg.price * rate / 100) * 100) / 100;
-
-                if (bonusAmount > 0) {
-                    // Creditar comissão
-                    db.prepare('UPDATE users SET bonus = bonus + ?, balance = balance + ? WHERE id = ?')
-                        .run(bonusAmount, bonusAmount, sponsorId);
-
-                    // Registrar transação
-                    db.prepare(`INSERT INTO transactions (user_id, type, amount, description, reference_type, reference_id, date, status) VALUES (?, 'comissao', ?, ?, 'package', ?, date('now'), 'creditado')`)
-                        .run(sponsorId, bonusAmount, `Comissão Nível ${lvl + 1} - ${user.name} (${pkg.name})`, purchase.lastInsertRowid);
-
-                    // Registrar na tabela de comissões
-                    db.prepare(`INSERT INTO commissions (from_user_id, to_user_id, level, amount, source_type, source_id, date) VALUES (?, ?, ?, ?, 'package', ?, date('now'))`)
-                        .run(user.id, sponsorId, lvl + 1, bonusAmount, purchase.lastInsertRowid);
-                }
-
-                // Subir para o próximo nível da rede
-                currentUserId = sponsorId;
-            }
+            db.prepare('UPDATE users SET has_package = 1 WHERE id = ?').run(req.user.id);
 
             return true;
         });
 
         try {
             buyPackage();
-            res.json({ success: true, message: 'Pacote adquirido com sucesso!' });
+
+            // Processar comissões multi-nível e auto-graduação (fora da transação)
+            processNetworkCommissions(db, req.user.id, pkg.price, `Venda pacote ${pkg.name}`);
+            checkAutoGraduation(db, req.user.id);
+
+            res.json({ success: true, message: 'Pacote adquirido com sucesso! Acesso ao painel liberado.' });
         } catch (txErr) {
             if (txErr.message === 'INSUFFICIENT_BALANCE') {
                 return res.status(400).json({ success: false, error: 'Saldo insuficiente para comprar este pacote' });
+            }
+            if (txErr.message === 'LEVEL_CASCADE') {
+                return res.status(400).json({ success: false, error: 'Seu patrocinador não possui nível superior ao deste pacote. Escolha um pacote de nível inferior.' });
             }
             throw txErr;
         }
@@ -170,7 +183,7 @@ router.get('/my-packages', auth, (req, res) => {
     try {
         const db = getDB();
         const packages = db.prepare(`
-            SELECT up.*, p.name, p.price, p.points, p.description
+            SELECT up.*, p.name, p.price, p.points, p.description, p.names_count
             FROM user_packages up JOIN packages p ON up.package_id = p.id
             WHERE up.user_id = ? ORDER BY up.purchased_at DESC
         `).all(req.user.id);
@@ -288,6 +301,21 @@ router.get('/settings/all', auth, (req, res) => {
     } catch (err) {
         console.error('Erro settings all:', err.message);
         res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// ── Landing Page Content (público) ──
+router.get('/landing', (req, res) => {
+    try {
+        const db = getDB();
+        const row = db.prepare("SELECT value FROM settings WHERE key = 'landing_content'").get();
+        if (row) {
+            try { return res.json(JSON.parse(row.value)); } catch {}
+        }
+        res.json({});
+    } catch (err) {
+        console.error('Erro landing:', err.message);
+        res.json({});
     }
 });
 

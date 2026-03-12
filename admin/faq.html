@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness Admin — FAQ</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2>Gerenciar FAQ</h2><p>Perguntas frequentes exibidas na área do cliente</p></div>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-outline" onclick="addItem()"><i class="fas fa-plus"></i> Adicionar</button>
+                <button class="btn btn-primary" onclick="saveAll()"><i class="fas fa-save"></i> Salvar Tudo</button>
+            </div>
+        </div>
+
+        <div id="faqList"></div>
+        <div id="emptyMsg" class="card" style="display:none;text-align:center;padding:40px;color:#64748b">
+            <i class="fas fa-question-circle" style="font-size:48px;margin-bottom:12px;opacity:.4"></i>
+            <p>Nenhuma pergunta cadastrada. Clique em <strong>Adicionar</strong> para começar.</p>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-faq', title: 'FAQ', admin: true });
+
+        let items = [];
+        const cats = [
+            { v: 'conta', l: 'Conta' },
+            { v: 'pagamentos', l: 'Pagamentos' },
+            { v: 'servicos', l: 'Serviços' },
+            { v: 'rede', l: 'Rede MLM' },
+            { v: 'seguranca', l: 'Segurança' },
+            { v: 'outros', l: 'Outros' }
+        ];
+
+        async function loadFaqs() {
+            const data = await DB.api('GET', '/api/content/faqs');
+            if (data && Array.isArray(data)) {
+                items = data.map(f => ({ question: f.q || f.question, answer: f.a || f.answer, category: f.cat || f.category || 'conta' }));
+            }
+            render();
+        }
+
+        function render() {
+            const list = document.getElementById('faqList');
+            const empty = document.getElementById('emptyMsg');
+            if (!items.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            list.innerHTML = items.map((f, i) => `
+                <div class="card" style="margin-bottom:12px">
+                    <div class="card-body">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+                            <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+                                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                                    <span style="background:#e0e7ff;color:#4338ca;padding:2px 10px;border-radius:8px;font-size:12px;font-weight:600">#${i + 1}</span>
+                                    <select class="form-control" style="width:160px;font-size:13px" onchange="items[${i}].category=this.value">
+                                        ${cats.map(c => `<option value="${c.v}" ${f.category === c.v ? 'selected' : ''}>${c.l}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <input type="text" class="form-control" placeholder="Pergunta" value="${esc(f.question)}" oninput="items[${i}].question=this.value">
+                                <textarea class="form-control" placeholder="Resposta" rows="2" oninput="items[${i}].answer=this.value">${esc(f.answer)}</textarea>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:6px;min-width:36px">
+                                ${i > 0 ? `<button class="btn btn-sm btn-outline" onclick="move(${i},-1)" title="Subir"><i class="fas fa-arrow-up"></i></button>` : ''}
+                                ${i < items.length - 1 ? `<button class="btn btn-sm btn-outline" onclick="move(${i},1)" title="Descer"><i class="fas fa-arrow-down"></i></button>` : ''}
+                                <button class="btn btn-sm btn-danger" onclick="removeItem(${i})" title="Remover"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        function addItem() {
+            items.push({ question: '', answer: '', category: 'conta' });
+            render();
+        }
+        function removeItem(i) { items.splice(i, 1); render(); }
+        function move(i, dir) {
+            const j = i + dir;
+            if (j < 0 || j >= items.length) return;
+            [items[i], items[j]] = [items[j], items[i]];
+            render();
+        }
+
+        async function saveAll() {
+            const valid = items.filter(f => f.question.trim() && f.answer.trim());
+            if (!valid.length && items.length) { Layout.toast('Preencha pelo menos pergunta e resposta', 'warning'); return; }
+            const payload = valid.map(f => ({ q: f.question.trim(), a: f.answer.trim(), cat: f.category }));
+            const res = await DB.api('PUT', '/api/admin/content/faqs', payload);
+            if (res && res.success) {
+                Layout.toast('FAQ salvo!', 'success');
+                items = valid;
+                render();
+            } else {
+                Layout.toast('Erro ao salvar', 'error');
+            }
+        }
+
+        loadFaqs();
+    </script>
+</body>
+</html>

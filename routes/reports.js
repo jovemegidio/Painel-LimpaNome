@@ -7,12 +7,12 @@
 
 const express = require('express');
 const { getDB } = require('../database/init');
-const { auth } = require('../middleware/auth');
+const { auth, requirePackage } = require('../middleware/auth');
 
 const router = express.Router();
 
 // ── Relatório de Vendas da Rede ──
-router.get('/sales', auth, (req, res) => {
+router.get('/sales', auth, requirePackage, (req, res) => {
     try {
         const db = getDB();
         const from = req.query.from || '2000-01-01';
@@ -69,7 +69,7 @@ router.get('/sales', auth, (req, res) => {
 });
 
 // ── Relatório de Comissões ──
-router.get('/commissions', auth, (req, res) => {
+router.get('/commissions', auth, requirePackage, (req, res) => {
     try {
         const db = getDB();
         const from = req.query.from || '2000-01-01';
@@ -135,7 +135,7 @@ router.get('/commissions', auth, (req, res) => {
 });
 
 // ── Resumo Geral (admin) ──
-router.get('/summary', auth, (req, res) => {
+router.get('/summary', auth, requirePackage, (req, res) => {
     try {
         const db = getDB();
         const from = req.query.from || '2000-01-01';

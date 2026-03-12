@@ -21,7 +21,7 @@
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
-        Layout.init({ basePath: '../', page: 'eventos', title: 'Eventos' });
+        Layout.init({ basePath: '../', page: 'eventos-agenda', title: 'Eventos' });
         const events = DB.get('events') || [];
         const months = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -29,12 +29,15 @@
             if (!list.length) return '<div class="empty-state"><i class="fas fa-calendar"></i><p>Nenhum evento</p></div>';
             return `<div style="display:grid;gap:12px">${list.map(e => {
                 const parts = e.date.split('-');
+                const isFuture = e.date >= new Date().toISOString().split('T')[0];
+                const priceTag = e.price > 0 ? `<span class="badge badge-orange">R$ ${fmt(e.price)}</span>` : '<span class="badge badge-green">Grátis</span>';
                 return `<div class="event-card">
                     <div class="event-date"><div class="day">${parseInt(parts[2])}</div><div class="month">${months[parseInt(parts[1])]}</div></div>
-                    <div class="event-info">
+                    <div class="event-info" style="flex:1">
                         <h4>${e.title}</h4>
                         <p>${e.description}</p>
-                        <div class="event-meta"><span><i class="fas fa-clock"></i>${e.time}</span><span><i class="fas fa-map-marker-alt"></i>${e.location}</span><span class="badge badge-${e.type==='online'?'blue':'green'}">${e.type}</span></div>
+                        <div class="event-meta"><span><i class="fas fa-clock"></i>${e.time}</span><span><i class="fas fa-map-marker-alt"></i>${e.location}</span><span class="badge badge-${e.type==='online'?'blue':'green'}">${e.type}</span>${priceTag}</div>
+                        ${isFuture ? `<button class="btn btn-primary btn-sm mt-8" onclick="buyTicket(${e.id}, '${e.title.replace(/'/g,"\\'")}')"><i class="fas fa-ticket-alt"></i> Adquirir Ingresso</button>` : ''}
                     </div>
                 </div>`;
             }).join('')}</div>`;
@@ -48,6 +51,15 @@
             document.querySelectorAll('#eventTabs .tab').forEach((t, i) => t.classList.toggle('active', i === (tab === 'proximos' ? 0 : 1)));
             document.getElementById('proximosTab').style.display = tab === 'proximos' ? 'block' : 'none';
             document.getElementById('passadosTab').style.display = tab === 'passados' ? 'block' : 'none';
+        }
+
+        async function buyTicket(eventId, title) {
+            if (!confirm(`Adquirir ingresso para "${title}"?`)) return;
+            Layout.toast('Processando...', 'info');
+            const result = await DB.api('POST', `/api/wallet/events/${eventId}/buy`, { quantity: 1 });
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
+            if (result.error) { Layout.toast(result.error, 'error'); return; }
+            Layout.toast(result.message || 'Ingresso adquirido!', 'success');
         }
     </script>
 </body>

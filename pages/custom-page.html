@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Página</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .custom-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;line-height:1.8;font-size:.95rem}
+        .custom-content h1,.custom-content h2,.custom-content h3{color:var(--text);margin-top:24px;margin-bottom:12px}
+        .custom-content h2{font-size:1.4rem}
+        .custom-content h3{font-size:1.15rem}
+        .custom-content p{margin-bottom:14px;color:var(--text2)}
+        .custom-content img{max-width:100%;height:auto;border-radius:var(--radius);margin:12px 0}
+        .custom-content a{color:var(--primary);text-decoration:underline}
+        .custom-content ul,.custom-content ol{margin:12px 0;padding-left:24px}
+        .custom-content li{margin-bottom:6px}
+        .custom-content blockquote{border-left:4px solid var(--primary);margin:16px 0;padding:12px 20px;background:rgba(99,102,246,.04);border-radius:0 var(--radius) var(--radius) 0}
+        .custom-content iframe{border-radius:12px}
+        .loading-state{text-align:center;padding:60px;color:var(--text3)}
+        .error-state{text-align:center;padding:60px;color:var(--text3)}
+        @media(max-width:768px){.custom-content{padding:20px}}
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div id="pageHeader" class="page-header"><h2 id="pageTitle">Carregando...</h2><p id="pageDesc"></p></div>
+        <div id="pageBody" class="custom-content">
+            <div class="loading-state"><i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:12px"></i><p>Carregando conteúdo...</p></div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        // Extract slug from URL: custom-{slug}.html
+        const filename = location.pathname.split('/').pop().replace('.html', '');
+        const slug = filename.startsWith('custom-') ? filename.substring(7) : filename;
+
+        Layout.init({ basePath: '../', page: 'custom-' + slug, title: 'Página' });
+
+        (async function loadPage() {
+            const page = await DB.api('GET', '/api/content/custom-pages/' + encodeURIComponent(slug));
+            if (!page || page.error) {
+                document.getElementById('pageTitle').textContent = 'Página não encontrada';
+                document.getElementById('pageBody').innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle" style="font-size:2.5rem;margin-bottom:12px;color:#f59e0b"></i>
+                        <p style="font-size:1rem">A página solicitada não existe ou foi removida.</p>
+                        <a href="dashboard.html" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-home"></i> Voltar ao Dashboard</a>
+                    </div>`;
+                return;
+            }
+            document.title = 'Credbusiness — ' + page.title;
+            document.getElementById('pageTitle').textContent = page.title;
+            document.getElementById('pageBody').innerHTML = page.content || '<p>Sem conteúdo.</p>';
+        })();
+    </script>
+</body>
+</html>

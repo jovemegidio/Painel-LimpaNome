@@ -6,6 +6,31 @@
     <title>Credbusiness — Meus Processos</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .credit-box{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 16px}
+        .credit-box i{color:var(--accent)}
+        .credit-box .num{font-size:1.1rem;font-weight:700;color:var(--accent)}
+        .credit-box.empty .num{color:var(--danger)}
+        .pending-banner{background:var(--surface);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:20px 24px;display:flex;align-items:flex-start;gap:16px;margin-top:16px;position:relative;overflow:hidden}
+        .pending-banner::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#f59e0b;border-radius:4px 0 0 4px}
+        .pending-banner .pending-icon{width:44px;height:44px;border-radius:10px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .pending-banner .pending-icon i{font-size:1.2rem;color:#f59e0b}
+        .pending-banner .info{flex:1}
+        .pending-banner .info h4{font-size:.9rem;font-weight:600;margin-bottom:4px;color:var(--text1)}
+        .pending-banner .info p{font-size:.82rem;color:var(--text3);margin:0;line-height:1.5}
+        .pending-banner .info .pending-details{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+        .pending-banner .info .pending-tag{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;color:var(--text2);background:var(--bg);padding:4px 10px;border-radius:6px;border:1px solid var(--border)}
+        .pending-banner .info .pending-tag i{font-size:.7rem;color:#f59e0b}
+        .no-credits-cta{text-align:center;padding:48px 24px}
+        .no-credits-cta .cta-icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(99,102,241,.02));display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px}
+        .no-credits-cta .cta-icon i{font-size:1.8rem;color:var(--primary);opacity:.7}
+        .no-credits-cta h3{margin-bottom:8px;font-size:1.1rem}
+        .no-credits-cta p{color:var(--text3);font-size:.9rem;margin-bottom:24px;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.5}
+        .no-credits-cta .btn-cta{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;font-size:.95rem;border-radius:10px;font-weight:600;transition:all .2s;box-shadow:0 2px 8px rgba(99,102,241,.2)}
+        .no-credits-cta .btn-cta:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(99,102,241,.3)}
+        .page-header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+        @media(max-width:768px){.page-header-row{flex-direction:column;align-items:flex-start}}
+    </style>
 </head>
 <body>
     <div id="app"></div>
@@ -13,15 +38,27 @@
     <template id="page-content">
         <div class="page-header-row">
             <div class="page-header" style="margin-bottom:0">
-                <h2>Meus Processos</h2>
-                <p>Acompanhe seus processos de limpeza de nome</p>
+                <h2><i class="fas fa-broom" style="color:var(--primary);margin-right:8px"></i>Meus Processos</h2>
+                <p>Gerencie seus processos de limpeza de nome</p>
             </div>
-            <button class="btn btn-primary" onclick="openNewProcess()"><i class="fas fa-plus"></i> Novo Processo</button>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <div class="credit-box" id="creditsInfo">
+                    <i class="fas fa-coins"></i>
+                    <span style="font-size:.85rem;color:var(--text3)">Créditos:</span>
+                    <span class="num" id="namesCredit">0</span>
+                    <span style="font-size:.78rem;color:var(--text3)">nome(s)</span>
+                </div>
+                <button class="btn btn-primary" onclick="openNewProcess()" id="btnNewProcess"><i class="fas fa-plus"></i> Novo Processo</button>
+            </div>
         </div>
 
+        <div id="pendingBanner"></div>
         <div class="stats-grid" style="margin-top:24px" id="processStats"></div>
 
         <div class="card" style="margin-top:24px">
+            <div class="card-header">
+                <h3><i class="fas fa-list"></i> Processos</h3>
+            </div>
             <div class="card-body">
                 <div class="table-wrap" id="processTable"></div>
             </div>
@@ -33,6 +70,38 @@
     <script>
         Layout.init({ basePath: '../', page: 'limpa-nome-processos', title: 'Meus Processos' });
         const user = Layout.user;
+        const namesAvailable = user.names_available || 0;
+
+        // Atualizar badge de créditos
+        document.getElementById('namesCredit').textContent = namesAvailable;
+        if (namesAvailable < 1) {
+            document.getElementById('creditsInfo').classList.add('empty');
+        }
+
+        // Verificar pacotes com pagamento pendente (apenas boleto)
+        async function checkPendingPackages() {
+            const pkgs = await DB.api('GET', '/api/content/my-packages');
+            if (!pkgs || !Array.isArray(pkgs)) return;
+            const pending = pkgs.filter(p => p.payment_status === 'pendente' && p.payment_method === 'boleto');
+            if (pending.length > 0) {
+                const totalNames = pending.reduce((sum, p) => sum + (p.names_count || 0), 0);
+                const totalValue = pending.reduce((sum, p) => sum + (p.price || 0), 0);
+                document.getElementById('pendingBanner').innerHTML = `
+                    <div class="pending-banner">
+                        <div class="pending-icon"><i class="fas fa-barcode"></i></div>
+                        <div class="info">
+                            <h4>Pagamento via boleto em processamento</h4>
+                            <p>${pending.length} pacote(s) aguardando a compensação bancária. Os créditos serão liberados automaticamente após a confirmação.</p>
+                            <div class="pending-details">
+                                <span class="pending-tag"><i class="fas fa-file-invoice"></i> ${pending.length} boleto(s)</span>
+                                <span class="pending-tag"><i class="fas fa-user"></i> ${totalNames} nome(s)</span>
+                                <span class="pending-tag"><i class="fas fa-clock"></i> Até 3 dias úteis</span>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+        }
+        checkPendingPackages();
 
         function render() {
             const proc = DB.getProcesses(user.id);
@@ -40,45 +109,126 @@
             const statusLabel = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
 
             document.getElementById('processStats').innerHTML = `
-                <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-file-alt"></i></div><div class="stat-info"><h3>${proc.length}</h3><p>Total Processos</p></div></div>
+                <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-file-alt"></i></div><div class="stat-info"><h3>${proc.length}</h3><p>Total</p></div></div>
                 <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-clock"></i></div><div class="stat-info"><h3>${proc.filter(p=>p.status==='pendente'||p.status==='em_andamento').length}</h3><p>Em Aberto</p></div></div>
-                <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check"></i></div><div class="stat-info"><h3>${proc.filter(p=>p.status==='concluido').length}</h3><p>Concluídos</p></div></div>
+                <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div><div class="stat-info"><h3>${proc.filter(p=>p.status==='concluido').length}</h3><p>Concluídos</p></div></div>
+                <div class="stat-card"><div class="stat-icon ${namesAvailable > 0 ? 'purple' : 'red'}"><i class="fas fa-coins"></i></div><div class="stat-info"><h3>${namesAvailable}</h3><p>Créditos</p></div></div>
             `;
 
-            document.getElementById('processTable').innerHTML = proc.length ? `<table>
-                <thead><tr><th>#</th><th>CPF</th><th>Tipo</th><th>Instituição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
+            if (!proc.length) {
+                document.getElementById('processTable').innerHTML = namesAvailable > 0
+                    ? '<div class="table-empty"><i class="fas fa-folder-open"></i><p>Nenhum processo ainda</p><small>Clique em <strong>"Novo Processo"</strong> para usar seus créditos</small></div>'
+                    : `<div class="no-credits-cta">
+                        <div class="cta-icon"><i class="fas fa-box-open"></i></div>
+                        <h3>Adquira um pacote para começar</h3>
+                        <p>Compre um pacote de nomes para abrir processos de limpeza de nome.</p>
+                        <a href="pacotes-disponiveis.html" class="btn btn-primary btn-cta"><i class="fas fa-shopping-cart"></i> Ver Pacotes</a>
+                    </div>`;
+                return;
+            }
+
+            document.getElementById('processTable').innerHTML = `<table>
+                <thead><tr><th>#</th><th>Documento</th><th>Nome</th><th>Status</th><th>Data</th></tr></thead>
                 <tbody>${proc.map(p => `<tr>
-                    <td>${p.id}</td><td>${p.cpf}</td>
-                    <td>${p.type === 'negativacao' ? 'Negativação' : 'Dívida'}</td>
-                    <td>${p.institution}</td>
-                    <td style="font-weight:600">R$ ${fmt(p.value)}</td>
-                    <td><span class="badge ${statusMap[p.status]}">${statusLabel[p.status]}</span></td>
-                    <td>${p.createdAt}</td>
+                    <td>${p.id}</td>
+                    <td style="font-family:monospace;font-size:.85rem">${p.cpf || p.cnpj || '-'}</td>
+                    <td>${p.name || p.company_name || '-'}</td>
+                    <td><span class="badge ${statusMap[p.status]}">${statusLabel[p.status] || p.status}</span></td>
+                    <td>${p.createdAt || p.created_at || '-'}</td>
                 </tr>`).join('')}</tbody>
-            </table>` : '<div class="table-empty"><i class="fas fa-folder-open"></i><p>Nenhum processo</p><small>Clique em "Novo Processo" para começar</small></div>';
+            </table>`;
         }
         render();
 
         function openNewProcess() {
-            Layout.openModal('Novo Processo', `
-                <div class="form-group"><label>CPF</label><input class="form-control" id="npCpf" value="${user.cpf}" maxlength="14"></div>
-                <div class="form-row">
-                    <div class="form-group"><label>Tipo</label><select class="form-control" id="npType"><option value="negativacao">Negativação</option><option value="divida">Dívida</option></select></div>
-                    <div class="form-group"><label>Instituição</label><select class="form-control" id="npInst"><option>Serasa</option><option>SPC</option><option>Boa Vista</option><option>Outro</option></select></div>
+            if (namesAvailable < 1) {
+                Layout.openModal('Sem Créditos', `
+                    <div style="text-align:center;padding:20px">
+                        <div style="font-size:3rem;margin-bottom:16px"><i class="fas fa-coins" style="color:var(--danger)"></i></div>
+                        <h3 style="margin-bottom:8px">Créditos insuficientes</h3>
+                        <p style="color:var(--text3);font-size:.9rem;margin-bottom:20px">Você precisa de pelo menos <strong>1 crédito de nome</strong> para abrir um novo processo. Adquira um pacote para continuar.</p>
+                        <a href="pacotes-disponiveis.html" class="btn btn-primary w-full" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-shopping-cart"></i> Comprar Pacote</a>
+                    </div>
+                `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
+                return;
+            }
+            Layout.openModal('Novo Processo de Limpeza', `
+                <div style="display:grid;gap:16px">
+                    <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:12px;font-size:.85rem;color:var(--text2)">
+                        <i class="fas fa-info-circle" style="color:var(--success)"></i> Ao abrir o processo, <strong>1 crédito</strong> será utilizado. Você possui <strong>${namesAvailable}</strong> crédito(s).
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Tipo de Pessoa</label><select class="form-control" id="npPersonType" onchange="toggleProcessPJ()"><option value="pf">Pessoa Física (CPF)</option><option value="pj">Pessoa Jurídica (CNPJ)</option></select></div>
+                        <div class="form-group" id="npCpfGroup"><label>CPF</label><input class="form-control" id="npCpf" maxlength="14" placeholder="000.000.000-00" oninput="maskDoc(this,'cpf')"></div>
+                        <div class="form-group" id="npCnpjGroup" style="display:none"><label>CNPJ</label><input class="form-control" id="npCnpj" maxlength="18" placeholder="00.000.000/0000-00" oninput="maskDoc(this,'cnpj')"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" id="npNameGroup"><label>Nome Completo</label><input class="form-control" id="npName" placeholder="Nome do titular"></div>
+                        <div class="form-group" id="npCompanyGroup" style="display:none"><label>Razão Social</label><input class="form-control" id="npCompany" placeholder="Razão social da empresa"></div>
+                    </div>
+                    <div class="form-group"><label>Observações (opcional)</label><textarea class="form-control" id="npNotes" rows="3" placeholder="Detalhes adicionais sobre o processo..." style="resize:vertical"></textarea></div>
                 </div>
-                <div class="form-group"><label>Valor (R$)</label><input type="number" class="form-control" id="npValue" placeholder="0.00"></div>
-            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProcess()">Abrir Processo</button>`);
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProcess()"><i class="fas fa-paper-plane"></i> Abrir Processo</button>`);
         }
 
-        function saveProcess() {
-            const cpf = document.getElementById('npCpf').value;
-            const value = parseFloat(document.getElementById('npValue').value);
-            if (!cpf || !value) { Layout.toast('Preencha todos os campos', 'error'); return; }
-            DB.addProcess({ userId: user.id, cpf, name: user.name, status: 'pendente', type: document.getElementById('npType').value, value, institution: document.getElementById('npInst').value });
-            Layout.closeModal();
-            Layout.toast('Processo aberto!', 'success');
-            render();
+        function toggleProcessPJ() {
+            const isPJ = document.getElementById('npPersonType').value === 'pj';
+            document.getElementById('npCpfGroup').style.display = isPJ ? 'none' : '';
+            document.getElementById('npCnpjGroup').style.display = isPJ ? '' : 'none';
+            document.getElementById('npNameGroup').style.display = isPJ ? 'none' : '';
+            document.getElementById('npCompanyGroup').style.display = isPJ ? '' : 'none';
         }
+
+        function maskDoc(el, type) {
+            let v = el.value.replace(/\D/g, '');
+            if (type === 'cpf') {
+                v = v.substring(0, 11);
+                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+            } else {
+                v = v.substring(0, 14);
+                if (v.length > 12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+                else if (v.length > 8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+                else if (v.length > 5) v = v.replace(/(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,3})/, '$1.$2');
+            }
+            el.value = v;
+        }
+
+        async function saveProcess() {
+            const personType = document.getElementById('npPersonType').value;
+            const cpf = personType === 'pf' ? document.getElementById('npCpf').value : document.getElementById('npCnpj').value;
+            const name = personType === 'pf' ? document.getElementById('npName').value : document.getElementById('npCompany').value;
+            const notes = document.getElementById('npNotes').value;
+            if (!cpf || !name) { Layout.toast('Preencha o documento e nome', 'error'); return; }
+
+            const docClean = cpf.replace(/\D/g, '');
+            if (personType === 'pf' && docClean.length !== 11) { Layout.toast('CPF deve ter 11 dígitos', 'error'); return; }
+            if (personType === 'pj' && docClean.length !== 14) { Layout.toast('CNPJ deve ter 14 dígitos', 'error'); return; }
+
+            const data = {
+                cpf, name, type: 'limpa_nome',
+                person_type: personType,
+                cnpj: personType === 'pj' ? cpf : '',
+                company_name: personType === 'pj' ? name : '',
+                notes
+            };
+
+            const result = await DB.api('POST', '/api/services/processes', data);
+            if (result && result.success) {
+                Layout.closeModal();
+                Layout.toast('Processo aberto! 1 crédito utilizado.', 'success');
+                await DB.syncData();
+                location.reload();
+            } else {
+                Layout.toast(result?.error || 'Erro ao abrir processo', 'error');
+            }
+        }
+
+        window.onRealtimeUpdate = function(detail) {
+            if (detail.entity === 'processes') { DB.syncData().then(() => render()); }
+        };
     </script>
 </body>
 </html>

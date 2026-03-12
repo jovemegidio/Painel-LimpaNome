@@ -44,14 +44,14 @@
 
         <!-- History -->
         <div class="card">
-            <div class="card-header"><h3><i class="fas fa-history"></i> Extrato</h3></div>
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-history"></i> Extrato</h3><button class="btn btn-sm btn-outline" onclick="exportExtratoPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button></div>
             <div class="card-body"><div class="table-wrap" id="txTable"></div></div>
         </div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
-        Layout.init({ basePath: '../', page: 'financeiro', title: 'Financeiro' });
+        Layout.init({ basePath: '../', page: 'financeiro-extrato', title: 'Financeiro' });
         const user = Layout.user;
         const tx = DB.getTransactions(user.id);
         const totalIn = tx.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
@@ -99,6 +99,19 @@
             await DB.syncData();
             setTimeout(() => location.reload(), 1500);
         }
+
+        function exportExtratoPDF() {
+            if (!tx.length) { Layout.toast('Nenhuma transação para exportar', 'error'); return; }
+            ExportPDF.download('extrato-financeiro', 'Extrato Financeiro',
+                ['Tipo', 'Descrição', 'Valor', 'Status', 'Data'],
+                tx.map(t => [t.type, t.description, (t.amount >= 0 ? '+' : '') + 'R$ ' + fmt(Math.abs(t.amount)), t.status, t.date]),
+                { summary: [{ label: 'Total Recebido', value: 'R$ ' + fmt(totalIn), color: '#28a745' }, { label: 'Total Sacado', value: 'R$ ' + fmt(totalOut), color: '#dc3545' }, { label: 'Saldo', value: 'R$ ' + fmt(user.balance), color: '#007bff' }] }
+            );
+        }
+
+        window.onRealtimeUpdate = function(detail) {
+            if (['transactions','user_updated'].includes(detail.entity)) location.reload();
+        };
     </script>
 </body>
 </html>

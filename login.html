@@ -4,39 +4,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Credbusiness — Entrar</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="/favicon.ico" type="image/svg+xml">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+
+        .login-wrapper{display:flex;min-height:100vh}
+
+        /* ── Left Panel (branding) ── */
+        .login-left{
+            flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+            background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 50%,#f1f5f9 100%);
+            position:relative;overflow:hidden;padding:60px 48px;color:#0f172a;text-align:center;
+        }
+        .login-left::before{
+            content:'';position:absolute;inset:0;
+            background:radial-gradient(circle at 30% 20%,rgba(99,102,241,.06) 0%,transparent 50%),
+                        radial-gradient(circle at 70% 80%,rgba(16,185,129,.04) 0%,transparent 50%);
+        }
+        .login-left-content{position:relative;z-index:1;max-width:420px}
+        .login-left-logo{height:160px;object-fit:contain;margin-bottom:32px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.08))}
+        .login-left h1{font-size:2rem;font-weight:800;letter-spacing:-.5px;margin-bottom:12px;line-height:1.2;color:#0f172a}
+        .login-left h1 span{background:linear-gradient(135deg,#6366f1,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .login-left p{font-size:1rem;color:#64748b;line-height:1.7;margin-bottom:40px}
+        .login-features{display:flex;flex-direction:column;gap:16px;text-align:left}
+        .login-feature{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,255,255,.7);border:1px solid #e2e8f0;border-radius:12px;transition:background .2s}
+        .login-feature:hover{background:rgba(255,255,255,.9)}
+        .login-feature-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+        .login-feature-icon.blue{background:rgba(99,102,241,.1);color:#6366f1}
+        .login-feature-icon.green{background:rgba(16,185,129,.1);color:#059669}
+        .login-feature-icon.amber{background:rgba(251,191,36,.1);color:#d97706}
+        .login-feature span{font-size:.875rem;font-weight:500;color:#334155}
+
+        /* ── Right Panel (form) ── */
+        .login-right{
+            width:520px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;
+            padding:60px 56px;background:#fff;position:relative;
+        }
+        .login-right-header{margin-bottom:36px}
+        .login-right-header h2{font-size:1.65rem;font-weight:700;color:#0f172a;letter-spacing:-.3px;margin-bottom:6px}
+        .login-right-header p{font-size:.9rem;color:#64748b}
+
+        /* Auth tabs */
+        .auth-tabs{display:flex;background:#f1f5f9;border-radius:10px;padding:4px;margin-bottom:28px}
+        .auth-tab{flex:1;padding:10px;text-align:center;font-size:.85rem;font-weight:550;color:#64748b;border:none;background:none;border-radius:8px;cursor:pointer;transition:all .2s}
+        .auth-tab.active{background:#fff;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+        /* Form */
+        .form-group{margin-bottom:20px}
+        .form-group label{display:block;font-size:.82rem;font-weight:600;color:#334155;margin-bottom:6px}
+        .form-group label i{margin-right:6px;opacity:.4}
+        .form-control{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;font-family:inherit;color:#0f172a;background:#f8fafc;transition:all .2s;outline:none}
+        .form-control:focus{border-color:#6366f1;background:#fff;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+        .form-control::placeholder{color:#94a3b8}
+        .input-group{display:flex;position:relative}
+        .input-group .form-control{padding-right:44px}
+        .input-group-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;color:#94a3b8;cursor:pointer;border-radius:8px;transition:color .2s}
+        .input-group-btn:hover{color:#6366f1}
+
+        .btn-login{width:100%;padding:13px;border:none;border-radius:10px;font-size:.95rem;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s}
+        .btn-login-primary{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+        .btn-login-primary:hover{box-shadow:0 6px 24px rgba(99,102,241,.4);transform:translateY(-1px)}
+        .btn-login-admin{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 14px rgba(239,68,68,.25)}
+        .btn-login-admin:hover{box-shadow:0 6px 24px rgba(239,68,68,.35);transform:translateY(-1px)}
+        .btn-login:disabled{opacity:.7;cursor:not-allowed;transform:none!important}
+
+        .login-footer{margin-top:28px;text-align:center;font-size:.82rem;color:#94a3b8}
+        .login-footer a{color:#6366f1;font-weight:600;text-decoration:none}
+        .login-footer a:hover{text-decoration:underline}
+
+        /* 2FA step */
+        .twofa-header{text-align:center;margin-bottom:20px}
+        .twofa-icon{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(79,70,229,.1));display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px}
+        .twofa-icon i{font-size:1.3rem;color:#6366f1}
+        .twofa-header h3{font-size:1.05rem;font-weight:700;color:#0f172a;margin-bottom:4px}
+        .twofa-header p{font-size:.82rem;color:#94a3b8}
+
+        /* Toast */
+        .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+        .toast{padding:14px 20px;border-radius:10px;color:#fff;font-size:.85rem;font-weight:500;display:flex;align-items:center;gap:10px;animation:slideIn .3s;transition:opacity .3s;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+        .toast.success{background:#059669}.toast.error{background:#dc2626}.toast.warning{background:#d97706}.toast.info{background:#2563eb}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+        /* ── Mobile ── */
+        @media(max-width:960px){
+            .login-wrapper{flex-direction:column}
+            .login-left{padding:40px 24px;min-height:auto}
+            .login-left h1{font-size:1.5rem}
+            .login-left p{font-size:.9rem;margin-bottom:24px}
+            .login-features{display:none}
+            .login-right{width:100%;padding:40px 28px}
+        }
+        @media(max-width:480px){
+            .login-right{padding:32px 20px}
+            .login-right-header h2{font-size:1.35rem}
+        }
+    </style>
 </head>
 <body>
-<div class="login-page">
-    <div class="login-card">
-        <!-- Brand -->
-        <div class="login-brand">
-            <div class="brand-icon"><img src="css/logo.png" alt="Credbusiness"></div>
+
+<div class="login-wrapper">
+    <!-- Left Branding Panel -->
+    <div class="login-left">
+        <div class="login-left-content">
+            <img src="css/logo-footer.png" alt="Credbusiness" class="login-left-logo">
+            <h1>Recupere seu credito <span>com seguranca</span></h1>
+            <p>Plataforma completa para regularizacao financeira de CPF e CNPJ. Consulte, conteste e acompanhe tudo em um so lugar.</p>
+            <div class="login-features">
+                <div class="login-feature">
+                    <div class="login-feature-icon blue"><i class="fas fa-search-dollar"></i></div>
+                    <span>Consulta de negativacoes em tempo real</span>
+                </div>
+                <div class="login-feature">
+                    <div class="login-feature-icon green"><i class="fas fa-file-signature"></i></div>
+                    <span>Contestacao automatizada de dividas</span>
+                </div>
+                <div class="login-feature">
+                    <div class="login-feature-icon amber"><i class="fas fa-users"></i></div>
+                    <span>Rede de indicacoes com comissoes</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Form Panel -->
+    <div class="login-right">
+        <div class="login-right-header">
             <h2>Bem-vindo de volta</h2>
-            <p>Acesse seu escritório virtual</p>
+            <p>Acesse seu escritorio virtual</p>
         </div>
 
         <!-- Tabs -->
         <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchTab('user')">Usuário</button>
+            <button class="auth-tab active" onclick="switchTab('user')">Usuario</button>
             <button class="auth-tab" onclick="switchTab('admin')">Administrador</button>
         </div>
 
         <!-- User Login -->
         <form id="userForm" onsubmit="doLogin(event,'user')">
             <div class="form-group">
-                <label><i class="fas fa-user" style="margin-right:6px;opacity:.4"></i>Usuário</label>
-                <input type="text" class="form-control" id="userUsername" placeholder="Seu nome de usuário" required autocomplete="username">
+                <label><i class="fas fa-user"></i>Usuario</label>
+                <input type="text" class="form-control" id="userUsername" placeholder="Seu nome de usuario" required autocomplete="username">
             </div>
             <div class="form-group">
-                <label><i class="fas fa-lock" style="margin-right:6px;opacity:.4"></i>Senha</label>
+                <label><i class="fas fa-lock"></i>Senha</label>
                 <div class="input-group">
                     <input type="password" class="form-control" id="userPassword" placeholder="Sua senha" required autocomplete="current-password">
                     <button type="button" class="input-group-btn" onclick="togglePass('userPassword',this)"><i class="fas fa-eye"></i></button>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary w-full" id="userBtn" style="padding:12px;font-size:.95rem">
+            <button type="submit" class="btn-login btn-login-primary" id="userBtn">
                 <span class="btn-text">Entrar</span>
                 <i class="fas fa-spinner fa-spin" style="display:none"></i>
             </button>
@@ -44,40 +165,38 @@
 
         <!-- 2FA Step (hidden) -->
         <form id="twoFAForm" onsubmit="verify2FA(event)" style="display:none">
-            <div style="text-align:center;margin-bottom:16px">
-                <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(79,70,229,0.1));display:inline-flex;align-items:center;justify-content:center;margin-bottom:8px">
-                    <i class="fas fa-shield-halved" style="font-size:1.2rem;color:var(--primary)"></i>
-                </div>
-                <h3 style="font-size:1rem;margin:0 0 4px">Autenticação em Dois Fatores</h3>
-                <p style="font-size:.82rem;color:var(--text3);margin:0">Informe o código do seu app autenticador</p>
+            <div class="twofa-header">
+                <div class="twofa-icon"><i class="fas fa-shield-halved"></i></div>
+                <h3>Autenticacao em Dois Fatores</h3>
+                <p>Informe o codigo do seu app autenticador</p>
             </div>
             <div class="form-group">
-                <label><i class="fas fa-key" style="margin-right:6px;opacity:.4"></i>Código 2FA</label>
+                <label><i class="fas fa-key"></i>Codigo 2FA</label>
                 <input type="text" class="form-control" id="totpCode" placeholder="000000" required maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;font-size:1.3rem;letter-spacing:8px;font-weight:600">
             </div>
-            <button type="submit" class="btn btn-primary w-full" id="twoFABtn" style="padding:12px;font-size:.95rem">
+            <button type="submit" class="btn-login btn-login-primary" id="twoFABtn">
                 <span class="btn-text">Verificar</span>
                 <i class="fas fa-spinner fa-spin" style="display:none"></i>
             </button>
             <div style="text-align:center;margin-top:12px">
-                <a href="#" onclick="cancel2FA();return false" style="font-size:.82rem;color:var(--text3)"><i class="fas fa-arrow-left" style="margin-right:4px"></i>Voltar</a>
+                <a href="#" onclick="cancel2FA();return false" style="font-size:.82rem;color:#94a3b8;text-decoration:none"><i class="fas fa-arrow-left" style="margin-right:4px"></i>Voltar</a>
             </div>
         </form>
 
         <!-- Admin Login (hidden) -->
         <form id="adminForm" onsubmit="doLogin(event,'admin')" style="display:none">
             <div class="form-group">
-                <label><i class="fas fa-shield-halved" style="margin-right:6px;opacity:.4"></i>Usuário Admin</label>
+                <label><i class="fas fa-shield-halved"></i>Usuario Admin</label>
                 <input type="text" class="form-control" id="adminUsername" placeholder="admin" required>
             </div>
             <div class="form-group">
-                <label><i class="fas fa-lock" style="margin-right:6px;opacity:.4"></i>Senha</label>
+                <label><i class="fas fa-lock"></i>Senha</label>
                 <div class="input-group">
                     <input type="password" class="form-control" id="adminPassword" placeholder="Senha do administrador" required>
                     <button type="button" class="input-group-btn" onclick="togglePass('adminPassword',this)"><i class="fas fa-eye"></i></button>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary w-full" id="adminBtn" style="padding:12px;font-size:.95rem;background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 14px rgba(239,68,68,.25)">
+            <button type="submit" class="btn-login btn-login-admin" id="adminBtn">
                 <span class="btn-text">Entrar como Admin</span>
                 <i class="fas fa-spinner fa-spin" style="display:none"></i>
             </button>
@@ -86,7 +205,7 @@
         <!-- Footer links -->
         <div class="login-footer">
             <a href="password-forgot.html">Esqueceu sua senha?</a>
-            <span style="margin:0 8px;color:var(--border)">•</span>
+            <span style="margin:0 8px;color:#cbd5e1">&bull;</span>
             <a href="register.html">Cadastre-se</a>
         </div>
     </div>
@@ -97,7 +216,7 @@
 
 <script src="js/data.js"></script>
 <script>
-    // Clear stale auth data on login page load (prevents redirect loops)
+    // Clear stale auth data on login page load
     (function cleanupStaleAuth() {
         const token = localStorage.getItem('credbusiness_token');
         if (token) {
@@ -113,18 +232,28 @@
                 localStorage.removeItem('credbusiness_currentUser');
                 return;
             }
+            // Validar token com o servidor antes de redirecionar
+            fetch('/api/sync', { headers: { 'Authorization': 'Bearer ' + token } })
+                .then(r => {
+                    if (r.status === 401) {
+                        localStorage.removeItem('credbusiness_token');
+                        localStorage.removeItem('credbusiness_currentUser');
+                    } else {
+                        // Token válido — redirecionar
+                        const cur = JSON.parse(localStorage.getItem('credbusiness_currentUser') || 'null');
+                        if (cur) window.location.href = cur.role === 'admin' ? 'admin/index.html' : 'pages/dashboard.html';
+                    }
+                }).catch(() => {});
+            return;
         }
     })();
 
-    // Check if already logged
+    // Init DB (settings, branding)
     DB.init();
-    const cur = DB.getCurrentUser();
-    if (cur) window.location.href = cur.role === 'admin' ? 'admin/index.html' : 'pages/dashboard.html';
 
     // Apply dynamic branding
     const _s = DB.getSettings();
     document.title = _s.siteTitle || 'Credbusiness — Entrar';
-    // Logo is now an image, no need to set text
 
     let pending2FAToken = null;
 
@@ -147,7 +276,7 @@
 
     async function doLogin(e, type) {
         e.preventDefault();
-        const btn = e.target.querySelector('button[type=submit]');
+        const btn = e.target.querySelector('.btn-login');
         const text = btn.querySelector('.btn-text');
         const spin = btn.querySelector('.fa-spin');
         text.style.display = 'none';
@@ -167,7 +296,6 @@
             }
 
             if (result.success && result.requires2FA) {
-                // Mostrar etapa 2FA
                 pending2FAToken = result.tempToken;
                 document.getElementById('userForm').style.display = 'none';
                 document.getElementById('adminForm').style.display = 'none';
@@ -186,13 +314,13 @@
                     window.location.href = type === 'admin' ? 'admin/index.html' : 'pages/dashboard.html';
                 }, 600);
             } else {
-                showToast(result.error || 'Usuário ou senha inválidos.', 'error');
+                showToast(result.error || 'Usuario ou senha invalidos.', 'error');
                 text.style.display = 'inline';
                 spin.style.display = 'none';
                 btn.disabled = false;
             }
         } catch (err) {
-            showToast('Erro de conexão com o servidor.', 'error');
+            showToast('Erro de conexao com o servidor.', 'error');
             text.style.display = 'inline';
             spin.style.display = 'none';
             btn.disabled = false;
@@ -216,7 +344,7 @@
                 showToast('Login realizado com sucesso!', 'success');
                 setTimeout(() => { window.location.href = 'pages/dashboard.html'; }, 600);
             } else {
-                showToast(result.error || 'Código inválido.', 'error');
+                showToast(result.error || 'Codigo invalido.', 'error');
                 document.getElementById('totpCode').value = '';
                 document.getElementById('totpCode').focus();
                 text.style.display = 'inline';
@@ -224,7 +352,7 @@
                 btn.disabled = false;
             }
         } catch (err) {
-            showToast('Erro de conexão com o servidor.', 'error');
+            showToast('Erro de conexao com o servidor.', 'error');
             text.style.display = 'inline';
             spin.style.display = 'none';
             btn.disabled = false;
@@ -244,10 +372,11 @@
         const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
         const el = document.createElement('div');
         el.className = 'toast ' + type;
-        el.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span>${msg}</span>`;
+        el.innerHTML = '<i class="fas ' + (icons[type]||icons.info) + '"></i><span>' + msg + '</span>';
         c.appendChild(el);
         setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
     }
 </script>
+
 </body>
 </html>

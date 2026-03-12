@@ -7,24 +7,129 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .dash-welcome{background:linear-gradient(135deg,var(--primary),#4f46e5);border-radius:var(--radius);padding:28px 32px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:24px;position:relative;overflow:hidden}
+        .dash-welcome::before{content:'';position:absolute;top:-40%;right:-10%;width:300px;height:300px;background:rgba(255,255,255,.06);border-radius:50%}
+        .dash-welcome::after{content:'';position:absolute;bottom:-50%;right:15%;width:200px;height:200px;background:rgba(255,255,255,.04);border-radius:50%}
+        .dash-welcome h2{font-size:1.4rem;font-weight:700;margin-bottom:4px;position:relative;z-index:1;color:#fff}
+        .dash-welcome p{opacity:.85;font-size:.9rem;position:relative;z-index:1}
+        .dash-welcome .dash-date{font-size:.82rem;opacity:.7;position:relative;z-index:1}
+        .dash-level-badge{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+        .dash-level-icon{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:2px solid rgba(255,255,255,.3);box-shadow:0 4px 20px rgba(0,0,0,.15)}
+        .dash-level-name{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,.15);padding:3px 14px;border-radius:20px;backdrop-filter:blur(4px)}
+        .dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+        .dash-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;align-items:center;gap:16px;transition:all .2s}
+        .dash-stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+        .dash-stat .stat-ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+        .dash-stat .stat-ic.ic-blue{background:rgba(59,130,246,.1);color:#3b82f6}
+        .dash-stat .stat-ic.ic-purple{background:rgba(139,92,246,.1);color:#8b5cf6}
+        .dash-stat .stat-ic.ic-green{background:rgba(16,185,129,.1);color:#10b981}
+        .dash-stat .stat-ic.ic-orange{background:rgba(245,158,11,.1);color:#f59e0b}
+        .dash-stat .stat-ic.ic-cyan{background:rgba(6,182,212,.1);color:#06b6d4}
+        .dash-stat .stat-ic.ic-rose{background:rgba(244,63,94,.1);color:#f43f5e}
+        .dash-stat .stat-val{font-size:1.5rem;font-weight:700;line-height:1.2}
+        .dash-stat .stat-lbl{font-size:.78rem;color:var(--text3);margin-top:2px}
+        .dash-stat .stat-change{font-size:.72rem;margin-top:4px;display:flex;align-items:center;gap:4px}
+        .dash-stat .stat-change.up{color:#10b981}
+        .dash-stat .stat-change.down{color:#f43f5e}
+        .grad-ring{width:140px;height:140px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative}
+        .grad-ring svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+        .grad-ring .ring-inner{text-align:center;z-index:1}
+        .grad-ring .ring-icon{font-size:2.5rem;line-height:1}
+        .grad-ring .ring-pct{font-size:.8rem;font-weight:700;color:var(--primary);margin-top:2px}
+        .ref-card{background:linear-gradient(135deg,#10b981,#059669);border-radius:var(--radius);padding:24px;color:#fff}
+        .ref-card h4{font-size:.95rem;font-weight:700;margin-bottom:4px;color:#fff}
+        .ref-card p{font-size:.82rem;opacity:.85;margin-bottom:16px}
+        .ref-input-group{display:flex;gap:8px;flex-wrap:wrap}
+        .ref-input-group input{flex:1;min-width:200px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:10px 14px;color:#fff;font-size:.82rem;backdrop-filter:blur(4px)}
+        .ref-input-group input::placeholder{color:rgba(255,255,255,.5)}
+        .ref-input-group button{padding:10px 18px;border-radius:8px;font-weight:600;font-size:.82rem;cursor:pointer;border:none;transition:all .2s}
+        .ref-input-group .btn-copy{background:rgba(255,255,255,.2);color:#fff;backdrop-filter:blur(4px)}
+        .ref-input-group .btn-copy:hover{background:rgba(255,255,255,.3)}
+        .ref-input-group .btn-wpp{background:#25D366;color:#fff}
+        .ref-input-group .btn-wpp:hover{background:#1ebe5d}
+        .quick-nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+        .quick-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--text);font-size:.82rem;font-weight:600;transition:all .2s}
+        .quick-item:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--primary)}
+        .quick-item i{font-size:1.4rem;color:var(--primary)}
+        @media(max-width:768px){
+            .dash-welcome{padding:20px;gap:16px}
+            .dash-welcome h2{font-size:1.15rem}
+            .dash-level-icon{width:52px;height:52px;font-size:1.3rem}
+            .dash-level-name{font-size:.75rem;padding:2px 10px}
+            .dash-stats{grid-template-columns:repeat(2,1fr);gap:12px}
+            .dash-stat{padding:14px 12px;gap:10px}
+            .dash-stat .stat-ic{width:42px;height:42px;border-radius:10px;font-size:1.1rem}
+            .dash-stat .stat-val{font-size:1.2rem}
+            .quick-nav{grid-template-columns:repeat(3,1fr);gap:10px}
+            .quick-item{padding:14px 8px;font-size:.75rem}
+            .quick-item i{font-size:1.2rem}
+            .grad-ring{width:120px;height:120px}
+            .ring-icon{font-size:2rem}
+            .ref-input-group{flex-direction:column}
+            .ref-input-group input{min-width:0}
+            .ref-input-group button{width:100%}
+        }
+        @media(max-width:480px){
+            .dash-welcome{padding:16px;flex-direction:column;text-align:center;gap:12px}
+            .dash-level-badge{flex-direction:row;gap:10px}
+            .dash-stats{grid-template-columns:1fr 1fr;gap:10px}
+            .dash-stat .stat-val{font-size:1.05rem}
+            .dash-stat .stat-lbl{font-size:.7rem}
+            .quick-nav{grid-template-columns:repeat(2,1fr)}
+        }
+    </style>
 </head>
 <body>
     <div id="app"></div>
 
     <template id="page-content">
-        <div class="page-header">
-            <h2>Dashboard</h2>
-            <p>Visão geral da sua conta e desempenho</p>
+        <!-- Monthly Fee Alert Banner -->
+        <div id="monthlyFeeAlert" style="display:none;background:linear-gradient(135deg,#dc2626,#b91c1c);border-radius:var(--radius);padding:20px 24px;color:#fff;margin-bottom:24px;align-items:center;gap:16px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+                <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:4px;color:#fff"><i class="fas fa-exclamation-triangle"></i> Mensalidade Pendente</h3>
+                <p style="font-size:.88rem;opacity:.9" id="feeAlertText">Sua mensalidade de R$ 95,00 está vencida. Seu acesso foi bloqueado. Efetue o pagamento para reativar.</p>
+            </div>
+            <button class="btn" onclick="payMonthlyFee()" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);padding:10px 24px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap">
+                <i class="fas fa-credit-card"></i> Pagar Mensalidade
+            </button>
         </div>
 
-        <!-- Stats -->
-        <div class="stats-grid" id="statsGrid"></div>
+        <!-- Welcome Banner -->
+        <div class="dash-welcome" id="welcomeBanner">
+            <div>
+                <h2 id="greetingText">Bom dia!</h2>
+                <p id="greetingName"></p>
+                <div class="dash-date" id="greetingDate"></div>
+            </div>
+            <div class="dash-level-badge">
+                <div class="dash-level-icon" id="greetingLevel"></div>
+                <div class="dash-level-name" id="greetingLevelName"></div>
+            </div>
+        </div>
 
-        <!-- Charts + Levels -->
+        <!-- Stats Grid (4 cards) -->
+        <div class="dash-stats" id="statsGrid">
+            <div class="dash-stat"><div class="stat-ic ic-blue"><i class="fas fa-users"></i></div><div><div class="stat-val">—</div><div class="stat-lbl">Indicados Diretos</div></div></div>
+            <div class="dash-stat"><div class="stat-ic ic-green"><i class="fas fa-coins"></i></div><div><div class="stat-val">—</div><div class="stat-lbl">Bônus Total</div></div></div>
+            <div class="dash-stat"><div class="stat-ic ic-orange"><i class="fas fa-wallet"></i></div><div><div class="stat-val">—</div><div class="stat-lbl">Saldo Disponível</div></div></div>
+            <div class="dash-stat"><div class="stat-ic ic-rose"><i class="fas fa-hand-holding-dollar"></i></div><div><div class="stat-val">—</div><div class="stat-lbl">Comissões do Mês</div></div></div>
+        </div>
+
+        <!-- Quick Access -->
+        <div class="quick-nav" id="quickNav">
+            <a href="limpa-nome-consulta.html" class="quick-item"><i class="fas fa-search"></i>Consultar CPF</a>
+            <a href="pacotes-disponiveis.html" class="quick-item"><i class="fas fa-cube"></i>Pacotes</a>
+            <a href="rede-indicados.html" class="quick-item"><i class="fas fa-users"></i>Minha Rede</a>
+            <a href="financeiro.html" class="quick-item"><i class="fas fa-wallet"></i>Financeiro</a>
+            <a href="suporte-tickets.html" class="quick-item"><i class="fas fa-headset"></i>Suporte</a>
+        </div>
+
+        <!-- Charts + Graduation -->
         <div class="grid-2 mb-24">
             <div class="card">
-                <div class="card-header"><h3><i class="fas fa-chart-bar"></i> Pontuação Mensal</h3></div>
-                <div class="card-body"><div style="height:260px"><canvas id="pointsChart"></canvas></div></div>
+                <div class="card-header"><h3><i class="fas fa-chart-area"></i> Desempenho Mensal</h3></div>
+                <div class="card-body"><div style="height:280px"><canvas id="pointsChart"></canvas></div></div>
             </div>
             <div class="card">
                 <div class="card-header"><h3><i class="fas fa-trophy"></i> Graduação</h3></div>
@@ -32,31 +137,37 @@
             </div>
         </div>
 
-        <!-- Levels -->
-        <div class="grid-3 mb-24" id="levelCards"></div>
-
-        <!-- Activities + Goals -->
-        <div class="grid-2">
+        <!-- Activities + Goals + Rank -->
+        <div class="grid-2 mb-24">
             <div class="card">
-                <div class="card-header"><h3><i class="fas fa-clock"></i> Atividades Recentes</h3></div>
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                    <h3><i class="fas fa-clock"></i> Atividades Recentes</h3>
+                    <a href="financeiro.html" style="font-size:.78rem;color:var(--primary);font-weight:600">Ver todas</a>
+                </div>
                 <div class="card-body" id="recentActivities"></div>
             </div>
             <div class="card">
-                <div class="card-header"><h3><i class="fas fa-bullseye"></i> Metas</h3></div>
+                <div class="card-header"><h3><i class="fas fa-bullseye"></i> Metas do Mês</h3></div>
                 <div class="card-body" id="goalsCard"></div>
             </div>
         </div>
 
+        <!-- Levels Roadmap -->
+        <div class="card mb-24">
+            <div class="card-header"><h3><i class="fas fa-route"></i> Plano de Carreira</h3></div>
+            <div class="card-body">
+                <div style="display:flex;gap:12px;overflow-x:auto;padding:8px 0" id="levelCards"></div>
+            </div>
+        </div>
+
         <!-- Referral Link -->
-        <div class="card" style="margin-top:24px">
-            <div class="card-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-                <div style="flex:1;min-width:200px">
-                    <h4 style="font-size:.9rem;margin-bottom:4px"><i class="fas fa-link"></i> Link de Indicação</h4>
-                    <p style="font-size:.78rem;color:var(--text3)">Compartilhe para ganhar pontos e bônus</p>
-                </div>
-                <input class="form-control" id="refLink" readonly style="max-width:360px;font-size:.8rem;background:var(--bg)">
-                <button class="btn btn-sm btn-outline" onclick="copyLink()"><i class="fas fa-copy"></i> Copiar</button>
-                <button class="btn btn-sm btn-success" onclick="shareWpp()"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+        <div class="ref-card">
+            <h4><i class="fas fa-share-alt"></i> Seu Link de Indicação</h4>
+            <p>Compartilhe com amigos e ganhe comissões a cada venda!</p>
+            <div class="ref-input-group">
+                <input id="refLink" readonly placeholder="Carregando...">
+                <button class="btn-copy" onclick="copyLink()"><i class="fas fa-copy"></i> Copiar</button>
+                <button class="btn-wpp" onclick="shareWpp()"><i class="fab fa-whatsapp"></i> WhatsApp</button>
             </div>
         </div>
     </template>
@@ -69,94 +180,189 @@
         const user = Layout.user;
         const stats = DB.getDashboardStats(user.id);
         const levels = DB.get('levels');
+        const settings = DB.getSettings();
 
-        // Stats
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-info"><h3>${stats.indicados}</h3><p>Indicados Diretos</p></div></div>
-            <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-user-group"></i></div><div class="stat-info"><h3>${stats.equipe}</h3><p>Total Equipe</p></div></div>
-            <div class="stat-card"><div class="stat-icon green"><i class="fas fa-gift"></i></div><div class="stat-info"><h3>R$ ${fmt(stats.bonus)}</h3><p>Bônus Total</p></div></div>
-            <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-wallet"></i></div><div class="stat-info"><h3>R$ ${fmt(stats.saldo)}</h3><p>Saldo Disponível</p></div></div>
-        `;
+        // Greeting
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+        document.getElementById('greetingText').textContent = `${greeting}, ${(user.nickname || user.name || '').split(' ')[0]}!`;
+        document.getElementById('greetingName').textContent = 'Confira o resumo do seu escritório virtual';
+        document.getElementById('greetingDate').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('greetingLevel').innerHTML = stats.level.icon ? `<i class="fas ${stats.level.icon}"></i>` : '';
+        document.getElementById('greetingLevelName').textContent = stats.level.name || '';
 
-        // Graduation
-        const nextLabel = stats.nextLevel ? `Próximo: ${stats.nextLevel.name} (${stats.nextLevel.minPoints} pts)` : 'Nível máximo atingido!';
-        document.getElementById('graduationCard').innerHTML = `
-            <div style="text-align:center;padding:20px 0">
-                <div style="font-size:3.5rem;margin-bottom:8px">${stats.level.icon}</div>
-                <h3 style="font-size:1.3rem;margin-bottom:4px">${stats.level.name}</h3>
-                <p style="font-size:.85rem;color:var(--text3)">${user.points} pontos</p>
-                <div style="margin:20px auto;max-width:280px">
-                    <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${stats.progressToNext}%"></div></div>
-                    <p style="font-size:.78rem;color:var(--text3);margin-top:6px">${nextLabel}</p>
+        // ── Carregar dados reais via API ──
+        (async function loadDashboard() {
+            // Buscar transações reais e dados do perfil atualizados
+            let transactions = [];
+            try {
+                const txData = await DB.api('GET', '/api/services/transactions');
+                transactions = Array.isArray(txData) ? txData : [];
+            } catch(e) { transactions = DB.getTransactions(user.id); }
+
+            const nowDate = new Date();
+            const currentMonthStr = nowDate.toISOString().slice(0, 7);
+
+            // Comissões do mês atual
+            const comissoesMes = transactions.filter(t => t.type === 'comissao' && t.date && t.date.startsWith(currentMonthStr)).reduce((s,t) => s + (t.amount||0), 0);
+
+            // Stats cards com dados reais
+            const indicados = stats.indicados || 0;
+            const bonus = user.bonus || 0;
+            const saldo = user.balance || 0;
+            const cardEls = document.querySelectorAll('#statsGrid .dash-stat .stat-val');
+            if (cardEls.length >= 4) {
+                cardEls[0].textContent = indicados;
+                cardEls[1].textContent = `R$ ${fmt(bonus)}`;
+                cardEls[2].textContent = `R$ ${fmt(saldo)}`;
+                cardEls[3].textContent = `R$ ${fmt(comissoesMes)}`;
+            }
+
+            // Graduation with ring
+            const pct = stats.progressToNext;
+            const r = 58, c = 2 * Math.PI * r, offset = c - (pct / 100) * c;
+            const nextLabel = stats.nextLevel ? `Próximo: ${stats.nextLevel.name} (${stats.nextLevel.minPoints} pts)` : 'Nível máximo atingido!';
+            document.getElementById('graduationCard').innerHTML = `
+                <div style="text-align:center;padding:16px 0">
+                    <div class="grad-ring">
+                        <svg viewBox="0 0 140 140" width="100%" height="100%"><circle cx="70" cy="70" r="${r}" stroke="var(--border)" stroke-width="8" fill="none"/><circle cx="70" cy="70" r="${r}" stroke="var(--primary)" stroke-width="8" fill="none" stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round" style="transition:stroke-dashoffset .8s ease"/></svg>
+                        <div class="ring-inner"><div class="ring-icon"><i class="fas ${stats.level.icon}"></i></div><div class="ring-pct">${Math.round(pct)}%</div></div>
+                    </div>
+                    <h3 style="font-size:1.15rem;margin-bottom:2px">${stats.level.name}</h3>
+                    <p style="font-size:.82rem;color:var(--text3)">${user.points || 0} pontos acumulados</p>
+                    <div style="margin:16px auto 0;max-width:260px">
+                        <div class="progress-bar" style="height:8px"><div class="progress-fill" style="width:${pct}%"></div></div>
+                        <p style="font-size:.75rem;color:var(--text3);margin-top:6px">${nextLabel}</p>
+                    </div>
+                </div>`;
+
+            // Levels Roadmap
+            document.getElementById('levelCards').innerHTML = Object.entries(levels).map(([key, l]) => `
+                <div style="flex:0 0 160px;text-align:center;padding:20px 16px;border-radius:var(--radius);border:2px solid ${user.level === key ? 'var(--primary)' : 'var(--border)'};background:${user.level === key ? 'rgba(99,102,241,.06)' : 'var(--surface)'};position:relative;transition:all .2s">
+                    ${user.level === key ? '<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;padding:2px 12px;border-radius:20px;font-size:.68rem;font-weight:700">ATUAL</div>' : ''}
+                    <div style="font-size:2rem;margin-bottom:8px;color:${l.color}"><i class="fas ${l.icon}"></i></div>
+                    <div style="font-weight:700;font-size:.9rem;margin-bottom:4px">${l.name}</div>
+                    <div style="font-size:.75rem;color:var(--text3)">${l.minPoints}+ pts</div>
+                    <div style="font-size:.72rem;color:var(--success);margin-top:6px;font-weight:600">Bônus ${l.bonus}%</div>
                 </div>
-            </div>`;
+            `).join('');
 
-        // Levels
-        document.getElementById('levelCards').innerHTML = Object.entries(levels).map(([key, l]) => `
-            <div class="level-card ${user.level === key ? 'current' : ''}">
-                ${user.level === key ? '<span class="level-badge badge badge-blue">Atual</span>' : ''}
-                <div class="level-icon">${l.icon}</div>
-                <h4>${l.name}</h4>
-                <p>${l.minPoints}+ pontos</p>
-                <p style="font-size:.78rem;color:var(--success);margin-top:4px">Bônus: ${l.bonus}%</p>
-            </div>
-        `).join('');
+            // Activities — dados reais
+            const tx = transactions.slice(0, 6);
+            const txIcons = { comissao: 'fa-hand-holding-dollar', compra: 'fa-shopping-cart', deposito: 'fa-arrow-down', saque: 'fa-arrow-up', transferencia: 'fa-exchange-alt' };
+            document.getElementById('recentActivities').innerHTML = tx.length ? `<ul class="activity-list">${tx.map(t => `
+                <li class="activity-item">
+                    <div class="activity-icon ${t.amount >= 0 ? 'stat-icon green' : 'stat-icon red'}">
+                        <i class="fas ${txIcons[t.type] || (t.amount >= 0 ? 'fa-arrow-down' : 'fa-arrow-up')}"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="title">${t.description}</div>
+                        <div class="time">${t.date ? new Date(t.date).toLocaleDateString('pt-BR') : ''}</div>
+                    </div>
+                    <div style="font-weight:700;font-size:.9rem;color:${t.amount >= 0 ? 'var(--success)' : 'var(--danger)'}">${t.amount >= 0 ? '+' : ''}R$ ${fmt(Math.abs(t.amount))}</div>
+                </li>
+            `).join('')}</ul>` : '<div class="table-empty"><i class="fas fa-inbox"></i><p>Nenhuma atividade recente</p></div>';
 
-        // Activities
-        const tx = DB.getTransactions(user.id).slice(0, 5);
-        document.getElementById('recentActivities').innerHTML = tx.length ? `<ul class="activity-list">${tx.map(t => `
-            <li class="activity-item">
-                <div class="activity-icon ${t.amount >= 0 ? 'stat-icon green' : 'stat-icon red'}">
-                    <i class="fas ${t.amount >= 0 ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+            // Goals — dados reais
+            const indicadosMes = transactions.filter(t => t.type === 'comissao' && t.date && t.date.startsWith(currentMonthStr)).length;
+            const vendasMes = transactions.filter(t => t.type === 'compra' && t.date && t.date.startsWith(currentMonthStr)).length;
+            const metaIndicados = 10, metaVendas = 5;
+            document.getElementById('goalsCard').innerHTML = `
+                <div style="margin-bottom:20px">
+                    <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span><i class="fas fa-users" style="color:var(--primary);margin-right:6px"></i>Indicados</span><strong>${indicados}</strong></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, (indicados / metaIndicados) * 100)}%"></div></div>
                 </div>
-                <div class="activity-info">
-                    <div class="title">${t.description}</div>
-                    <div class="time">${t.date}</div>
+                <div style="margin-bottom:20px">
+                    <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span><i class="fas fa-star" style="color:#f59e0b;margin-right:6px"></i>Pontos p/ próximo nível</span><strong>${user.points || 0}/${stats.nextLevel ? stats.nextLevel.minPoints : user.points || 0}</strong></div>
+                    <div class="progress-bar"><div class="progress-fill green" style="width:${pct}%"></div></div>
                 </div>
-                <div style="font-weight:700;font-size:.9rem;color:${t.amount >= 0 ? 'var(--success)' : 'var(--danger)'}">${t.amount >= 0 ? '+' : ''}R$ ${fmt(Math.abs(t.amount))}</div>
-            </li>
-        `).join('')}</ul>` : '<div class="table-empty"><i class="fas fa-inbox"></i><p>Nenhuma atividade</p></div>';
+                <div style="margin-bottom:20px">
+                    <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span><i class="fas fa-hand-holding-dollar" style="color:#06b6d4;margin-right:6px"></i>Comissões do mês</span><strong>R$ ${fmt(comissoesMes)}</strong></div>
+                    <div class="progress-bar"><div class="progress-fill orange" style="width:${Math.min(100, comissoesMes > 0 ? 50 : 0)}%"></div></div>
+                </div>
+                <div style="padding:14px;background:var(--bg);border-radius:var(--radius);margin-top:12px">
+                    <div style="font-size:.82rem;font-weight:600;margin-bottom:6px"><i class="fas fa-lightbulb" style="color:#f59e0b"></i> Dica do dia</div>
+                    <div style="font-size:.78rem;color:var(--text3)">Compartilhe seu link de indicação para aumentar sua rede e ganhar comissões!</div>
+                </div>
+            `;
 
-        // Goals — compute real vendas do mês
-        const nowDate = new Date();
-        const currentMonthStr = nowDate.toISOString().slice(0, 7);
-        const vendasMes = tx.filter(t => (t.type === 'compra') && t.date.startsWith(currentMonthStr)).length;
-        document.getElementById('goalsCard').innerHTML = `
-            <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Indicados este mês</span><strong>${stats.indicados}/10</strong></div><div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, stats.indicados * 10)}%"></div></div></div>
-            <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Pontos para próximo nível</span><strong>${user.points}/${stats.nextLevel ? stats.nextLevel.minPoints : user.points}</strong></div><div class="progress-bar"><div class="progress-fill green" style="width:${stats.progressToNext}%"></div></div></div>
-            <div><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px"><span>Vendas do mês</span><strong>${vendasMes}/5</strong></div><div class="progress-bar"><div class="progress-fill orange" style="width:${Math.min(100, vendasMes * 20)}%"></div></div></div>
-        `;
+            // Points Chart — dados reais
+            const chartNow = new Date();
+            const chartLabels = [];
+            const chartDataPts = [];
+            const chartDataComm = [];
+            const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(chartNow.getFullYear(), chartNow.getMonth() - i, 1);
+                const key = d.toISOString().slice(0, 7);
+                chartLabels.push(monthNames[d.getMonth()]);
+                const monthPts = transactions.filter(t => t.date && t.date.startsWith(key) && t.amount > 0).reduce((s, t) => s + t.amount, 0);
+                const monthComm = transactions.filter(t => t.date && t.date.startsWith(key) && t.type === 'comissao').reduce((s, t) => s + t.amount, 0);
+                chartDataPts.push(Math.round(monthPts));
+                chartDataComm.push(Math.round(monthComm));
+            }
+            new Chart(document.getElementById('pointsChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        { label: 'Receita', data: chartDataPts, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,.08)', fill: true, tension: .4, pointRadius: 4, pointBackgroundColor: '#6366f1', borderWidth: 2 },
+                        { label: 'Comissões', data: chartDataComm, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.06)', fill: true, tension: .4, pointRadius: 4, pointBackgroundColor: '#10b981', borderWidth: 2 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 12 } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(0,0,0,.04)' }, beginAtZero: true } } }
+            });
+        })();
 
         // Referral Link
-        document.getElementById('refLink').value = `https://credbusiness.com.br/ref/${user.username}`;
-
-        // Points Chart — compute real monthly data from transactions
-        const allTx = DB.getTransactions(user.id);
-        const chartNow = new Date();
-        const chartLabels = [];
-        const chartData = [];
-        const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date(chartNow.getFullYear(), chartNow.getMonth() - i, 1);
-            const key = d.toISOString().slice(0, 7);
-            chartLabels.push(monthNames[d.getMonth()]);
-            const monthPts = allTx.filter(t => t.date && t.date.startsWith(key) && t.amount > 0).reduce((s, t) => s + t.amount, 0);
-            chartData.push(Math.round(monthPts));
-        }
-        // If all zeros, show current points in last bar
-        if (chartData.every(v => v === 0)) chartData[5] = user.points;
-        new Chart(document.getElementById('pointsChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: [{ label: 'Pontos', data: chartData, backgroundColor: '#3b82f6', borderRadius: 6, barThickness: 32 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f1f5f9' }, beginAtZero: true } } }
-        });
+        const baseUrl = window.location.origin || settings.siteUrl || 'https://credbusiness.com.br';
+        document.getElementById('refLink').value = `${baseUrl}/register.html?ref=${user.username}`;
 
         // Helpers
         function copyLink() { navigator.clipboard.writeText(document.getElementById('refLink').value); Layout.toast('Link copiado!', 'success'); }
         function shareWpp() { window.open('https://wa.me/?text=' + encodeURIComponent('Conheça a Credbusiness! ' + document.getElementById('refLink').value)); }
+
+        // ── Verificar mensalidade ──
+        (async function checkMonthlyFee() {
+            try {
+                const feeStatus = await DB.getMonthlyFeeStatus();
+                if (feeStatus && (!feeStatus.isPaid || feeStatus.accessBlocked)) {
+                    const alertEl = document.getElementById('monthlyFeeAlert');
+                    alertEl.style.display = 'flex';
+                    const txt = feeStatus.accessBlocked
+                        ? `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} está vencida. Seu acesso foi bloqueado. Efetue o pagamento para reativar.`
+                        : `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} vence em breve. Efetue o pagamento para manter o acesso.`;
+                    document.getElementById('feeAlertText').textContent = txt;
+                }
+            } catch {}
+        })();
+
+        async function payMonthlyFee() {
+            const method = prompt('Método de pagamento:\n1 - PIX\n2 - Boleto\n3 - Cartão de Crédito\n\nDigite 1, 2 ou 3:');
+            if (!method) return;
+            const methods = { '1': 'pix', '2': 'boleto', '3': 'credit_card' };
+            const m = methods[method.trim()];
+            if (!m) { Layout.toast('Método inválido', 'error'); return; }
+            Layout.toast('Processando pagamento...', 'info');
+            const result = await DB.payMonthlyFee(m);
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
+            if (result.error) { Layout.toast(result.error, 'error'); return; }
+            if (result.approved) {
+                Layout.toast(result.message || 'Mensalidade paga com sucesso!', 'success');
+                await DB.syncData();
+                setTimeout(() => location.reload(), 1500);
+            } else if (result.invoiceUrl) {
+                Layout.toast('Cobrança gerada! Redirecionando...', 'success');
+                setTimeout(() => window.open(result.invoiceUrl, '_blank'), 1000);
+            } else {
+                Layout.toast(result.message || 'Cobrança gerada com sucesso!', 'success');
+            }
+        }
+
+        // Real-time: recarrega ao receber atualização relevante
+        window.onRealtimeUpdate = function(detail) {
+            if (['transactions','user_updated','processes','notifications'].includes(detail.entity)) location.reload();
+        };
     </script>
 </body>
 </html>

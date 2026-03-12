@@ -44,6 +44,10 @@
                         </select>
                     </div>
                     <div class="form-group"><label>Descrição</label><textarea id="evDesc" class="form-control" rows="3"></textarea></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Preço (R$) — 0 = Grátis</label><input type="number" id="evPrice" class="form-control" value="0" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Max Ingressos (0 = ilimitado)</label><input type="number" id="evMaxTickets" class="form-control" value="0" min="0"></div>
+                    </div>
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px">
                         <button type="button" class="btn btn-outline" onclick="closeEvModal()">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Salvar</button>
@@ -95,6 +99,8 @@
             document.getElementById('evLocation').value = e.location;
             document.getElementById('evType').value = e.type;
             document.getElementById('evDesc').value = e.description || '';
+            document.getElementById('evPrice').value = e.price || 0;
+            document.getElementById('evMaxTickets').value = e.max_tickets || 0;
         }
 
         function saveEv(ev) {
@@ -107,7 +113,9 @@
                 time: document.getElementById('evTime').value,
                 location: document.getElementById('evLocation').value.trim(),
                 type: document.getElementById('evType').value,
-                description: document.getElementById('evDesc').value.trim()
+                description: document.getElementById('evDesc').value.trim(),
+                price: parseFloat(document.getElementById('evPrice').value) || 0,
+                max_tickets: parseInt(document.getElementById('evMaxTickets').value) || 0
             };
             if (id) {
                 const idx = evs.findIndex(x => x.id === parseInt(id));

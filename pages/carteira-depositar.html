@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Depositar</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Depositar</h2><p>Adicione saldo à sua carteira</p></div>
+
+        <div class="grid-3 mb-24">
+            <div class="fin-card"><div class="fin-icon stat-icon blue"><i class="fas fa-wallet"></i></div><div><h4>Saldo Atual</h4><div class="amount text-accent" id="balance"></div></div></div>
+        </div>
+
+        <div class="grid-2 mb-24">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-plus-circle"></i> Novo Depósito</h3></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" class="form-control" id="amount" placeholder="0.00" min="10" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Método de Pagamento</label>
+                        <div class="payment-methods" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+                            <label class="payment-option" style="display:flex;align-items:center;gap:8px;padding:12px;border:2px solid var(--border);border-radius:8px;cursor:pointer">
+                                <input type="radio" name="method" value="pix" checked> <i class="fas fa-qrcode"></i> PIX
+                            </label>
+                            <label class="payment-option" style="display:flex;align-items:center;gap:8px;padding:12px;border:2px solid var(--border);border-radius:8px;cursor:pointer">
+                                <input type="radio" name="method" value="boleto"> <i class="fas fa-barcode"></i> Boleto
+                            </label>
+                        </div>
+                    </div>
+                    <button class="btn btn-success w-full" onclick="doDeposit()"><i class="fas fa-plus-circle"></i> Gerar Pagamento</button>
+                    <p class="form-hint">Depósito mínimo: R$ 10,00</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-info-circle"></i> Como funciona</h3></div>
+                <div class="card-body">
+                    <ul class="activity-list">
+                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-qrcode"></i></div><div class="activity-info"><div class="title">1. Escolha o valor e método</div><div class="desc">PIX (crédito instantâneo) ou Boleto (até 3 dias)</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-money-bill-wave"></i></div><div class="activity-info"><div class="title">2. Realize o pagamento</div><div class="desc">Escaneie o QR Code PIX ou pague o boleto</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon orange"><i class="fas fa-check-circle"></i></div><div class="activity-info"><div class="title">3. Saldo creditado</div><div class="desc">Após confirmação, o valor é creditado na sua carteira</div></div></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result area -->
+        <div class="card" id="resultCard" style="display:none">
+            <div class="card-header"><h3><i class="fas fa-check-circle"></i> Pagamento Gerado</h3></div>
+            <div class="card-body" id="resultBody"></div>
+        </div>
+
+        <!-- Deposit History -->
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-history"></i> Histórico de Depósitos</h3></div>
+            <div class="card-body"><div class="table-wrap" id="depositTable"><div class="table-empty"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div></div></div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'carteira-depositar', title: 'Depositar' });
+        document.getElementById('balance').textContent = 'R$ ' + fmt(Layout.user.balance);
+
+        // Highlight selected method
+        document.querySelectorAll('input[name="method"]').forEach(r => {
+            r.addEventListener('change', () => {
+                document.querySelectorAll('.payment-option').forEach(o => o.style.borderColor = 'var(--border)');
+                r.closest('.payment-option').style.borderColor = 'var(--primary)';
+            });
+        });
+        document.querySelector('input[name="method"]:checked').closest('.payment-option').style.borderColor = 'var(--primary)';
+
+        async function doDeposit() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const method = document.querySelector('input[name="method"]:checked').value;
+
+            if (!amount || amount < 10) { Layout.toast('Depósito mínimo: R$ 10,00', 'error'); return; }
+
+            Layout.toast('Gerando pagamento...', 'info');
+            const result = await DB.api('POST', '/api/wallet/deposit', { amount, method });
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
+            if (result.error) { Layout.toast(result.error, 'error'); return; }
+
+            Layout.toast(result.message || 'Pagamento gerado!', 'success');
+
+            const card = document.getElementById('resultCard');
+            const body = document.getElementById('resultBody');
+            card.style.display = '';
+
+            if (result.invoiceUrl) {
+                body.innerHTML = `
+                    <div class="alert alert-success mb-16"><i class="fas fa-check-circle"></i> Pagamento de <strong>R$ ${fmt(amount)}</strong> gerado via <strong>${method.toUpperCase()}</strong></div>
+                    <a href="${result.invoiceUrl}" target="_blank" rel="noopener" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Pagar Agora</a>
+                    <p class="form-hint mt-8">Após o pagamento ser confirmado, seu saldo será creditado automaticamente.</p>`;
+            } else {
+                body.innerHTML = `<div class="alert alert-info"><i class="fas fa-info-circle"></i> ${result.message}</div>`;
+            }
+
+            loadDepositHistory();
+        }
+
+        async function loadDepositHistory() {
+            const data = await DB.api('GET', '/api/wallet/deposits');
+            const table = document.getElementById('depositTable');
+            const items = [];
+            if (data && data.payments) data.payments.forEach(p => items.push({ date: p.created_at, amount: p.amount, method: (p.method||'pix').toUpperCase(), status: p.status, invoice: p.invoice_url }));
+            if (data && data.deposits) data.deposits.forEach(d => { if (!items.find(i => Math.abs(i.amount - d.amount) < 0.01 && i.date === d.date)) items.push({ date: d.date, amount: d.amount, method: '-', status: d.status, invoice: null }); });
+
+            if (!items.length) {
+                table.innerHTML = '<div class="table-empty"><i class="fas fa-receipt"></i><p>Nenhum depósito realizado</p></div>';
+                return;
+            }
+
+            table.innerHTML = `<table>
+                <thead><tr><th>Data</th><th>Valor</th><th>Método</th><th>Status</th><th>Ação</th></tr></thead>
+                <tbody>${items.map(d => `<tr>
+                    <td>${d.date || '-'}</td>
+                    <td style="font-weight:700;color:var(--success)">R$ ${fmt(d.amount)}</td>
+                    <td>${d.method}</td>
+                    <td><span class="badge badge-${d.status==='confirmado'||d.status==='concluido'?'green':d.status==='pendente'?'orange':d.status==='cancelado'||d.status==='falhou'?'red':'gray'}">${d.status}</span></td>
+                    <td>${d.invoice ? `<a href="${d.invoice}" target="_blank" rel="noopener" class="btn btn-sm"><i class="fas fa-external-link-alt"></i> Pagar</a>` : '-'}</td>
+                </tr>`).join('')}</tbody>
+            </table>`;
+        }
+
+        loadDepositHistory();
+    </script>
+</body>
+</html>

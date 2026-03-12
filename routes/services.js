@@ -5,7 +5,7 @@
 const express = require('express');
 const axios = require('axios');
 const { getDB } = require('../database/init');
-const { auth } = require('../middleware/auth');
+const { auth, requirePackage } = require('../middleware/auth');
 const { logAudit, getClientIP } = require('../utils/audit');
 const { createNotification } = require('../utils/notifications');
 const asaas = require('../utils/asaas');
@@ -27,7 +27,7 @@ const VALID_PROCESS_TRANSITIONS = {
 //   PROCESSOS LIMPA NOME
 // ════════════════════════════════════
 
-router.get('/processes', auth, (req, res) => {
+router.get('/processes', auth, requirePackage, (req, res) => {
     try {
         const db = getDB();
         const processes = db.prepare('SELECT * FROM processes WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
@@ -38,13 +38,17 @@ router.get('/processes', auth, (req, res) => {
     }
 });
 
-router.post('/processes', auth, (req, res) => {
+router.post('/processes', auth, requirePackage, (req, res) => {
     try {
         const cpf = sanitize(req.body.cpf);
         const name = sanitize(req.body.name);
         const type = sanitize(req.body.type) || 'negativacao';
         const value = Number(req.body.value) || 0;
         const institution = sanitize(req.body.institution);
+        const person_type = ['pf', 'pj'].includes(req.body.person_type) ? req.body.person_type : 'pf';
+        const cnpj = sanitize(req.body.cnpj);
+        const company_name = sanitize(req.body.company_name);
+        const notes = sanitize(req.body.notes);
 
         if (!cpf || !name) return res.status(400).json({ error: 'CPF e nome são obrigatórios' });
         if (!['negativacao', 'divida', 'limpa_nome', 'bacen'].includes(type)) {
@@ -52,10 +56,23 @@ router.post('/processes', auth, (req, res) => {
         }
 
         const db = getDB();
+
+        // Verificar se o usuário tem créditos de nomes disponíveis
+        const currentUser = db.prepare('SELECT names_available FROM users WHERE id = ?').get(req.user.id);
+        if (!currentUser || (currentUser.names_available || 0) < 1) {
+            return res.status(400).json({ error: 'Você não possui créditos de nomes disponíveis. Adquira um pacote para continuar.' });
+        }
+
+        // Deduzir 1 crédito de nome (atômico)
+        const deducted = db.prepare('UPDATE users SET names_available = names_available - 1 WHERE id = ? AND names_available > 0').run(req.user.id);
+        if (deducted.changes === 0) {
+            return res.status(400).json({ error: 'Créditos de nomes esgotados. Adquira um novo pacote.' });
+        }
+
         const result = db.prepare(`
-            INSERT INTO processes (user_id, cpf, name, status, type, value, institution, created_at, updated_at)
-            VALUES (?, ?, ?, 'pendente', ?, ?, ?, date('now'), date('now'))
-        `).run(req.user.id, cpf, name, type, value, institution);
+            INSERT INTO processes (user_id, cpf, name, status, type, value, institution, notes, person_type, cnpj, company_name, created_at, updated_at)
+            VALUES (?, ?, ?, 'pendente', ?, ?, ?, ?, ?, ?, ?, date('now'), date('now'))
+        `).run(req.user.id, cpf, name, type, value, institution, notes, person_type, cnpj, company_name);
 
         const process = db.prepare('SELECT * FROM processes WHERE id = ?').get(result.lastInsertRowid);
         logAudit({ userType: 'user', userId: req.user.id, action: 'create_process', entity: 'process', entityId: result.lastInsertRowid, ip: getClientIP(req) });
@@ -66,7 +83,7 @@ router.post('/processes', auth, (req, res) => {
     }
 });
 
-router.put('/processes/:id', auth, (req, res) => {
+router.put('/processes/:id', auth, requirePackage, (req, res) => {
     try {
         const status = sanitize(req.body.status);
         const db = getDB();
@@ -92,8 +109,36 @@ router.put('/processes/:id', auth, (req, res) => {
 //   CONSULTAS CPF / BACEN
 // ════════════════════════════════════
 
+// Lookup CPF — retorna nome do usuário e dados conhecidos (para auto-complete)
+router.get('/lookup-cpf', auth, requirePackage, (req, res) => {
+    try {
+        const cpf = sanitize(req.query.cpf);
+        if (!cpf || cpf.replace(/\D/g, '').length < 11) return res.json({ found: false });
+
+        const db = getDB();
+        // Buscar nos usuários cadastrados
+        const user = db.prepare("SELECT name, birth_date, nickname FROM users WHERE REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') = ?").get(cpf.replace(/\D/g, ''));
+        if (user) {
+            return res.json({ found: true, name: user.name, birth_date: user.birth_date || '', nickname: user.nickname || '' });
+        }
+        // Buscar nas consultas anteriores
+        const consult = db.prepare("SELECT name FROM consultations WHERE REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') = ? AND name != '' ORDER BY created_at DESC LIMIT 1").get(cpf.replace(/\D/g, ''));
+        if (consult && consult.name) {
+            return res.json({ found: true, name: consult.name });
+        }
+        // Buscar nos processos
+        const proc = db.prepare("SELECT name FROM processes WHERE REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') = ? ORDER BY created_at DESC LIMIT 1").get(cpf.replace(/\D/g, ''));
+        if (proc && proc.name) {
+            return res.json({ found: true, name: proc.name });
+        }
+        res.json({ found: false });
+    } catch (err) {
+        res.json({ found: false });
+    }
+});
+
 // Consultar CPF
-router.post('/consultar-cpf', auth, (req, res) => {
+router.post('/consultar-cpf', auth, requirePackage, (req, res) => {
     try {
         const cpf = sanitize(req.body.cpf);
         const nome = sanitize(req.body.nome);
@@ -116,24 +161,8 @@ router.post('/consultar-cpf', auth, (req, res) => {
             return;
         }
 
-        // MOCK
-        const hasIssue = Math.random() > 0.3;
-        const mockResult = hasIssue
-            ? {
-                status: 'restricao',
-                mensagem: 'CPF com restrição',
-                detalhes: [
-                    { orgao: 'Serasa', tipo: 'Negativação', valor: (Math.random() * 5000 + 500).toFixed(2), data: '15/08/2025' },
-                    { orgao: 'SPC', tipo: 'Dívida', valor: (Math.random() * 2000 + 200).toFixed(2), data: '22/10/2025' }
-                ]
-            }
-            : { status: 'limpo', mensagem: 'Nenhuma restrição encontrada' };
-
-        db.prepare(`INSERT INTO consultations (user_id, cpf, name, type, result, created_at) VALUES (?, ?, ?, 'cpf', ?, datetime('now'))`)
-            .run(req.user.id, cpf, nome || '', JSON.stringify(mockResult));
-
-        logAudit({ userType: 'user', userId: req.user.id, action: 'consult_cpf', entity: 'consultation', details: { cpf }, ip: getClientIP(req) });
-        res.json(mockResult);
+        // API de consulta CPF não configurada
+        return res.status(503).json({ error: 'Serviço de consulta CPF não configurado. Contate o administrador.' });
     } catch (err) {
         console.error('Erro consultar-cpf:', err.message);
         res.status(500).json({ error: 'Erro interno do servidor' });
@@ -141,7 +170,7 @@ router.post('/consultar-cpf', auth, (req, res) => {
 });
 
 // Consultar Bacen
-router.post('/consultar-bacen', auth, (req, res) => {
+router.post('/consultar-bacen', auth, requirePackage, (req, res) => {
     try {
         const cpf = sanitize(req.body.cpf);
         if (!cpf) return res.status(400).json({ error: 'CPF é obrigatório' });
@@ -163,21 +192,8 @@ router.post('/consultar-bacen', auth, (req, res) => {
             return;
         }
 
-        // MOCK
-        const mockResult = {
-            status: 'ok',
-            mensagem: 'Consulta realizada',
-            dados: {
-                valores_a_receber: (Math.random() * 500).toFixed(2),
-                instituicoes: Math.floor(Math.random() * 5),
-                ultima_atualizacao: new Date().toISOString().split('T')[0]
-            }
-        };
-
-        db.prepare(`INSERT INTO consultations (user_id, cpf, name, type, result, created_at) VALUES (?, ?, '', 'bacen', ?, datetime('now'))`)
-            .run(req.user.id, cpf, JSON.stringify(mockResult));
-
-        res.json(mockResult);
+        // API Bacen não configurada
+        return res.status(503).json({ error: 'Serviço de consulta Bacen não configurado. Contate o administrador.' });
     } catch (err) {
         console.error('Erro consultar-bacen:', err.message);
         res.status(500).json({ error: 'Erro interno do servidor' });
@@ -185,7 +201,7 @@ router.post('/consultar-bacen', auth, (req, res) => {
 });
 
 // Histórico de consultas
-router.get('/consultations', auth, (req, res) => {
+router.get('/consultations', auth, requirePackage, (req, res) => {
     try {
         const db = getDB();
         const consults = db.prepare('SELECT * FROM consultations WHERE user_id = ? ORDER BY created_at DESC LIMIT 50')
@@ -214,7 +230,7 @@ router.get('/transactions', auth, (req, res) => {
 });
 
 // Solicitar saque — ATÔMICO com transaction + Asaas PIX Payout
-router.post('/transactions/withdraw', auth, async (req, res) => {
+router.post('/transactions/withdraw', auth, requirePackage, async (req, res) => {
     try {
         const amount = Number(req.body.amount);
         const pixKey = sanitize(req.body.pixKey);
@@ -225,20 +241,37 @@ router.post('/transactions/withdraw', auth, async (req, res) => {
         const db = getDB();
         const settings = {};
         db.prepare('SELECT * FROM settings').all().forEach(s => { settings[s.key] = s.value; });
-        const minWithdraw = Number(settings.minWithdraw) || 50;
+        const minWithdraw = Number(settings.minWithdraw) || 100;
+        const withdrawFee = Number(settings.withdrawFee) || 2.50;
 
-        if (amount < minWithdraw) return res.status(400).json({ success: false, error: `Saque mínimo: R$ ${minWithdraw}` });
+        if (amount < minWithdraw) return res.status(400).json({ success: false, error: `Saque mínimo: R$ ${minWithdraw.toFixed(2).replace('.', ',')}` });
+
+        // ── Verificar limite de 1 saque por mês ──
+        const now = new Date();
+        const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const withdrawThisMonth = db.prepare(
+            "SELECT COUNT(*) as c FROM transactions WHERE user_id = ? AND type = 'saque' AND date >= ? AND status != 'falhou' AND status != 'cancelado'"
+        ).get(req.user.id, monthStart);
+        if (withdrawThisMonth.c >= 1) {
+            return res.status(400).json({ success: false, error: 'Você já realizou um saque este mês. Limite: 1 saque por mês.' });
+        }
+
+        const totalDebit = Math.round((amount + withdrawFee) * 100) / 100;
 
         // ── Transação atômica para evitar race condition ──
         const withdraw = db.transaction(() => {
             const user = db.prepare('SELECT balance FROM users WHERE id = ?').get(req.user.id);
             if (!user) throw new Error('USER_NOT_FOUND');
-            if (amount > user.balance) throw new Error('INSUFFICIENT_BALANCE');
+            if (totalDebit > user.balance) throw new Error('INSUFFICIENT_BALANCE');
 
-            db.prepare('UPDATE users SET balance = balance - ? WHERE id = ?').run(amount, req.user.id);
+            db.prepare('UPDATE users SET balance = balance - ?, last_withdraw_date = date("now") WHERE id = ?').run(totalDebit, req.user.id);
 
             const txResult = db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status, reference_type) VALUES (?, 'saque', ?, ?, date('now'), 'pendente', 'payment')`)
-                .run(req.user.id, -amount, `Saque via PIX - ${pixKey || 'N/A'}`);
+                .run(req.user.id, -amount, `Saque via PIX - ${pixKey || 'N/A'} (taxa: R$ ${withdrawFee.toFixed(2)})`);
+
+            // Registrar taxa de saque como transação separada
+            db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status, reference_type) VALUES (?, 'taxa', ?, 'Taxa de saque', date('now'), 'concluido', 'fee')`)
+                .run(req.user.id, -withdrawFee);
 
             return txResult.lastInsertRowid;
         });
@@ -256,7 +289,7 @@ router.post('/transactions/withdraw', auth, async (req, res) => {
             throw txErr;
         }
 
-        logAudit({ userType: 'user', userId: req.user.id, action: 'withdraw', entity: 'transaction', details: { amount, pixKey }, ip: getClientIP(req) });
+        logAudit({ userType: 'user', userId: req.user.id, action: 'withdraw', entity: 'transaction', details: { amount, fee: withdrawFee, totalDebit, pixKey }, ip: getClientIP(req) });
 
         // ── Asaas PIX Payout (se configurado) ──
         if (asaas.isConfigured()) {
@@ -286,9 +319,9 @@ router.post('/transactions/withdraw', auth, async (req, res) => {
                     status: transfer.status
                 });
             } catch (pixErr) {
-                // PIX falhou — devolver saldo
+                // PIX falhou — devolver saldo (valor + taxa)
                 console.error('[Withdraw] Erro PIX payout:', pixErr.message);
-                db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(amount, req.user.id);
+                db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(totalDebit, req.user.id);
                 db.prepare("UPDATE transactions SET status = 'falhou', description = ? WHERE id = ?")
                     .run(`Saque via PIX - FALHOU: ${pixErr.message}`, transactionId);
 
@@ -305,7 +338,7 @@ router.post('/transactions/withdraw', auth, async (req, res) => {
 });
 
 // ── Consulta CNPJ (via ReceitaWS free API) ──
-router.post('/consultar-cnpj', auth, async (req, res) => {
+router.post('/consultar-cnpj', auth, requirePackage, async (req, res) => {
     const { cnpj } = req.body;
     if (!cnpj) return res.status(400).json({ error: 'CNPJ é obrigatório' });
 
@@ -340,23 +373,8 @@ router.post('/consultar-cnpj', auth, async (req, res) => {
                 result = { status: 'not_found', message: resp.data.message || 'CNPJ não encontrado' };
             }
         } catch (apiErr) {
-            // Fallback mock
-            result = {
-                status: 'found',
-                cnpj: cleanCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5'),
-                nome: 'Empresa Exemplo LTDA',
-                fantasia: 'Empresa Exemplo',
-                situacao: 'ATIVA',
-                tipo: 'MATRIZ',
-                abertura: '01/01/2020',
-                natureza_juridica: '206-2 - Sociedade Empresária Limitada',
-                atividade_principal: 'Comércio varejista',
-                endereco: 'Rua Exemplo, 123 - Centro, São Paulo/SP',
-                telefone: '(11) 0000-0000',
-                email: 'contato@exemplo.com.br',
-                capital_social: '100000.00',
-                mock: true
-            };
+            console.error('Erro API ReceitaWS:', apiErr.message);
+            return res.status(502).json({ error: 'Serviço de consulta CNPJ indisponível. Tente novamente em alguns instantes.' });
         }
 
         // Save consultation

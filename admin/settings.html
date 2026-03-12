@@ -35,6 +35,7 @@
             <button class="settings-tab" onclick="switchTab('levels',this)"><i class="fas fa-layer-group"></i> Níveis MLM</button>
             <button class="settings-tab" onclick="switchTab('commissions',this)"><i class="fas fa-percentage"></i> Comissões</button>
             <button class="settings-tab" onclick="switchTab('plans',this)"><i class="fas fa-id-card"></i> Planos</button>
+            <button class="settings-tab" onclick="switchTab('pages',this)"><i class="fas fa-eye-slash"></i> Páginas</button>
             <button class="settings-tab" onclick="switchTab('data',this)"><i class="fas fa-database"></i> Dados</button>
         </div>
 
@@ -65,6 +66,8 @@
         <div class="settings-section" id="sec-general">
             <div class="card" style="max-width:600px"><div class="card-header"><h3><i class="fas fa-cog"></i> Configurações Gerais</h3></div><div class="card-body">
                 <div class="form-group"><label>Saque Mínimo (R$)</label><input type="number" id="minWithdraw" class="form-control" min="0" step="0.01"></div>
+                <div class="form-group"><label>Taxa por Saque (R$)</label><input type="number" id="withdrawFee" class="form-control" min="0" step="0.01"></div>
+                <div class="form-group"><label>Mensalidade (R$)</label><input type="number" id="monthlyFee" class="form-control" min="0" step="0.01"></div>
                 <div class="form-group" style="display:flex;align-items:center;gap:16px">
                     <label style="margin:0;font-weight:600">Modo Manutenção</label>
                     <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0"><input type="checkbox" id="maintenance" style="opacity:0;width:0;height:0"><span id="switchTrack" style="position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:26px;transition:.3s"></span></label>
@@ -80,10 +83,27 @@
 
         <!-- COMMISSIONS -->
         <div class="settings-section" id="sec-commissions">
-            <div class="card" style="max-width:600px"><div class="card-header"><h3><i class="fas fa-percentage"></i> Comissões por Nível de Rede</h3></div><div class="card-body">
-                <div class="form-group"><label>Nível 1 (Direto) — %</label><input type="number" id="comm1" class="form-control" min="0" max="100" step="0.5"></div>
-                <div class="form-group"><label>Nível 2 (Indireto) — %</label><input type="number" id="comm2" class="form-control" min="0" max="100" step="0.5"></div>
-                <div class="form-group"><label>Nível 3 (Profundidade) — %</label><input type="number" id="comm3" class="form-control" min="0" max="100" step="0.5"></div>
+            <div class="card" style="max-width:650px"><div class="card-header"><h3><i class="fas fa-percentage"></i> Comissões por Indicação</h3></div><div class="card-body">
+                <div class="form-group">
+                    <label>Tipo de Comissão</label>
+                    <select id="commType" class="form-control" onchange="toggleCommType()">
+                        <option value="percentage">Percentual sobre a venda</option>
+                        <option value="fixed">Valor fixo (apenas nível 1)</option>
+                    </select>
+                </div>
+                <div id="commPercentFields">
+                    <p style="color:var(--text3);font-size:.8rem;margin-bottom:12px"><i class="fas fa-info-circle"></i> Comissão calculada sobre o valor da venda, distribuída em até 3 níveis na rede de patrocínio.</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Nível 1 — Direto (%)</label><input type="number" id="commLevel1" class="form-control" min="0" max="100" step="0.5"></div>
+                        <div class="form-group"><label>Nível 2 — Indireto (%)</label><input type="number" id="commLevel2" class="form-control" min="0" max="100" step="0.5"></div>
+                        <div class="form-group"><label>Nível 3 — 3º Nível (%)</label><input type="number" id="commLevel3" class="form-control" min="0" max="100" step="0.5"></div>
+                    </div>
+                </div>
+                <div id="commFixedFields" style="display:none">
+                    <div class="form-group"><label>Valor fixo por indicação (R$)</label><input type="number" id="commFixed" class="form-control" min="0" step="1"></div>
+                </div>
+                <hr style="border-color:var(--border);margin:16px 0">
+                <div class="form-group"><label>Máx. patrocinados por usuário</label><input type="number" id="maxSponsored" class="form-control" min="1" step="1" style="max-width:200px"></div>
                 <button class="btn btn-primary" onclick="saveCommissions()"><i class="fas fa-save"></i> Salvar Comissões</button>
             </div></div>
         </div>
@@ -91,6 +111,15 @@
         <!-- PLANS -->
         <div class="settings-section" id="sec-plans">
             <div class="card"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-id-card"></i> Planos</h3><button class="btn btn-sm btn-primary" onclick="addPlan()"><i class="fas fa-plus"></i> Novo Plano</button></div><div class="card-body" id="plansContainer"></div></div>
+        </div>
+
+        <!-- PAGES VISIBILITY -->
+        <div class="settings-section" id="sec-pages">
+            <div class="card" style="max-width:700px"><div class="card-header"><h3><i class="fas fa-eye-slash"></i> Visibilidade de Páginas</h3></div><div class="card-body">
+                <p style="color:var(--text3);font-size:.85rem;margin-bottom:20px"><i class="fas fa-info-circle"></i> Desmarque as páginas que deseja ocultar do menu do painel. Páginas ocultas não aparecerão para os usuários.</p>
+                <div id="pagesCheckboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+                <div style="margin-top:20px"><button class="btn btn-primary" onclick="savePageVisibility()"><i class="fas fa-save"></i> Salvar Visibilidade</button></div>
+            </div></div>
         </div>
 
         <!-- DATA -->
@@ -118,7 +147,17 @@
             btn.classList.add('active');
         }
 
-        function loadSettings() {
+        async function loadSettings() {
+            // Sincronizar settings do backend
+            const serverSettings = await DB.api('GET', '/api/admin/settings');
+            if (serverSettings) {
+                Object.entries(serverSettings).forEach(([key, val]) => {
+                    if (key === 'plans' && typeof val === 'string') {
+                        try { DB.set('plans', JSON.parse(val)); } catch(e) {}
+                    }
+                });
+            }
+
             const s = DB.getSettings();
             document.getElementById('siteName').value = s.siteName || '';
             document.getElementById('siteTitle').value = s.siteTitle || '';
@@ -130,13 +169,19 @@
             document.getElementById('accentColorText').value = s.accentColor || '#10b981';
             document.getElementById('footerText').value = s.footerText || '';
             document.getElementById('loginBg').value = s.loginBg || '';
-            document.getElementById('minWithdraw').value = s.minWithdraw || 50;
+            document.getElementById('minWithdraw').value = s.minWithdraw || 100;
+            document.getElementById('withdrawFee').value = s.withdrawFee || 2.50;
+            document.getElementById('monthlyFee').value = s.monthlyFee || 95;
             document.getElementById('maintenance').checked = s.maintenanceMode || false;
             updateSwitch();
-            document.getElementById('comm1').value = s.commissionLevel1 || 10;
-            document.getElementById('comm2').value = s.commissionLevel2 || 5;
-            document.getElementById('comm3').value = s.commissionLevel3 || 3;
-            loadLevels(); loadPlans(); updatePreview(); loadDbInfo();
+            document.getElementById('commFixed').value = s.commissionFixedAmount || 30;
+            document.getElementById('maxSponsored').value = s.maxSponsoredPerUser || 12;
+            document.getElementById('commType').value = s.commissionType || 'percentage';
+            document.getElementById('commLevel1').value = s.commissionLevel1 || 10;
+            document.getElementById('commLevel2').value = s.commissionLevel2 || 5;
+            document.getElementById('commLevel3').value = s.commissionLevel3 || 2;
+            toggleCommType();
+            loadLevels(); loadPlans(); loadPageVisibility(); updatePreview(); loadDbInfo();
         }
 
         document.getElementById('primaryColor').addEventListener('input', function(){ document.getElementById('primaryColorText').value = this.value; updatePreview(); });
@@ -169,24 +214,49 @@
         document.getElementById('maintenance').addEventListener('change', updateSwitch);
 
         function saveGeneral() {
-            DB.saveSettings({ minWithdraw: parseFloat(document.getElementById('minWithdraw').value)||50, maintenanceMode: document.getElementById('maintenance').checked });
+            DB.saveSettings({ minWithdraw: parseFloat(document.getElementById('minWithdraw').value)||100, withdrawFee: parseFloat(document.getElementById('withdrawFee').value)||2.50, monthlyFee: parseFloat(document.getElementById('monthlyFee').value)||95, maintenanceMode: document.getElementById('maintenance').checked });
             Layout.toast('Configurações gerais salvas!', 'success');
         }
 
         function loadLevels() {
             const levels = DB.get('levels') || {};
-            const iconMap = { prata:'fa-medal', ouro:'fa-crown', diamante:'fa-gem' };
+            const iconMap = { start:'fa-rocket', bronze:'fa-medal', prata:'fa-medal', ouro:'fa-crown', diamante:'fa-gem' };
             document.getElementById('levelsContainer').innerHTML = Object.entries(levels).map(([key, l]) => '<div class="level-card"><div class="level-icon" style="background:'+l.color+'"><i class="fas '+(iconMap[key]||'fa-star')+'"></i></div><div class="level-fields"><div><label>Nome</label><input type="text" class="form-control" value="'+l.name+'" readonly style="font-weight:700"></div><div><label>Pts Mínimos</label><input type="number" class="form-control" value="'+l.minPoints+'" id="lvlPts_'+key+'" min="0"></div><div><label>Bônus %</label><input type="number" class="form-control" value="'+l.bonus+'" id="lvlBonus_'+key+'" min="0" max="100"></div><div><label>Comissão %</label><input type="number" class="form-control" value="'+l.comission+'" id="lvlComm_'+key+'" min="0" max="100"></div></div></div>').join('') + '<button class="btn btn-primary" style="margin-top:12px" onclick="saveLevels()"><i class="fas fa-save"></i> Salvar Níveis</button>';
         }
 
         function saveLevels() {
             const levels = DB.get('levels') || {};
             Object.keys(levels).forEach(key => { levels[key].minPoints = parseInt(document.getElementById('lvlPts_'+key).value)||0; levels[key].bonus = parseInt(document.getElementById('lvlBonus_'+key).value)||0; levels[key].comission = parseInt(document.getElementById('lvlComm_'+key).value)||0; });
-            DB.set('levels', levels); Layout.toast('Níveis atualizados!', 'success'); loadLevels();
+            DB.set('levels', levels);
+            // Persistir no banco via API
+            Object.keys(levels).forEach(key => {
+                const l = levels[key];
+                DB.apiBackground('PUT', '/api/admin/settings', { ['level_'+key+'_minPoints']: l.minPoints, ['level_'+key+'_bonus']: l.bonus, ['level_'+key+'_comission']: l.comission });
+            });
+            Layout.toast('Níveis atualizados!', 'success'); loadLevels();
+        }
+
+        function toggleCommType() {
+            const isPercent = document.getElementById('commType').value === 'percentage';
+            document.getElementById('commPercentFields').style.display = isPercent ? 'block' : 'none';
+            document.getElementById('commFixedFields').style.display = isPercent ? 'none' : 'block';
         }
 
         function saveCommissions() {
-            DB.saveSettings({ commissionLevel1: parseFloat(document.getElementById('comm1').value)||10, commissionLevel2: parseFloat(document.getElementById('comm2').value)||5, commissionLevel3: parseFloat(document.getElementById('comm3').value)||3 });
+            const commType = document.getElementById('commType').value;
+            const level1 = parseFloat(document.getElementById('commLevel1').value) || 10;
+            const level2 = parseFloat(document.getElementById('commLevel2').value) || 5;
+            const level3 = parseFloat(document.getElementById('commLevel3').value) || 2;
+            const fixed = parseFloat(document.getElementById('commFixed').value) || 30;
+            const maxSp = parseInt(document.getElementById('maxSponsored').value) || 12;
+            DB.saveSettings({
+                commissionType: commType,
+                commissionLevel1: String(level1),
+                commissionLevel2: String(level2),
+                commissionLevel3: String(level3),
+                commissionFixedAmount: String(fixed),
+                maxSponsoredPerUser: String(maxSp)
+            });
             Layout.toast('Comissões salvas!', 'success');
         }
 
@@ -207,9 +277,9 @@
             const plan = { id: document.getElementById('planId').value.trim(), name: document.getElementById('planName').value.trim(), price: parseFloat(document.getElementById('planPrice').value)||0, features: document.getElementById('planFeatures').value.split(',').map(f=>f.trim()).filter(Boolean) };
             if(!plan.id||!plan.name){ Layout.toast('Preencha ID e Nome','error'); return; }
             if(idx>=0) plans[idx]=plan; else plans.push(plan);
-            DB.set('plans', plans); Layout.closeModal(); loadPlans(); Layout.toast('Plano salvo!','success');
+            DB.set('plans', plans); DB.apiBackground('PUT', '/api/admin/settings', { plans: JSON.stringify(plans) }); Layout.closeModal(); loadPlans(); Layout.toast('Plano salvo!','success');
         }
-        function deletePlan(idx) { if(!confirm('Excluir?')) return; const p=DB.get('plans')||[]; p.splice(idx,1); DB.set('plans',p); loadPlans(); Layout.toast('Plano excluído','success'); }
+        function deletePlan(idx) { if(!confirm('Excluir?')) return; const p=DB.get('plans')||[]; p.splice(idx,1); DB.set('plans',p); DB.apiBackground('PUT', '/api/admin/settings', { plans: JSON.stringify(p) }); loadPlans(); Layout.toast('Plano excluído','success'); }
 
         function loadDbInfo() {
             const u=(DB.get('users')||[]).length,pk=(DB.get('packages')||[]).length,tx=(DB.get('transactions')||[]).length,pr=(DB.get('limpanome_processes')||[]).length,tk=(DB.get('tickets')||[]).length;
@@ -228,6 +298,41 @@
             r.readAsText(file); e.target.value='';
         }
         function resetData() { if(!confirm('ATENÇÃO: Todos os dados serão perdidos!\nContinuar?')) return; DB.resetAll(); Layout.toast('Dados resetados!','success'); setTimeout(function(){location.reload()},1200); }
+
+        const allPages = [
+            { key: 'assinaturas', label: 'Assinaturas', icon: 'fa-id-badge' },
+            { key: 'bacen-consulta', label: 'Bacen Consulta', icon: 'fa-university' },
+            { key: 'bacen-relatorios', label: 'Bacen Relatórios', icon: 'fa-chart-bar' },
+            { key: 'consultas', label: 'Consultas', icon: 'fa-search' },
+            { key: 'cnpj-consulta', label: 'CNPJ Consulta', icon: 'fa-building' },
+            { key: 'eventos', label: 'Eventos', icon: 'fa-calendar-alt' },
+            { key: 'downloads', label: 'Downloads', icon: 'fa-download' },
+            { key: 'informativos', label: 'Informativos', icon: 'fa-bullhorn' },
+            { key: 'universidade', label: 'Universidade', icon: 'fa-graduation-cap' },
+            { key: 'financeiro', label: 'Financeiro', icon: 'fa-dollar-sign' },
+            { key: 'relatorios-vendas', label: 'Relatórios Vendas', icon: 'fa-chart-line' },
+            { key: 'relatorios-comissoes', label: 'Relatórios Comissões', icon: 'fa-percentage' },
+            { key: 'contratos', label: 'Contratos', icon: 'fa-file-contract' }
+        ];
+
+        function loadPageVisibility() {
+            const s = DB.getSettings();
+            const hidden = (s.hiddenPages || 'assinaturas').split(',').map(p => p.trim()).filter(Boolean);
+            document.getElementById('pagesCheckboxes').innerHTML = allPages.map(p => {
+                const checked = !hidden.includes(p.key);
+                return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;background:${checked ? 'var(--surface)' : 'var(--bg)'};transition:all .2s">
+                    <input type="checkbox" id="page_${p.key}" ${checked ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--primary)">
+                    <i class="fas ${p.icon}" style="color:${checked ? 'var(--primary)' : 'var(--text3)'};width:20px;text-align:center"></i>
+                    <span style="font-size:.88rem;${checked ? '' : 'color:var(--text3);text-decoration:line-through'}">${p.label}</span>
+                </label>`;
+            }).join('');
+        }
+
+        function savePageVisibility() {
+            const hidden = allPages.filter(p => !document.getElementById('page_' + p.key).checked).map(p => p.key);
+            DB.saveSettings({ hiddenPages: hidden.join(',') });
+            Layout.toast('Visibilidade das páginas salva! Recarregue o painel para aplicar.', 'success');
+        }
 
         loadSettings();
     </script>

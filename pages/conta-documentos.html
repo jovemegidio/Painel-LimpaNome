@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Meus Documentos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div id="app"></div>
+<template id="page-content">
+    <div class="page-header"><h2><i class="fas fa-id-card" style="color:var(--text3);margin-right:8px"></i>Meus Documentos</h2><p>Envie seus documentos para verificação da sua conta</p></div>
+
+    <div class="card mb-24">
+        <div class="card-header"><h3><i class="fas fa-upload"></i> Enviar Documento</h3></div>
+        <div class="card-body">
+            <form id="uploadForm" onsubmit="uploadDocument(event)">
+                <div class="form-row">
+                    <div class="form-group" style="flex:1">
+                        <label>Tipo do Documento</label>
+                        <select class="form-control" id="docType">
+                            <option value="rg">RG</option>
+                            <option value="cpf">CPF</option>
+                            <option value="cnh">CNH</option>
+                            <option value="comprovante_residencia">Comprovante de Residência</option>
+                            <option value="selfie">Selfie com Documento</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:2">
+                        <label>Arquivo (JPG, PNG ou PDF — máx. 5MB)</label>
+                        <input type="file" class="form-control" id="docFile" accept=".jpg,.jpeg,.png,.pdf" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="uploadBtn"><i class="fas fa-cloud-upload-alt"></i> Enviar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-file-alt"></i> Documentos Enviados</h3></div>
+        <div class="card-body" id="docList">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div>
+        </div>
+    </div>
+</template>
+
+<script src="../js/data.js"></script>
+<script src="../js/components.js"></script>
+<script>
+Layout.init({ basePath: '../', page: 'conta-documentos', title: 'Meus Documentos' });
+
+const typeLabels = { rg: 'RG', cpf: 'CPF', cnh: 'CNH', comprovante_residencia: 'Comprovante de Residência', selfie: 'Selfie com Documento', outro: 'Outro' };
+const statusBadge = { pendente: 'badge-warning', aprovado: 'badge-success', rejeitado: 'badge-danger' };
+
+async function loadDocuments() {
+    const docs = await DB.getUserDocuments();
+    const list = document.getElementById('docList');
+    if (!docs || docs.length === 0) {
+        list.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open" style="font-size:2rem;opacity:.5;margin-bottom:8px"></i><p>Nenhum documento enviado</p></div>';
+        return;
+    }
+    list.innerHTML = `<table class="table"><thead><tr><th>Tipo</th><th>Arquivo</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody>
+        ${docs.map(d => `<tr>
+            <td><strong>${typeLabels[d.type] || d.type}</strong></td>
+            <td>${d.original_name}<br><small style="color:var(--text3)">${(d.size/1024).toFixed(0)} KB</small></td>
+            <td><span class="badge ${statusBadge[d.status] || 'badge-secondary'}">${d.status}</span></td>
+            <td>${new Date(d.created_at).toLocaleDateString('pt-BR')}</td>
+            <td><button class="btn btn-sm btn-outline-danger" onclick="removeDoc(${d.id})"><i class="fas fa-trash"></i></button></td>
+        </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function uploadDocument(e) {
+    e.preventDefault();
+    const btn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('docFile');
+    if (!fileInput.files[0]) return;
+
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+    const result = await DB.uploadUserDocument(document.getElementById('docType').value, fileInput.files[0]);
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Enviar';
+
+    if (result && result.success) {
+        Layout.toast('Documento enviado com sucesso!', 'success');
+        fileInput.value = '';
+        loadDocuments();
+    } else {
+        Layout.toast(result?.error || 'Erro ao enviar documento', 'error');
+    }
+}
+
+async function removeDoc(id) {
+    if (!confirm('Remover este documento?')) return;
+    const result = await DB.deleteUserDocument(id);
+    if (result && result.success) {
+        Layout.toast('Documento removido', 'success');
+        loadDocuments();
+    }
+}
+
+loadDocuments();
+</script>
+</body>
+</html>

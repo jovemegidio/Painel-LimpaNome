@@ -18,7 +18,7 @@
         <div class="card">
             <div class="card-body" style="overflow-x:auto">
                 <table class="table" id="pkgTable"><thead><tr>
-                    <th>ID</th><th>Nome</th><th>Preço</th><th>Pontos</th><th>Descrição</th><th style="width:120px">Ações</th>
+                    <th>ID</th><th>Nome</th><th>Preço</th><th>Pontos</th><th>Nomes</th><th>Nível</th><th>Descrição</th><th style="width:120px">Ações</th>
                 </tr></thead><tbody></tbody></table>
             </div>
         </div>
@@ -33,11 +33,13 @@
                 <form id="pkgForm" onsubmit="savePkg(event)">
                     <input type="hidden" id="pkgEditId">
                     <div class="form-group"><label>Nome</label><input type="text" id="pkgName" class="form-control" required></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
                         <div class="form-group"><label>Preço (R$)</label><input type="number" id="pkgPrice" class="form-control" min="0" step="0.01" required></div>
                         <div class="form-group"><label>Pontos</label><input type="number" id="pkgPoints" class="form-control" min="0" required></div>
+                        <div class="form-group"><label>Qtd. Nomes</label><input type="number" id="pkgNamesCount" class="form-control" min="0" value="0"></div>
                     </div>
                     <div class="form-group"><label>Descrição</label><textarea id="pkgDesc" class="form-control" rows="3"></textarea></div>
+                    <div class="form-group"><label>Nível vinculado</label><select id="pkgLevel" class="form-control"><option value="">Nenhum</option><option value="start">Start</option><option value="bronze">Bronze</option><option value="prata">Prata</option><option value="ouro">Ouro</option><option value="diamante">Diamante</option></select></div>
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px">
                         <button type="button" class="btn btn-outline" onclick="closePkgModal()">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Salvar</button>
@@ -51,22 +53,32 @@
     <script>
         Layout.init({ basePath: '../', page: 'admin-packages', title: 'Pacotes', admin: true });
 
+        let pkgs = [];
+
+        async function loadPackages() {
+            const res = await DB.api('GET', '/api/admin/packages');
+            pkgs = Array.isArray(res) ? res : [];
+            renderTable();
+        }
+
         function renderTable() {
-            const pkgs = DB.get('packages') || [];
             const tbody = document.querySelector('#pkgTable tbody');
             tbody.innerHTML = pkgs.length ? pkgs.map(p => `<tr>
                 <td>${p.id}</td>
                 <td><strong>${p.name}</strong></td>
-                <td>${fmt(p.price)}</td>
+                <td>R$ ${fmt(p.price)}</td>
                 <td>${p.points} pts</td>
-                <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.description || '—'}</td>
+                <td>${p.names_count || '—'}</td>
+                <td>${p.level_key ? '<span style="text-transform:capitalize;font-weight:600">'+p.level_key+'</span>' : '—'}</td>
+                <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.description || '—'}</td>
                 <td>
                     <button class="btn btn-sm btn-outline" onclick="editPkg(${p.id})" title="Editar"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-danger" onclick="deletePkg(${p.id})" title="Excluir"><i class="fas fa-trash"></i></button>
                 </td>
-            </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b">Nenhum pacote cadastrado</td></tr>';
+            </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:#64748b">Nenhum pacote cadastrado</td></tr>';
         }
-        renderTable();
+
+        loadPackages();
 
         function openPkgModal() {
             document.getElementById('pkgModal').style.display = 'flex';
@@ -77,7 +89,6 @@
         function closePkgModal() { document.getElementById('pkgModal').style.display = 'none'; }
 
         function editPkg(id) {
-            const pkgs = DB.get('packages') || [];
             const p = pkgs.find(x => x.id === id);
             if (!p) return;
             document.getElementById('pkgModal').style.display = 'flex';
@@ -86,40 +97,48 @@
             document.getElementById('pkgName').value = p.name;
             document.getElementById('pkgPrice').value = p.price;
             document.getElementById('pkgPoints').value = p.points;
+            document.getElementById('pkgNamesCount').value = p.names_count || 0;
             document.getElementById('pkgDesc').value = p.description || '';
+            document.getElementById('pkgLevel').value = p.level_key || '';
         }
 
-        function savePkg(e) {
+        async function savePkg(e) {
             e.preventDefault();
-            const pkgs = DB.get('packages') || [];
             const id = document.getElementById('pkgEditId').value;
             const pkg = {
                 name: document.getElementById('pkgName').value.trim(),
                 price: parseFloat(document.getElementById('pkgPrice').value),
                 points: parseInt(document.getElementById('pkgPoints').value),
-                description: document.getElementById('pkgDesc').value.trim()
+                names_count: parseInt(document.getElementById('pkgNamesCount').value) || 0,
+                description: document.getElementById('pkgDesc').value.trim(),
+                level_key: document.getElementById('pkgLevel').value
             };
+
+            let res;
             if (id) {
-                const idx = pkgs.findIndex(x => x.id === parseInt(id));
-                if (idx !== -1) { pkgs[idx] = { ...pkgs[idx], ...pkg }; }
+                res = await DB.api('PUT', `/api/admin/packages/${id}`, pkg);
             } else {
-                pkg.id = Date.now();
-                pkgs.push(pkg);
+                res = await DB.api('POST', '/api/admin/packages', pkg);
             }
-            DB.set('packages', pkgs);
-            DB.apiBackground('PUT', '/api/admin/content/packages', pkgs);
-            closePkgModal();
-            renderTable();
-            Layout.toast('Pacote salvo com sucesso!', 'success');
+
+            if (res && !res.error) {
+                closePkgModal();
+                await loadPackages();
+                Layout.toast('Pacote salvo com sucesso!', 'success');
+            } else {
+                Layout.toast(res?.error || 'Erro ao salvar', 'error');
+            }
         }
 
-        function deletePkg(id) {
+        async function deletePkg(id) {
             if (!confirm('Excluir este pacote?')) return;
-            const pkgs = (DB.get('packages') || []).filter(x => x.id !== id);
-            DB.set('packages', pkgs);
-            DB.apiBackground('PUT', '/api/admin/content/packages', pkgs);
-            renderTable();
-            Layout.toast('Pacote excluído', 'success');
+            const res = await DB.api('DELETE', `/api/admin/packages/${id}`);
+            if (res && !res.error) {
+                await loadPackages();
+                Layout.toast('Pacote excluído', 'success');
+            } else {
+                Layout.toast(res?.error || 'Erro ao excluir', 'error');
+            }
         }
     </script>
 </body>

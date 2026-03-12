@@ -16,6 +16,112 @@ function getClientIP(req) { return req.headers['x-forwarded-for']?.split(',')[0]
 function sanitize(s) { return (s || '').replace(/[<>"'`;]/g, '').trim(); }
 
 // ════════════════════════════════════
+//   PACOTE PERSONALIZADO (quantidade customizada de nomes)
+// ════════════════════════════════════
+
+/**
+ * POST /api/payments/package/custom
+ * Gera cobrança para pacote com quantidade personalizada de nomes
+ * Body: { names_count, method, creditCard?, creditCardHolderInfo? }
+ */
+router.post('/package/custom', auth, async (req, res) => {
+    try {
+        const db = getDB();
+        const { names_count, method } = req.body;
+        const count = Number(names_count);
+
+        if (!count || !Number.isInteger(count) || count < 1 || count > 100) {
+            return res.status(400).json({ error: 'Quantidade de nomes inválida (1-100)' });
+        }
+        if (!['pix', 'boleto', 'credit_card'].includes(method)) {
+            return res.status(400).json({ error: 'Método de pagamento inválido' });
+        }
+
+        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+        if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+        // Calcular preço por nome baseado no nível
+        const RATE_PER_NAME = { diamante: 130, ouro: 160, prata: 190, bronze: 220, start: 250 };
+        const rate = RATE_PER_NAME[user.level] || 250;
+        const totalPrice = Math.round(rate * count * 100) / 100;
+        const points = Math.round(count * 50);
+
+        // Criar pacote temporário na tabela
+        const pkgResult = db.prepare('INSERT INTO packages (name, price, points, description, level_key, names_count, active) VALUES (?,?,?,?,?,?,1)')
+            .run(`${count} Nomes (Personalizado)`, totalPrice, points, `Pacote personalizado ${count} nomes — Nível ${user.level}`, user.level, count);
+        const pkgId = pkgResult.lastInsertRowid;
+        const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(pkgId);
+
+        if (!asaas.isConfigured()) {
+            return res.status(503).json({ error: 'Sistema de pagamento não configurado. Entre em contato com o suporte.' });
+        }
+
+        // Buscar/criar cliente Asaas
+        if (!user.cpf || user.cpf.replace(/\D/g, '').length < 11) {
+            return res.status(400).json({ error: 'CPF não cadastrado. Acesse Configurações e preencha seu CPF antes de comprar.' });
+        }
+        let customer;
+        try { customer = await asaas.getOrCreateCustomer(user); }
+        catch (e) { return res.status(400).json({ error: 'Erro ao processar CPF. Verifique seus dados em Configurações.' }); }
+        if (!customer) return res.status(400).json({ error: 'CPF/CNPJ inválido. Atualize em Configurações.' });
+
+        if (!user.asaas_customer_id || user.asaas_customer_id !== customer.id) {
+            db.prepare('UPDATE users SET asaas_customer_id = ? WHERE id = ?').run(customer.id, user.id);
+        }
+
+        const billingType = method === 'pix' ? 'PIX' : method === 'boleto' ? 'BOLETO' : 'CREDIT_CARD';
+        const paymentParams = {
+            customerId: customer.id,
+            value: totalPrice,
+            billingType,
+            description: `Pacote ${count} Nomes - Credbusiness`,
+            externalReference: `package_${pkgId}_user_${user.id}`
+        };
+        if (method === 'credit_card') {
+            if (!req.body.creditCard || !req.body.creditCardHolderInfo) {
+                return res.status(400).json({ error: 'Dados do cartão são obrigatórios' });
+            }
+            paymentParams.creditCard = req.body.creditCard;
+            paymentParams.creditCardHolderInfo = req.body.creditCardHolderInfo;
+        }
+
+        const payment = await asaas.createPayment(paymentParams);
+
+        db.prepare(`INSERT INTO payments (user_id, asaas_payment_id, asaas_customer_id, type, reference_id, amount, method, status, invoice_url, external_reference, due_date, created_at)
+            VALUES (?, ?, ?, 'package', ?, ?, ?, 'pendente', ?, ?, ?, datetime('now'))`)
+            .run(user.id, payment.id, customer.id, pkgId, totalPrice, method, payment.invoiceUrl || '', paymentParams.externalReference, payment.dueDate);
+
+        db.prepare(`INSERT INTO user_packages (user_id, package_id, purchased_at, status, payment_status, payment_method)
+            VALUES (?, ?, date('now'), 'pendente', 'pendente', ?)`)
+            .run(user.id, pkgId, method);
+
+        const response = { success: true, paymentId: payment.id, status: payment.status, invoiceUrl: payment.invoiceUrl, value: payment.value, dueDate: payment.dueDate, method };
+
+        if (method === 'pix') {
+            const pix = await asaas.getPixQrCode(payment.id);
+            if (pix) {
+                response.pix = { qrCodeImage: pix.encodedImage, copyPaste: pix.payload, expirationDate: pix.expirationDate };
+                db.prepare('UPDATE payments SET pix_qr_code = ?, pix_copy_paste = ? WHERE asaas_payment_id = ?').run(pix.encodedImage, pix.payload, payment.id);
+            }
+        }
+        if (method === 'boleto') {
+            const boleto = await asaas.getBoletoInfo(payment.id);
+            if (boleto) response.boleto = { identificationField: boleto.identificationField, barCode: boleto.barCode };
+        }
+        if (method === 'credit_card' && (payment.status === 'CONFIRMED' || payment.status === 'RECEIVED')) {
+            activatePackage(db, user.id, pkg);
+            response.approved = true;
+            response.message = 'Pagamento aprovado! Pacote ativado.';
+        }
+
+        res.json(response);
+    } catch (err) {
+        console.error('Erro pacote personalizado:', err.message);
+        res.status(500).json({ error: 'Erro ao processar pagamento' });
+    }
+});
+
+// ════════════════════════════════════
 //   PAGAMENTO DE PACOTE
 // ════════════════════════════════════
 
@@ -42,16 +148,29 @@ router.post('/package/:packageId', auth, async (req, res) => {
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
         if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
+        // Validar que o pacote é do nível do usuário
+        if (pkg.level_key && pkg.level_key !== user.level) {
+            return res.status(403).json({ error: 'Este pacote não está disponível para o seu nível.' });
+        }
+
         // Verificar se Asaas está configurado
         if (!asaas.isConfigured()) {
-            // Modo fallback — debitar do saldo interno (sandbox/dev)
-            return handleFallbackPurchase(db, req, res, user, pkg);
+            return res.status(503).json({ error: 'Sistema de pagamento não configurado. Entre em contato com o suporte.' });
         }
 
         // ── Buscar/criar cliente no Asaas ──
-        const customer = await asaas.getOrCreateCustomer(user);
+        if (!user.cpf || user.cpf.replace(/\D/g, '').length < 11) {
+            return res.status(400).json({ error: 'CPF não cadastrado. Acesse Configurações e preencha seu CPF antes de comprar.' });
+        }
+        let customer;
+        try {
+            customer = await asaas.getOrCreateCustomer(user);
+        } catch (custErr) {
+            console.error('Erro Asaas customer:', custErr.message);
+            return res.status(400).json({ error: 'Erro ao processar CPF. Verifique seus dados em Configurações.' });
+        }
         if (!customer) {
-            return res.status(500).json({ error: 'Erro ao registrar cliente no gateway de pagamento. Verifique seu CPF.' });
+            return res.status(400).json({ error: 'CPF/CNPJ inválido. Atualize seus dados em Configurações.' });
         }
 
         // Salvar asaas_customer_id no usuário
@@ -86,9 +205,9 @@ router.post('/package/:packageId', auth, async (req, res) => {
             .run(user.id, payment.id, customer.id, pkg.id, pkg.price, method, payment.invoiceUrl || '', paymentParams.externalReference, payment.dueDate);
 
         // Registrar compra de pacote como pendente
-        db.prepare(`INSERT INTO user_packages (user_id, package_id, purchased_at, status, payment_status)
-            VALUES (?, ?, date('now'), 'pendente', 'pendente')`)
-            .run(user.id, pkg.id);
+        db.prepare(`INSERT INTO user_packages (user_id, package_id, purchased_at, status, payment_status, payment_method)
+            VALUES (?, ?, date('now'), 'pendente', 'pendente', ?)`)
+            .run(user.id, pkg.id, method);
 
         logAudit({ userType: 'user', userId: user.id, action: 'payment_created', entity: 'payment', details: { packageId: pkg.id, method, asaasId: payment.id, value: pkg.price }, ip: getClientIP(req) });
 
@@ -141,7 +260,10 @@ router.post('/package/:packageId', auth, async (req, res) => {
         res.json(response);
     } catch (err) {
         console.error('Erro pagamento pacote:', err.message);
-        res.status(500).json({ error: err.message || 'Erro ao processar pagamento' });
+        const isAsaasError = err.message && (err.message.includes('CPF') || err.message.includes('CNPJ') || err.message.includes('inválido') || err.message.includes('400'));
+        const status = isAsaasError ? 400 : 500;
+        const msg = isAsaasError ? 'Verifique seus dados cadastrais (CPF/CNPJ) nas Configurações.' : 'Erro ao processar pagamento';
+        res.status(status).json({ error: msg });
     }
 });
 
@@ -184,7 +306,7 @@ router.post('/plan/:planId', auth, async (req, res) => {
 
         // Buscar/criar cliente Asaas
         const customer = await asaas.getOrCreateCustomer(user);
-        if (!customer) return res.status(500).json({ error: 'Erro ao registrar no gateway. Verifique seu CPF.' });
+        if (!customer) return res.status(400).json({ error: 'Não foi possível registrar no gateway. Verifique se seu CPF/CNPJ está correto nas Configurações.' });
 
         if (!user.asaas_customer_id || user.asaas_customer_id !== customer.id) {
             db.prepare('UPDATE users SET asaas_customer_id = ? WHERE id = ?').run(customer.id, user.id);
@@ -253,7 +375,10 @@ router.post('/plan/:planId', auth, async (req, res) => {
         res.json(response);
     } catch (err) {
         console.error('Erro pagamento plano:', err.message);
-        res.status(500).json({ error: err.message || 'Erro ao processar pagamento' });
+        const isAsaasError = err.message && (err.message.includes('CPF') || err.message.includes('CNPJ') || err.message.includes('inválido') || err.message.includes('400'));
+        const status = isAsaasError ? 400 : 500;
+        const msg = isAsaasError ? 'Verifique seus dados cadastrais (CPF/CNPJ) nas Configurações.' : 'Erro ao processar pagamento';
+        res.status(status).json({ error: msg });
     }
 });
 
@@ -321,6 +446,154 @@ router.get('/my', auth, (req, res) => {
     } catch (err) {
         console.error('Erro listar pagamentos:', err.message);
         res.status(500).json({ error: 'Erro ao listar pagamentos' });
+    }
+});
+
+// ════════════════════════════════════
+//   MENSALIDADE (R$ 95,00/mês)
+// ════════════════════════════════════
+
+/**
+ * GET /api/payments/monthly-fee/status
+ * Retorna status da mensalidade do usuário
+ */
+router.get('/monthly-fee/status', auth, (req, res) => {
+    try {
+        const db = getDB();
+        const user = db.prepare('SELECT monthly_fee_paid_until, access_blocked FROM users WHERE id = ?').get(req.user.id);
+        if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+        const settings = {};
+        db.prepare('SELECT * FROM settings').all().forEach(s => { settings[s.key] = s.value; });
+        const monthlyFee = Number(settings.monthlyFee) || 95;
+
+        const now = new Date();
+        const paidUntil = user.monthly_fee_paid_until ? new Date(user.monthly_fee_paid_until) : null;
+        const isPaid = paidUntil && paidUntil >= now;
+
+        res.json({
+            success: true,
+            isPaid,
+            paidUntil: user.monthly_fee_paid_until || null,
+            accessBlocked: !!user.access_blocked,
+            monthlyFeeValue: monthlyFee
+        });
+    } catch (err) {
+        console.error('Erro status mensalidade:', err.message);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+/**
+ * POST /api/payments/monthly-fee/pay
+ * Gera cobrança para mensalidade
+ * Body: { method }
+ */
+router.post('/monthly-fee/pay', auth, async (req, res) => {
+    try {
+        const db = getDB();
+        const { method } = req.body;
+
+        if (!['pix', 'boleto', 'credit_card'].includes(method)) {
+            return res.status(400).json({ error: 'Método de pagamento inválido' });
+        }
+
+        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+        if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+        const settings = {};
+        db.prepare('SELECT * FROM settings').all().forEach(s => { settings[s.key] = s.value; });
+        const monthlyFee = Number(settings.monthlyFee) || 95;
+
+        // Verificar se já há pagamento de mensalidade pendente este mês
+        const now = new Date();
+        const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const pendingFee = db.prepare(
+            "SELECT id FROM payments WHERE user_id = ? AND type = 'monthly_fee' AND status IN ('pendente', 'processando') AND created_at >= ?"
+        ).get(user.id, monthStart);
+        if (pendingFee) {
+            return res.status(400).json({ error: 'Já existe uma cobrança de mensalidade pendente para este mês.' });
+        }
+
+        if (!asaas.isConfigured()) {
+            // Modo fallback — ativar diretamente (dev/sandbox)
+            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            const paidUntilStr = nextMonth.toISOString().slice(0, 10);
+            db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0 WHERE id = ?')
+                .run(paidUntilStr, user.id);
+
+            db.prepare(`INSERT INTO payments (user_id, type, amount, method, status, external_reference, created_at)
+                VALUES (?, 'monthly_fee', ?, ?, 'pago', ?, datetime('now'))`)
+                .run(user.id, monthlyFee, method, `monthly_fee_user_${user.id}`);
+
+            db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status)
+                VALUES (?, 'mensalidade', ?, 'Mensalidade mensal', date('now'), 'concluido')`)
+                .run(user.id, -monthlyFee);
+
+            createNotification(user.id, 'success', 'Mensalidade paga!',
+                `Sua mensalidade de R$ ${monthlyFee.toFixed(2)} foi confirmada. Acesso liberado até ${paidUntilStr}.`);
+
+            return res.json({ success: true, approved: true, message: 'Mensalidade paga com sucesso! Acesso liberado.' });
+        }
+
+        // Buscar/criar cliente Asaas
+        if (!user.cpf || user.cpf.replace(/\D/g, '').length < 11) {
+            return res.status(400).json({ error: 'CPF não cadastrado. Acesse Configurações e preencha seu CPF.' });
+        }
+
+        let customer;
+        try { customer = await asaas.getOrCreateCustomer(user); }
+        catch (e) { return res.status(400).json({ error: 'Erro ao processar CPF.' }); }
+        if (!customer) return res.status(400).json({ error: 'CPF/CNPJ inválido.' });
+
+        if (!user.asaas_customer_id || user.asaas_customer_id !== customer.id) {
+            db.prepare('UPDATE users SET asaas_customer_id = ? WHERE id = ?').run(customer.id, user.id);
+        }
+
+        const billingType = method === 'pix' ? 'PIX' : method === 'boleto' ? 'BOLETO' : 'CREDIT_CARD';
+        const paymentParams = {
+            customerId: customer.id,
+            value: monthlyFee,
+            billingType,
+            description: 'Mensalidade Credbusiness',
+            externalReference: `monthly_fee_user_${user.id}_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+        };
+
+        if (method === 'credit_card') {
+            if (!req.body.creditCard || !req.body.creditCardHolderInfo) {
+                return res.status(400).json({ error: 'Dados do cartão são obrigatórios' });
+            }
+            paymentParams.creditCard = req.body.creditCard;
+            paymentParams.creditCardHolderInfo = req.body.creditCardHolderInfo;
+        }
+
+        const payment = await asaas.createPayment(paymentParams);
+
+        db.prepare(`INSERT INTO payments (user_id, asaas_payment_id, asaas_customer_id, type, amount, method, status, invoice_url, external_reference, due_date, created_at)
+            VALUES (?, ?, ?, 'monthly_fee', ?, ?, 'pendente', ?, ?, ?, datetime('now'))`)
+            .run(user.id, payment.id, customer.id, monthlyFee, method, payment.invoiceUrl || '', paymentParams.externalReference, payment.dueDate);
+
+        const response = { success: true, paymentId: payment.id, status: payment.status, invoiceUrl: payment.invoiceUrl, value: payment.value, dueDate: payment.dueDate, method };
+
+        if (method === 'pix') {
+            try {
+                const pix = await asaas.getPixQrCode(payment.id);
+                if (pix) {
+                    response.pixQrCode = pix.encodedImage;
+                    response.pixCopyPaste = pix.payload;
+                    db.prepare('UPDATE payments SET pix_qr_code = ?, pix_copy_paste = ? WHERE asaas_payment_id = ?')
+                        .run(pix.encodedImage, pix.payload, payment.id);
+                }
+            } catch {}
+        }
+
+        logAudit({ userType: 'user', userId: user.id, action: 'monthly_fee_payment', entity: 'payment',
+            details: { value: monthlyFee, method }, ip: getClientIP(req) });
+
+        res.json(response);
+    } catch (err) {
+        console.error('Erro pagamento mensalidade:', err.message);
+        res.status(500).json({ error: 'Erro ao processar pagamento da mensalidade' });
     }
 });
 
@@ -394,15 +667,15 @@ router.post('/webhook', async (req, res) => {
             const newStatus = asaas.mapPaymentStatus(asaasPayment.status);
             const oldStatus = localPayment.status;
 
-            // Atualizar status local
-            db.prepare('UPDATE payments SET status = ?, updated_at = datetime(\'now\') WHERE asaas_payment_id = ?')
-                .run(newStatus, asaasPayment.id);
-
-            // ── Pagamento Confirmado ──
+            // ── Pagamento Confirmado (verificar ANTES de atualizar status para idempotência) ──
             if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && oldStatus !== 'pago') {
-                db.prepare("UPDATE payments SET status = 'pago', paid_at = datetime('now') WHERE asaas_payment_id = ?")
+                db.prepare("UPDATE payments SET status = 'pago', paid_at = datetime('now'), updated_at = datetime('now') WHERE asaas_payment_id = ? AND status != 'pago'")
                     .run(asaasPayment.id);
                 processPaymentConfirmed(db, localPayment);
+            } else {
+                // Atualizar status local (para eventos que não são confirmação)
+                db.prepare('UPDATE payments SET status = ?, updated_at = datetime(\'now\') WHERE asaas_payment_id = ?')
+                    .run(newStatus, asaasPayment.id);
             }
 
             // ── Pagamento Estornado ──
@@ -412,7 +685,7 @@ router.post('/webhook', async (req, res) => {
 
             // ── Pagamento Vencido ──
             if (event === 'PAYMENT_OVERDUE') {
-                createNotification(db, localPayment.user_id, 'payment', 'Pagamento vencido',
+                createNotification(localPayment.user_id, 'payment', 'Pagamento vencido',
                     `Seu pagamento de R$ ${localPayment.amount.toFixed(2)} venceu. Gere uma nova cobrança.`);
             }
 
@@ -430,21 +703,25 @@ router.post('/webhook', async (req, res) => {
                 db.prepare('UPDATE payments SET status = ?, updated_at = datetime(\'now\') WHERE asaas_payment_id = ?')
                     .run(newStatus, asaasTransfer.id);
 
-                if (event === 'TRANSFER_DONE') {
-                    // Saque concluído com sucesso
-                    db.prepare("UPDATE transactions SET status = 'concluido' WHERE reference_type = 'payment' AND reference_id = ?")
+                if (event === 'TRANSFER_DONE' && localPayment.status !== 'concluido') {
+                    // Saque concluído com sucesso (idempotente)
+                    const updated = db.prepare("UPDATE transactions SET status = 'concluido' WHERE reference_type = 'payment' AND reference_id = ? AND status != 'concluido'")
                         .run(localPayment.id);
-                    createNotification(db, localPayment.user_id, 'financial', 'Saque concluído!',
-                        `Sua transferência PIX de R$ ${localPayment.amount.toFixed(2)} foi concluída com sucesso.`);
+                    if (updated.changes > 0) {
+                        createNotification(localPayment.user_id, 'financial', 'Saque concluído!',
+                            `Sua transferência PIX de R$ ${localPayment.amount.toFixed(2)} foi concluída com sucesso.`);
+                    }
                 }
 
-                if (event === 'TRANSFER_FAILED' || event === 'TRANSFER_CANCELLED') {
-                    // Saque falhou — devolver saldo
-                    db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(localPayment.amount, localPayment.user_id);
-                    db.prepare("UPDATE transactions SET status = 'falhou' WHERE reference_type = 'payment' AND reference_id = ?")
+                if ((event === 'TRANSFER_FAILED' || event === 'TRANSFER_CANCELLED') && localPayment.status !== 'falhou') {
+                    // Saque falhou — devolver saldo (idempotente)
+                    const updated = db.prepare("UPDATE transactions SET status = 'falhou' WHERE reference_type = 'payment' AND reference_id = ? AND status != 'falhou'")
                         .run(localPayment.id);
-                    createNotification(db, localPayment.user_id, 'financial', 'Saque falhou',
-                        `A transferência PIX de R$ ${localPayment.amount.toFixed(2)} falhou. O valor foi devolvido ao seu saldo.`);
+                    if (updated.changes > 0) {
+                        db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(localPayment.amount, localPayment.user_id);
+                        createNotification(localPayment.user_id, 'financial', 'Saque falhou',
+                            `A transferência PIX de R$ ${localPayment.amount.toFixed(2)} falhou. O valor foi devolvido ao seu saldo.`);
+                    }
                 }
 
                 logAudit({ userType: 'system', userId: 0, action: 'webhook_transfer', entity: 'payment',
@@ -524,9 +801,38 @@ function processPaymentConfirmed(db, localPayment) {
         if (match) {
             const planId = match[1];
             db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(planId, localPayment.user_id);
-            createNotification(db, localPayment.user_id, 'plan', 'Plano ativado!',
+            createNotification(localPayment.user_id, 'plan', 'Plano ativado!',
                 `Seu plano foi ativado com sucesso. Aproveite todos os benefícios!`);
         }
+    }
+
+    if (localPayment.type === 'deposit') {
+        // Credit user balance
+        db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(localPayment.amount, localPayment.user_id);
+        createNotification(localPayment.user_id, 'success', 'Depósito confirmado!',
+            `R$ ${localPayment.amount.toFixed(2)} foram creditados na sua carteira.`);
+        // Register deposit transaction
+        db.prepare(`INSERT INTO transactions (user_id, type, amount, description, reference_type, reference_id, date, status)
+            VALUES (?, 'deposito', ?, 'Depósito confirmado', 'payment', ?, date('now'), 'concluido')`)
+            .run(localPayment.user_id, localPayment.amount, localPayment.id);
+        return; // Don't create duplicate transaction below
+    }
+
+    if (localPayment.type === 'monthly_fee') {
+        // Ativar acesso — mensalidade paga por mais 30 dias
+        const now = new Date();
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        const paidUntilStr = nextMonth.toISOString().slice(0, 10);
+        db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0 WHERE id = ?')
+            .run(paidUntilStr, localPayment.user_id);
+
+        db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status)
+            VALUES (?, 'mensalidade', ?, 'Mensalidade mensal', date('now'), 'concluido')`)
+            .run(localPayment.user_id, -localPayment.amount);
+
+        createNotification(localPayment.user_id, 'success', 'Mensalidade paga!',
+            `Sua mensalidade de R$ ${localPayment.amount.toFixed(2)} foi confirmada. Acesso liberado até ${paidUntilStr}.`);
+        return;
     }
 
     // Registrar transação de crédito
@@ -541,8 +847,21 @@ function processPaymentConfirmed(db, localPayment) {
  * Ativar pacote comprado
  */
 function activatePackage(db, userId, pkg) {
-    // Adicionar pontos ao usuário
-    db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(pkg.points, userId);
+    // Adicionar pontos e créditos de nomes ao usuário
+    const namesCredit = pkg.names_count || 0;
+    db.prepare('UPDATE users SET points = points + ?, names_available = names_available + ? WHERE id = ?').run(pkg.points, namesCredit, userId);
+
+    // Ativar acesso ao painel + atualizar nível
+    db.prepare('UPDATE users SET has_package = 1 WHERE id = ?').run(userId);
+    if (pkg.level_key) {
+        const LEVEL_ORDER = { start: 1, bronze: 2, prata: 3, ouro: 4, diamante: 5 };
+        const user = db.prepare('SELECT level FROM users WHERE id = ?').get(userId);
+        const newRank = LEVEL_ORDER[pkg.level_key] || 0;
+        const currentRank = LEVEL_ORDER[user?.level] || 0;
+        if (newRank > currentRank) {
+            db.prepare('UPDATE users SET level = ? WHERE id = ?').run(pkg.level_key, userId);
+        }
+    }
 
     // Atualizar status do user_package
     db.prepare(`UPDATE user_packages SET status = 'ativo', payment_status = 'pago'
@@ -551,11 +870,14 @@ function activatePackage(db, userId, pkg) {
         .run(userId, pkg.id);
 
     // Notificação
-    createNotification(db, userId, 'purchase', 'Pacote ativado!',
-        `Seu pacote "${pkg.name}" foi ativado. +${pkg.points} pontos adicionados!`);
+    createNotification(userId, 'purchase', 'Pacote ativado!',
+        `Seu pacote "${pkg.name}" foi ativado. +${pkg.points} pontos e ${namesCredit} nome(s) adicionados!`);
 
-    // Processar comissões de rede
-    processNetworkCommissions(db, userId, pkg.price, `Comissão venda pacote ${pkg.name}`);
+    // Verificar graduação automática por pontos
+    checkAutoGraduation(db, userId);
+
+    // Processar comissões multi-nível (% configurável)
+    processNetworkCommissions(db, userId, pkg.price, `Comissão por indicação - ${pkg.name}`);
 }
 
 /**
@@ -565,54 +887,69 @@ function processPaymentRefunded(db, localPayment) {
     if (localPayment.type === 'package') {
         const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(localPayment.reference_id);
         if (pkg) {
-            // Remover pontos
-            db.prepare('UPDATE users SET points = MAX(0, points - ?) WHERE id = ?').run(pkg.points, localPayment.user_id);
+            // Remover pontos e créditos de nomes
+            const namesCredit = pkg.names_count || 0;
+            db.prepare('UPDATE users SET points = CASE WHEN points - ? < 0 THEN 0 ELSE points - ? END, names_available = CASE WHEN names_available - ? < 0 THEN 0 ELSE names_available - ? END WHERE id = ?')
+                .run(pkg.points, pkg.points, namesCredit, namesCredit, localPayment.user_id);
             db.prepare(`UPDATE user_packages SET status = 'estornado', payment_status = 'estornado'
                 WHERE user_id = ? AND package_id = ? AND payment_status = 'pago'
                 ORDER BY id DESC LIMIT 1`)
                 .run(localPayment.user_id, pkg.id);
         }
     }
-    createNotification(db, localPayment.user_id, 'financial', 'Pagamento estornado',
+    createNotification(localPayment.user_id, 'financial', 'Pagamento estornado',
         `O pagamento de R$ ${localPayment.amount.toFixed(2)} foi estornado.`);
 }
 
 /**
- * Processar comissões da rede MLM (3 níveis)
+ * Processar comissões multi-nível (até 3 níveis) com % configurável
+ * Sobe a árvore de patrocinadores creditando cada nível
  */
 function processNetworkCommissions(db, userId, saleAmount, description) {
     try {
         const settings = {};
         db.prepare('SELECT * FROM settings').all().forEach(s => { settings[s.key] = s.value; });
 
-        const commissionRates = [
-            Number(settings.commissionLevel1) || 10,
-            Number(settings.commissionLevel2) || 5,
-            Number(settings.commissionLevel3) || 3
-        ];
+        const commType = settings.commissionType || 'percentage'; // 'percentage' ou 'fixed'
+        const commLevel1 = Number(settings.commissionLevel1) || 10;
+        const commLevel2 = Number(settings.commissionLevel2) || 5;
+        const commLevel3 = Number(settings.commissionLevel3) || 2;
+        const fixedAmount = Number(settings.commissionFixedAmount) || 30;
+        const levelPercents = [commLevel1, commLevel2, commLevel3];
 
         let currentUserId = userId;
-        for (let level = 0; level < 3; level++) {
-            const user = db.prepare('SELECT sponsor_id FROM users WHERE id = ?').get(currentUserId);
-            if (!user || !user.sponsor_id) break;
 
-            const sponsorId = user.sponsor_id;
-            const commission = (saleAmount * commissionRates[level]) / 100;
+        for (let level = 1; level <= 3; level++) {
+            const current = db.prepare('SELECT sponsor_id FROM users WHERE id = ?').get(currentUserId);
+            if (!current || !current.sponsor_id) break;
+
+            const sponsor = db.prepare('SELECT id, active, name FROM users WHERE id = ?').get(current.sponsor_id);
+            if (!sponsor || !sponsor.active) { currentUserId = current.sponsor_id; continue; }
+
+            let commission = 0;
+            if (commType === 'fixed') {
+                commission = level === 1 ? fixedAmount : 0; // Fixo só para nível 1
+            } else {
+                commission = Math.round((saleAmount * levelPercents[level - 1] / 100) * 100) / 100;
+            }
 
             if (commission > 0) {
-                // Creditar comissão ao patrocinador
                 db.prepare('UPDATE users SET balance = balance + ?, bonus = bonus + ? WHERE id = ?')
-                    .run(commission, commission, sponsorId);
+                    .run(commission, commission, sponsor.id);
 
                 db.prepare(`INSERT INTO transactions (user_id, type, amount, description, reference_type, reference_id, date, status)
                     VALUES (?, 'comissao', ?, ?, 'commission', ?, date('now'), 'creditado')`)
-                    .run(sponsorId, commission, `${description} (Nível ${level + 1})`, userId);
+                    .run(sponsor.id, commission, `${description} (Nível ${level})`, userId);
 
-                createNotification(db, sponsorId, 'financial', 'Comissão recebida!',
-                    `Você recebeu R$ ${commission.toFixed(2)} de comissão nível ${level + 1}.`);
+                db.prepare(`INSERT INTO commissions (from_user_id, to_user_id, level, amount, source_type, source_id, date)
+                    VALUES (?, ?, ?, ?, 'package', ?, date('now'))`)
+                    .run(userId, sponsor.id, level, commission, userId);
+
+                createNotification(sponsor.id, 'financial', 'Comissão recebida!',
+                    `Você recebeu R$ ${commission.toFixed(2)} de comissão nível ${level} por indicação.`);
             }
 
-            currentUserId = sponsorId;
+            currentUserId = current.sponsor_id;
         }
     } catch (err) {
         console.error('Erro processar comissões:', err.message);
@@ -620,31 +957,78 @@ function processNetworkCommissions(db, userId, saleAmount, description) {
 }
 
 /**
+ * Verificar e aplicar graduação automática por pontos
+ * Chamada após qualquer compra de pacote
+ */
+function checkAutoGraduation(db, userId) {
+    try {
+        const LEVELS = ['start', 'bronze', 'prata', 'ouro', 'diamante'];
+        const user = db.prepare('SELECT id, points, level FROM users WHERE id = ?').get(userId);
+        if (!user) return;
+
+        const levelRows = db.prepare('SELECT * FROM levels ORDER BY min_points ASC').all();
+        if (!levelRows.length) return;
+
+        // Encontrar o maior nível que o usuário atingiu por pontos
+        let newLevel = user.level;
+        for (const lv of levelRows) {
+            if (user.points >= lv.min_points) {
+                newLevel = lv.key;
+            }
+        }
+
+        if (newLevel !== user.level) {
+            const oldIdx = LEVELS.indexOf(user.level);
+            const newIdx = LEVELS.indexOf(newLevel);
+            if (newIdx > oldIdx) {
+                db.prepare('UPDATE users SET level = ? WHERE id = ?').run(newLevel, userId);
+                db.prepare('INSERT INTO level_history (user_id, from_level, to_level, points_at_change, created_at) VALUES (?, ?, ?, ?, datetime("now"))')
+                    .run(userId, user.level, newLevel, user.points);
+                const lvObj = levelRows.find(l => l.key === newLevel);
+                createNotification(userId, 'success', 'Graduação!',
+                    `Parabéns! Você foi promovido para ${lvObj ? lvObj.name : newLevel}! 🎉`);
+            }
+        }
+    } catch (err) {
+        console.error('Erro auto-graduação:', err.message);
+    }
+}
+
+/**
  * Fallback — comprar pacote sem gateway (modo sandbox/dev)
  */
-function handleFallbackPurchase(db, req, res, user, pkg) {
-    if (user.balance < pkg.price) {
-        return res.status(400).json({ error: `Saldo insuficiente. Seu saldo: R$ ${user.balance.toFixed(2)}` });
-    }
-
+function handleFallbackPurchase(db, req, res, user, pkg, customMessage) {
+    // Ativar pacote diretamente (modo fallback/sandbox)
     const purchase = db.transaction(() => {
-        db.prepare('UPDATE users SET balance = balance - ?, points = points + ? WHERE id = ?')
-            .run(pkg.price, pkg.points, user.id);
+        const namesCredit = pkg.names_count || 0;
+        db.prepare('UPDATE users SET points = points + ?, names_available = names_available + ?, has_package = 1 WHERE id = ?')
+            .run(pkg.points, namesCredit, user.id);
+        // Atualizar nível
+        if (pkg.level_key) {
+            const LEVEL_ORDER = { start: 1, bronze: 2, prata: 3, ouro: 4, diamante: 5 };
+            const newRank = LEVEL_ORDER[pkg.level_key] || 0;
+            const currentRank = LEVEL_ORDER[user.level] || 0;
+            if (newRank > currentRank) {
+                db.prepare('UPDATE users SET level = ? WHERE id = ?').run(pkg.level_key, user.id);
+            }
+        }
         db.prepare(`INSERT INTO user_packages (user_id, package_id, purchased_at, status, payment_status)
-            VALUES (?, ?, date('now'), 'ativo', 'pago')`)
+            VALUES (?, ?, date('now'), 'ativo', 'pendente')`)
             .run(user.id, pkg.id);
         db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status)
-            VALUES (?, 'compra', ?, ?, date('now'), 'concluido')`)
+            VALUES (?, 'compra', ?, ?, date('now'), 'pendente')`)
             .run(user.id, -pkg.price, `Compra pacote: ${pkg.name}`);
     });
 
     purchase();
-    processNetworkCommissions(db, user.id, pkg.price, `Comissão venda pacote ${pkg.name}`);
+    processNetworkCommissions(db, user.id, pkg.price, `Comissão por indicação - ${pkg.name}`);
 
     logAudit({ userType: 'user', userId: user.id, action: 'package_purchase_fallback', entity: 'package',
         details: { packageId: pkg.id, value: pkg.price }, ip: getClientIP(req) });
 
-    res.json({ success: true, approved: true, message: `Pacote ${pkg.name} ativado! +${pkg.points} pontos` });
+    res.json({ success: true, approved: true, message: customMessage || `Pacote ${pkg.name} ativado! +${pkg.points} pontos` });
 }
 
 module.exports = router;
+module.exports.processNetworkCommissions = processNetworkCommissions;
+module.exports.checkAutoGraduation = checkAutoGraduation;

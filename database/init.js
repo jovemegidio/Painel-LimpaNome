@@ -32,7 +32,8 @@ function initDatabase() {
             cpf TEXT DEFAULT '',
             pix_key TEXT DEFAULT '',
             pix_type TEXT DEFAULT 'cpf',
-            level TEXT DEFAULT 'prata',
+            level TEXT DEFAULT 'start',
+            has_package INTEGER DEFAULT 0,
             points INTEGER DEFAULT 0,
             bonus REAL DEFAULT 0,
             balance REAL DEFAULT 0,
@@ -77,6 +78,7 @@ function initDatabase() {
             price REAL NOT NULL,
             points INTEGER DEFAULT 0,
             description TEXT DEFAULT '',
+            level_key TEXT DEFAULT '',
             active INTEGER DEFAULT 1
         );
 
@@ -342,9 +344,195 @@ function initDatabase() {
     addCol('transactions', 'reference_type', "TEXT DEFAULT ''");
     addCol('transactions', 'reference_id', 'INTEGER');
     addCol('user_packages', 'payment_status', "TEXT DEFAULT 'pendente'");
+    addCol('user_packages', 'payment_method', "TEXT DEFAULT ''");
     addCol('users', 'email_verified', 'INTEGER DEFAULT 0');
     addCol('users', 'email_verified_at', 'TEXT');
     addCol('users', 'asaas_customer_id', "TEXT DEFAULT ''");
+    addCol('users', 'financial_password', 'TEXT');
+    addCol('events', 'price', 'REAL DEFAULT 0');
+    addCol('events', 'max_tickets', 'INTEGER DEFAULT 0');
+    addCol('events', 'image', "TEXT DEFAULT ''");
+
+    // v5 — MLM restructure: has_package gate + level_key on packages
+    addCol('users', 'has_package', 'INTEGER DEFAULT 0');
+    addCol('packages', 'level_key', "TEXT DEFAULT ''");
+    addCol('packages', 'names_count', 'INTEGER DEFAULT 0');
+
+    // v6 — Créditos de nomes disponíveis para usar em processos
+    addCol('users', 'names_available', 'INTEGER DEFAULT 0');
+
+    // v4 — Profile enrichment
+    addCol('users', 'nickname', "TEXT DEFAULT ''");
+    addCol('users', 'birth_date', "TEXT DEFAULT ''");
+    addCol('users', 'gender', "TEXT DEFAULT ''");
+    addCol('users', 'bio', "TEXT DEFAULT ''");
+    addCol('users', 'person_type', "TEXT DEFAULT 'pf'");
+    addCol('users', 'cnpj', "TEXT DEFAULT ''");
+    addCol('users', 'company_name', "TEXT DEFAULT ''");
+    addCol('processes', 'person_type', "TEXT DEFAULT 'pf'");
+    addCol('processes', 'cnpj', "TEXT DEFAULT ''");
+    addCol('processes', 'company_name', "TEXT DEFAULT ''");
+
+    // v3 — Address fields
+    addCol('users', 'address_street', "TEXT DEFAULT ''");
+    addCol('users', 'address_number', "TEXT DEFAULT ''");
+    addCol('users', 'address_complement', "TEXT DEFAULT ''");
+    addCol('users', 'address_neighborhood', "TEXT DEFAULT ''");
+    addCol('users', 'address_city', "TEXT DEFAULT ''");
+    addCol('users', 'address_state', "TEXT DEFAULT ''");
+    addCol('users', 'address_zip', "TEXT DEFAULT ''");
+    addCol('users', 'address_country', "TEXT DEFAULT 'BR'");
+
+    // v6 — Dados bancários para repasse de bônus
+    addCol('users', 'bank_name', "TEXT DEFAULT ''");
+    addCol('users', 'bank_agency', "TEXT DEFAULT ''");
+    addCol('users', 'bank_account', "TEXT DEFAULT ''");
+    addCol('users', 'bank_type', "TEXT DEFAULT 'corrente'");
+
+    // v7 — Mensalidade e controle de saques
+    addCol('users', 'monthly_fee_paid_until', 'TEXT');
+    addCol('users', 'access_blocked', 'INTEGER DEFAULT 0');
+    addCol('users', 'last_withdraw_date', 'TEXT');
+
+    // ── Novas tabelas (v2 — features AgilCred) ──
+    d.exec(`
+        CREATE TABLE IF NOT EXISTS event_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            event_id INTEGER NOT NULL,
+            quantity INTEGER DEFAULT 1,
+            total REAL DEFAULT 0,
+            status TEXT DEFAULT 'pendente',
+            payment_id INTEGER,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS event_tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            event_id INTEGER NOT NULL,
+            ticket_code TEXT UNIQUE NOT NULL,
+            attendee_name TEXT DEFAULT '',
+            status TEXT DEFAULT 'ativo',
+            used_at TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (order_id) REFERENCES event_orders(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS downloads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'geral',
+            file_url TEXT NOT NULL,
+            file_type TEXT DEFAULT '',
+            file_size TEXT DEFAULT '',
+            thumbnail TEXT DEFAULT '',
+            active INTEGER DEFAULT 1,
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS level_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            from_level TEXT,
+            to_level TEXT NOT NULL,
+            points_at_change INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_event_orders_user ON event_orders(user_id);
+        CREATE INDEX IF NOT EXISTS idx_event_orders_event ON event_orders(event_id);
+        CREATE INDEX IF NOT EXISTS idx_event_tickets_user ON event_tickets(user_id);
+        CREATE INDEX IF NOT EXISTS idx_event_tickets_order ON event_tickets(order_id);
+        CREATE INDEX IF NOT EXISTS idx_downloads_active ON downloads(active);
+        CREATE INDEX IF NOT EXISTS idx_level_history_user ON level_history(user_id);
+    `);
+
+    // ── v3 — User Documents (KYC), Contracts, Subscriptions ──
+    d.exec(`
+        CREATE TABLE IF NOT EXISTS user_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            type TEXT NOT NULL DEFAULT 'rg',
+            filename TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            mimetype TEXT DEFAULT '',
+            size INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pendente',
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now')),
+            reviewed_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS contracts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            content TEXT NOT NULL DEFAULT '',
+            version TEXT DEFAULT '1.0',
+            required INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS user_contracts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            contract_id INTEGER NOT NULL,
+            accepted INTEGER DEFAULT 0,
+            accepted_at TEXT,
+            ip TEXT DEFAULT '',
+            UNIQUE(user_id, contract_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            plan_id TEXT NOT NULL,
+            status TEXT DEFAULT 'ativa',
+            asaas_subscription_id TEXT DEFAULT '',
+            start_date TEXT DEFAULT (date('now')),
+            next_billing TEXT,
+            canceled_at TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (plan_id) REFERENCES plans(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_user_documents_user ON user_documents(user_id);
+        CREATE INDEX IF NOT EXISTS idx_user_contracts_user ON user_contracts(user_id);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+    `);
+
+    // ── v4 — Custom Pages (admin-managed dynamic pages) ──
+    d.exec(`
+        CREATE TABLE IF NOT EXISTS custom_pages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug TEXT UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            icon TEXT DEFAULT 'fa-file-alt',
+            content TEXT DEFAULT '',
+            section TEXT DEFAULT 'Personalizado',
+            sort_order INTEGER DEFAULT 0,
+            visible INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_custom_pages_slug ON custom_pages(slug);
+        CREATE INDEX IF NOT EXISTS idx_custom_pages_visible ON custom_pages(visible);
+    `);
 
     // Seed if empty
     const count = d.prepare('SELECT COUNT(*) as c FROM users').get();
@@ -353,6 +541,9 @@ function initDatabase() {
         console.log('✅ Banco de dados populado com dados iniciais');
     }
 
+    // Downloads and contracts seeds (run independently of users)
+    seedDownloadsAndContracts(d);
+
     console.log('✅ Banco de dados inicializado');
     return d;
 }
@@ -360,100 +551,34 @@ function initDatabase() {
 function seedData(d) {
     const h = (pw) => bcrypt.hashSync(pw, 10);
 
-    // Admin (senha forte — trocar em produção via painel)
-    d.prepare('INSERT INTO admins (username, password, name, role) VALUES (?,?,?,?)')
-        .run('admin', h('Cr3dBus!n3ss@2026#Adm'), 'Administrador', 'superadmin');
+    // Admin
+    d.prepare('INSERT OR IGNORE INTO admins (username, password, name, role) VALUES (?,?,?,?)')
+        .run('ADM-CREDBUSINESS', h('credadmin'), 'Administrador', 'superadmin');
 
-    // Levels
-    const iL = d.prepare('INSERT INTO levels (key,name,min_points,color,icon,bonus_percent,commission_percent) VALUES (?,?,?,?,?,?,?)');
-    iL.run('prata', 'Prata', 0, '#9e9e9e', '🥈', 5, 5);
-    iL.run('ouro', 'Ouro', 1000, '#ffc107', '🥇', 10, 8);
-    iL.run('diamante', 'Diamante', 2000, '#00bcd4', '💎', 15, 12);
+    // Root user (primeiro patrocinador da rede — necessário para registros)
+    const rootExists = d.prepare('SELECT id FROM users WHERE username = ?').get('credbusiness');
+    if (!rootExists) {
+        d.prepare(`
+            INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, email_verified, has_package, created_at)
+            VALUES (?, ?, ?, ?, '', '', NULL, 'premium', 'diamante', 0, 0, 0, 1, 'user', 1, datetime('now'), 1, 1, date('now'))
+        `).run('credbusiness', h('Cred@2026Biz'), 'Credbusiness', 'contato@credbusinessconsultoria.com.br');
+    }
+
+    // Levels (5 níveis — patrocínio em decadência: Diamante→Ouro→Prata→Bronze→Start)
+    const iL = d.prepare('INSERT OR IGNORE INTO levels (key,name,min_points,color,icon,bonus_percent,commission_percent) VALUES (?,?,?,?,?,?,?)');
+    iL.run('start', 'Start', 0, '#78909c', 'fa-rocket', 3, 3);
+    iL.run('bronze', 'Bronze', 200, '#cd7f32', 'fa-medal', 5, 5);
+    iL.run('prata', 'Prata', 500, '#9e9e9e', 'fa-award', 8, 8);
+    iL.run('ouro', 'Ouro', 1000, '#ffc107', 'fa-crown', 12, 10);
+    iL.run('diamante', 'Diamante', 2000, '#00bcd4', 'fa-gem', 15, 12);
 
     // Plans
-    const iP = d.prepare('INSERT INTO plans (id,name,price,features) VALUES (?,?,?,?)');
+    const iP = d.prepare('INSERT OR IGNORE INTO plans (id,name,price,features) VALUES (?,?,?,?)');
     iP.run('basico', 'Básico', 49.90, JSON.stringify(['Limpa Nome básico', '1 consulta/mês', 'Suporte email']));
     iP.run('plus', 'Plus', 99.90, JSON.stringify(['Limpa Nome completo', '5 consultas/mês', 'Suporte prioritário', 'Relatórios']));
     iP.run('premium', 'Premium', 199.90, JSON.stringify(['Limpa Nome VIP', 'Consultas ilimitadas', 'Suporte 24h', 'Relatórios avançados', 'Bacen completo']));
 
-    // Packages
-    const iPk = d.prepare('INSERT INTO packages (name,price,points,description) VALUES (?,?,?,?)');
-    iPk.run('Pacote Starter', 149.90, 100, 'Ideal para começar');
-    iPk.run('Pacote Business', 349.90, 300, 'Para crescimento acelerado');
-    iPk.run('Pacote Enterprise', 699.90, 700, 'Máximo desempenho');
-    iPk.run('Pacote Diamond', 1499.90, 1500, 'Exclusivo para líderes');
-
-    // Users
-    const iU = d.prepare('INSERT INTO users (username,password,name,email,phone,cpf,level,points,bonus,balance,sponsor_id,plan,active,role,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
-    iU.run('credbusiness', h('Service'), 'CredBusiness', 'cred@business.com', '(11) 99999-0001', '123.456.789-00', 'diamante', 2450, 2080, 120, null, 'premium', 1, 'user', '2025-06-15');
-    iU.run('maria.silva', h('123456'), 'Maria Silva', 'maria@email.com', '(11) 98888-0002', '234.567.890-01', 'ouro', 1200, 980, 50, 1, 'basico', 1, 'user', '2025-08-20');
-    iU.run('joao.santos', h('123456'), 'João Santos', 'joao@email.com', '(21) 97777-0003', '345.678.901-02', 'prata', 600, 420, 30, 1, 'basico', 1, 'user', '2025-09-10');
-    iU.run('ana.oliveira', h('123456'), 'Ana Oliveira', 'ana@email.com', '(31) 96666-0004', '456.789.012-03', 'prata', 450, 300, 20, 1, 'basico', 1, 'user', '2025-10-05');
-    iU.run('pedro.lima', h('123456'), 'Pedro Lima', 'pedro@email.com', '(41) 95555-0005', '567.890.123-04', 'prata', 300, 200, 15, 1, 'basico', 1, 'user', '2025-11-12');
-    iU.run('carla.souza', h('123456'), 'Carla Souza', 'carla@email.com', '(51) 94444-0006', '678.901.234-05', 'prata', 200, 150, 10, 1, 'basico', 0, 'user', '2025-12-01');
-    iU.run('lucas.ferr', h('123456'), 'Lucas Ferreira', 'lucas@email.com', '(61) 93333-0007', '789.012.345-06', 'prata', 150, 100, 5, 1, 'basico', 1, 'user', '2026-01-15');
-    iU.run('julia.costa', h('123456'), 'Julia Costa', 'julia@email.com', '(71) 92222-0008', '890.123.456-07', 'prata', 100, 80, 0, 1, 'basico', 1, 'user', '2026-02-01');
-    iU.run('rafael.mend', h('123456'), 'Rafael Mendes', 'rafael@email.com', '(81) 91111-0009', '901.234.567-08', 'prata', 80, 50, 0, 2, 'basico', 1, 'user', '2026-01-20');
-    iU.run('fernanda.r', h('123456'), 'Fernanda Rocha', 'fernanda@email.com', '(91) 90000-0010', '012.345.678-09', 'prata', 60, 30, 0, 2, 'basico', 1, 'user', '2026-02-10');
-    iU.run('gabriel.alm', h('123456'), 'Gabriel Almeida', 'gabriel@email.com', '(11) 99900-0011', '111.222.333-44', 'prata', 40, 20, 0, 3, 'basico', 1, 'user', '2026-02-15');
-    iU.run('camila.dias', h('123456'), 'Camila Dias', 'camila@email.com', '(21) 98800-0012', '222.333.444-55', 'prata', 30, 10, 0, 5, 'basico', 1, 'user', '2026-02-20');
-
-    // Processes
-    const iPr = d.prepare('INSERT INTO processes (user_id,cpf,name,status,type,value,institution,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)');
-    iPr.run(1, '123.456.789-00', 'CredBusiness', 'concluido', 'negativacao', 5200, 'Serasa', '2025-12-10', '2026-01-15');
-    iPr.run(2, '234.567.890-01', 'Maria Silva', 'em_andamento', 'negativacao', 3400, 'SPC', '2026-01-20', '2026-02-28');
-    iPr.run(3, '345.678.901-02', 'João Santos', 'pendente', 'divida', 8900, 'Boa Vista', '2026-02-15', '2026-02-15');
-    iPr.run(1, '123.456.789-00', 'CredBusiness', 'em_andamento', 'divida', 12000, 'Serasa', '2026-02-01', '2026-03-01');
-
-    // Transactions
-    const iT = d.prepare('INSERT INTO transactions (user_id,type,amount,description,date,status) VALUES (?,?,?,?,?,?)');
-    iT.run(1, 'bonus', 80, 'Bônus indicação - Maria Silva', '2026-03-04', 'creditado');
-    iT.run(1, 'bonus', 60, 'Bônus indicação - João Santos', '2026-03-03', 'creditado');
-    iT.run(1, 'comissao', 120, 'Comissão rede - Nível 2', '2026-03-02', 'creditado');
-    iT.run(1, 'saque', -200, 'Saque via PIX', '2026-02-28', 'concluido');
-    iT.run(1, 'bonus', 150, 'Bônus pacote - Pedro Lima', '2026-02-25', 'creditado');
-    iT.run(2, 'bonus', 50, 'Bônus indicação - Rafael Mendes', '2026-03-01', 'creditado');
-
-    // News
-    const iN = d.prepare('INSERT INTO news (title,content,date,category) VALUES (?,?,?,?)');
-    iN.run('Nova funcionalidade Limpa Nome Pro', 'Agora você pode acompanhar seus processos em tempo real com notificações automáticas.', '2026-03-04', 'novidade');
-    iN.run('Evento Online - Março 2026', 'Participe do nosso webinar exclusivo sobre estratégias de crescimento de rede. Data: 15/03/2026 às 20h.', '2026-03-02', 'evento');
-    iN.run('Atualização do sistema de pontos', 'O sistema de pontuação foi atualizado. Agora cada indicação ativa gera mais pontos para sua graduação.', '2026-02-28', 'sistema');
-    iN.run('Promoção Pacote Diamond', 'Adquira o Pacote Diamond com 20% de desconto até o final de março!', '2026-02-25', 'promocao');
-
-    // Events
-    const iE = d.prepare('INSERT INTO events (title,date,time,type,location,description,status) VALUES (?,?,?,?,?,?,?)');
-    iE.run('Webinar: Crescimento de Rede', '2026-03-15', '20:00', 'online', 'Zoom', 'Estratégias avançadas para crescer sua rede de indicações.', 'proximo');
-    iE.run('Encontro Regional SP', '2026-03-22', '14:00', 'presencial', 'São Paulo - SP', 'Encontro presencial para networking e treinamento.', 'proximo');
-    iE.run('Live: Novidades Credbusiness', '2026-02-20', '19:00', 'online', 'YouTube', 'Apresentação das novidades da plataforma.', 'passado');
-
-    // Tickets
-    const iTk = d.prepare('INSERT INTO tickets (user_id,subject,message,status,priority,created_at) VALUES (?,?,?,?,?,?)');
-    iTk.run(1, 'Dúvida sobre comissões', 'Gostaria de entender melhor como funcionam as comissões de rede.', 'respondido', 'media', '2026-03-01');
-    iTk.run(2, 'Problema no processo Limpa Nome', 'Meu processo está parado há mais de 15 dias.', 'aberto', 'alta', '2026-03-03');
-
-    // Ticket responses
-    d.prepare('INSERT INTO ticket_responses (ticket_id,from_type,message,date) VALUES (?,?,?,?)')
-        .run(1, 'admin', 'As comissões são calculadas com base no nível e volume da sua rede.', '2026-03-02');
-
-    // Notifications
-    const iNotif = d.prepare('INSERT INTO notifications (user_id, type, title, message, link, read, created_at) VALUES (?,?,?,?,?,?,?)');
-    iNotif.run(1, 'success', 'Bem-vindo!', 'Sua conta foi criada com sucesso. Explore o painel!', '/pages/dashboard.html', 0, '2026-03-04');
-    iNotif.run(1, 'info', 'Novo informativo', 'Confira as novidades da plataforma.', '/pages/informativos.html', 0, '2026-03-03');
-    iNotif.run(1, 'warning', 'Processo atualizado', 'Seu processo #1 foi concluído.', '/pages/limpa-nome-processos.html', 1, '2026-02-28');
-    iNotif.run(2, 'info', 'Bem-vindo!', 'Sua conta foi criada com sucesso.', '/pages/dashboard.html', 0, '2026-03-01');
-    iNotif.run(2, 'alert', 'Ticket respondido', 'O suporte respondeu ao seu ticket #2.', '/pages/suporte-tickets.html', 0, '2026-03-04');
-
-    // University Courses
-    const iCourse = d.prepare('INSERT INTO university_courses (title, description, category, video_url, duration, sort_order) VALUES (?,?,?,?,?,?)');
-    iCourse.run('Primeiros Passos na Plataforma', 'Aprenda a navegar pelo painel e configurar sua conta.', 'primeiros-passos', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '15:00', 1);
-    iCourse.run('Como Funciona o Limpa Nome', 'Entenda o processo de limpeza de nome e como acompanhar.', 'servicos', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '20:00', 2);
-    iCourse.run('Construindo sua Rede de Indicações', 'Estratégias para crescer sua rede MLM de forma sustentável.', 'vendas', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '25:00', 3);
-    iCourse.run('Consultas CPF e Bacen', 'Como realizar consultas e interpretar os resultados.', 'servicos', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '12:00', 4);
-    iCourse.run('Entendendo Comissões e Bônus', 'Saiba como são calculadas as comissões e bônus da sua rede.', 'financeiro', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '18:00', 5);
-    iCourse.run('Técnicas de Vendas Online', 'Melhore suas conversões com estratégias comprovadas.', 'vendas', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '22:00', 6);
-    iCourse.run('Usando o Suporte e FAQ', 'Saiba como abrir tickets e encontrar respostas rápidas.', 'primeiros-passos', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '10:00', 7);
-    iCourse.run('Saques e Gestão Financeira', 'Aprenda a solicitar saques e gerenciar seu saldo.', 'financeiro', 'https://www.youtube.com/embed/dQw4w9WgXcQ', '14:00', 8);
+    // (Sem dados mock — usuários, processos, transações etc. são criados em produção)
 
     // Settings
     const iS = d.prepare('INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)');
@@ -465,11 +590,117 @@ function seedData(d) {
     iS.run('accentColor', '#10b981');
     iS.run('footerText', '© 2026 Credbusiness');
     iS.run('loginBg', 'css/Fundo/Fundo.jpg');
+    iS.run('commissionType', 'percentage');
     iS.run('commissionLevel1', '10');
     iS.run('commissionLevel2', '5');
-    iS.run('commissionLevel3', '3');
-    iS.run('minWithdraw', '50');
+    iS.run('commissionLevel3', '2');
+    iS.run('commissionFixedAmount', '30');
+    iS.run('maxSponsoredPerUser', '12');
+    iS.run('minWithdraw', '100');
+    iS.run('withdrawFee', '2.50');
+    iS.run('monthlyFee', '95');
     iS.run('maintenanceMode', 'false');
+}
+
+function seedDownloadsAndContracts(d) {
+    // Packages — preços por nível × quantidade de nomes
+    // Diamante: R$130/nome | Ouro: R$160 | Prata: R$190 | Bronze: R$220 | Start: R$250
+    const pkgCount = d.prepare('SELECT COUNT(*) as c FROM packages WHERE names_count > 0').get().c;
+    if (pkgCount === 0) {
+    // Remove old-format packages (names_count = 0) if any
+    d.prepare('DELETE FROM packages WHERE names_count = 0 OR names_count IS NULL').run();
+    const iPk = d.prepare('INSERT INTO packages (name,price,points,description,level_key,names_count) VALUES (?,?,?,?,?,?)');
+    // Diamante (R$130/nome)
+    iPk.run('3 Nomes', 390, 150, 'Pacote 3 nomes — Nível Diamante', 'diamante', 3);
+    iPk.run('5 Nomes', 650, 300, 'Pacote 5 nomes — Nível Diamante', 'diamante', 5);
+    iPk.run('10 Nomes', 1300, 650, 'Pacote 10 nomes — Nível Diamante', 'diamante', 10);
+    // Ouro (R$160/nome)
+    iPk.run('3 Nomes', 480, 150, 'Pacote 3 nomes — Nível Ouro', 'ouro', 3);
+    iPk.run('5 Nomes', 800, 300, 'Pacote 5 nomes — Nível Ouro', 'ouro', 5);
+    iPk.run('10 Nomes', 1600, 650, 'Pacote 10 nomes — Nível Ouro', 'ouro', 10);
+    // Prata (R$190/nome)
+    iPk.run('3 Nomes', 570, 150, 'Pacote 3 nomes — Nível Prata', 'prata', 3);
+    iPk.run('5 Nomes', 950, 300, 'Pacote 5 nomes — Nível Prata', 'prata', 5);
+    iPk.run('10 Nomes', 1900, 650, 'Pacote 10 nomes — Nível Prata', 'prata', 10);
+    // Bronze (R$220/nome)
+    iPk.run('3 Nomes', 660, 150, 'Pacote 3 nomes — Nível Bronze', 'bronze', 3);
+    iPk.run('5 Nomes', 1100, 300, 'Pacote 5 nomes — Nível Bronze', 'bronze', 5);
+    iPk.run('10 Nomes', 2200, 650, 'Pacote 10 nomes — Nível Bronze', 'bronze', 10);
+    // Start (R$250/nome)
+    iPk.run('3 Nomes', 750, 150, 'Pacote 3 nomes — Nível Start', 'start', 3);
+    iPk.run('5 Nomes', 1250, 300, 'Pacote 5 nomes — Nível Start', 'start', 5);
+    iPk.run('10 Nomes', 2500, 650, 'Pacote 10 nomes — Nível Start', 'start', 10);
+    }
+
+    // Downloads (materiais de marketing — URLs serão configuradas pelo admin)
+    const dlCount = d.prepare('SELECT COUNT(*) as c FROM downloads').get().c;
+    if (dlCount === 0) {
+    const iDl = d.prepare('INSERT INTO downloads (title, description, category, file_url, file_type, file_size, sort_order) VALUES (?,?,?,?,?,?,?)');
+    iDl.run('Logo Credbusiness (PNG)', 'Logo oficial para uso em materiais de divulgação', 'marca', '/css/logo.png', 'image/png', '45 KB', 1);
+    iDl.run('Apresentação Institucional', 'Slides para apresentar a oportunidade Credbusiness', 'apresentacoes', '#', 'application/pdf', '2.3 MB', 2);
+    iDl.run('Banner para Redes Sociais', 'Banner otimizado para Facebook e Instagram', 'redes-sociais', '#', 'image/png', '320 KB', 3);
+    iDl.run('Cartão de Visita Digital', 'Template de cartão de visita editável', 'marca', '#', 'application/pdf', '1.1 MB', 4);
+    iDl.run('Plano de Compensação', 'PDF detalhado com o plano de compensação completo', 'documentos', '#', 'application/pdf', '850 KB', 5);
+    }
+
+    // Contracts seeds
+    const ctCount = d.prepare('SELECT COUNT(*) as c FROM contracts').get().c;
+    if (ctCount === 0) {
+    const iCt = d.prepare('INSERT INTO contracts (title, description, content, version, required, active) VALUES (?,?,?,?,?,?)');
+    iCt.run('Ficha Associativa - Contrato de Prestação de Serviços', 'Contrato de prestação de serviços de consultoria e assessoria jurídica para limpeza de nome', `
+<div style="text-align:center;border-bottom:2px solid #1a1a2e;padding-bottom:20px;margin-bottom:28px">
+<h2 style="margin:0;font-size:1.4rem;letter-spacing:1px;color:#1a1a2e">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h2>
+<p style="margin:6px 0 0;font-size:.85rem;color:#64748b">Ficha Associativa — Consultoria e Assessoria Jurídica</p>
+<p style="margin:4px 0 0;font-size:.8rem;color:#94a3b8">Versão 1.0 — Vigência a partir do aceite eletrônico</p>
+</div>
+
+<h3 style="color:#1a1a2e;border-left:3px solid #f59e0b;padding-left:12px;margin-top:24px">DAS PARTES</h3>
+<p><strong>CONTRATADA:</strong> Credbusiness, pessoa jurídica de direito privado, doravante denominada <strong>"CONTRATADA"</strong>.</p>
+<p><strong>CONTRATANTE:</strong> Pessoa física ou jurídica devidamente cadastrada na Plataforma, identificada pelos dados fornecidos no ato do registro e aceite eletrônico, doravante denominada <strong>"CONTRATANTE"</strong>.</p>
+<p>Decidem as partes, na melhor forma de direito, celebrar o presente <strong>CONTRATO DE PRESTAÇÃO DE SERVIÇOS</strong>, que reger-se-á mediante às cláusulas e condições adiante estipuladas.</p>
+
+<h3 style="color:#1a1a2e;border-left:3px solid #f59e0b;padding-left:12px;margin-top:24px">CLÁUSULA PRIMEIRA — DO OBJETO</h3>
+<p>O presente contrato tem como objeto a prestação de serviços de consultoria e assessoria jurídica em favor da CONTRATANTE pela CONTRATADA, sendo esta última a responsável pela retirada das restrições que constam perante os órgãos de proteção ao crédito, restauração de score e acompanhamento de processo administrativo ou judicial em face dos órgãos de controle de crédito.</p>
+
+<h3 style="color:#1a1a2e;border-left:3px solid #f59e0b;padding-left:12px;margin-top:24px">CLÁUSULA SEGUNDA — DAS OBRIGAÇÕES DA CONTRATADA</h3>
+<p><strong>2.1.</strong> A CONTRATADA compromete-se a prestar os serviços solicitados pela CONTRATANTE conforme descrito na Cláusula Primeira — Do Objeto.</p>
+<p><strong>2.2.</strong> O prazo para efetiva execução do serviço do objeto deste contrato é de 30 (trinta) a 60 (sessenta) dias úteis, a contar do pagamento e da entrega da documentação necessária para a propositura da ação.</p>
+<p><strong>2.3.</strong> Até o final do prazo, a CONTRATADA deverá entregar o NADA CONSTA dos birôs de consulta dos órgãos de proteção ao crédito à CONTRATANTE.</p>
+<p><strong>2.4.</strong> Na prestação de serviços, a CONTRATADA deverá manter sigilo total de todas as informações fornecidas pela CONTRATANTE, utilizando-se delas unicamente para fins de cumprimento do objeto do presente contrato.</p>
+<p><strong>2.5.</strong> Não há garantia de crédito, mas a CONTRATADA compromete-se a diligenciar para que aumentem as chances do êxito.</p>
+<p><strong>2.6.</strong> A CONTRATADA não garante a extensão dos efeitos da execução do serviço objeto do presente contrato às eventuais novas dívidas que a CONTRATANTE venha a incorrer, apenas as existentes no ato da contratação do serviço.</p>
+<p><strong>2.7.</strong> A CONTRATADA não garante pontuação mínima ou máxima na retomada do score.</p>
+<p><strong>2.8.</strong> Vale ressaltar que dentro da ação não serão feitas negociações, quitações, compras ou parcelamentos das dívidas. O serviço é baseado nos art. 42 e 43 do Código de Defesa do Consumidor (Lei n. 8.078/90).</p>
+<p><strong>2.9.</strong> Salienta-se que a dívida ainda aparecerá internamente dentro da instituição credora e de visualização interna (cliente) no aplicativo do Serasa e/ou outros.</p>
+
+<h3 style="color:#1a1a2e;border-left:3px solid #f59e0b;padding-left:12px;margin-top:24px">CLÁUSULA TERCEIRA — DAS OBRIGAÇÕES DA CONTRATANTE</h3>
+<p><strong>3.1.</strong> A CONTRATANTE se obriga a cumprir fielmente o pagamento dos honorários aqui acordados, sob pena de, em caso de mora, extinguir-se a relação contratual e ser levado o presente contrato à execução judicial.</p>
+<p><strong>3.2.</strong> A CONTRATANTE desde já se declara ciente de que a ação em questão obedece a procedimento previsto no Código de Processo Civil, Código Civil e Código de Defesa do Consumidor, não possuindo a CONTRATADA, poder para abreviar a prestação jurisdicional.</p>
+<p><strong>3.3.</strong> A CONTRATANTE fornecerá à CONTRATADA os documentos e meios necessários à comprovação processual do seu pretendido direito, sob pena de exclusão da responsabilidade causídica, inclusive dentro dos prazos legais.</p>
+
+<h3 style="color:#1a1a2e;border-left:3px solid #f59e0b;padding-left:12px;margin-top:24px">CLÁUSULA QUARTA — DO PAGAMENTO</h3>
+<p><strong>4.1.</strong> Pelo serviço objeto do presente contrato, a CONTRATANTE deverá pagar à CONTRATADA o valor conforme o plano contratado na Plataforma, de forma irrevogável e irretratável.</p>
+<p><strong>4.2.</strong> O pagamento é devido pela CONTRATANTE em favor da CONTRATADA por ação protocolada, ou seja, cada ação gera uma obrigação de pagamento nos valores constantes na Plataforma.</p>
+<p><strong>4.3.</strong> O não cumprimento do pagamento fará a ação ser revogada, sem direito à devolução de qualquer quantia paga, incorrendo em multa contratual de 2% (dois por cento) sobre os valores devidos, atualização monetária pelo INPC e juros monetário de 1% ao mês.</p>
+
+<h3 style="color:#1a1a2e;border-left:3px solid #f59e0b;padding-left:12px;margin-top:24px">CLÁUSULA QUINTA — DA RESCISÃO CONTRATUAL</h3>
+<p><strong>5.1.</strong> Em caso de desistência da ação por parte da CONTRATANTE, se a ação já estiver em andamento, não haverá devolução de qualquer quantia paga.</p>
+<p><strong>5.2.</strong> A parte que descumprir qualquer das cláusulas deste contrato dará à outra o direito de rescindir o presente instrumento, cientificando-a com aviso prévio de 15 (quinze) dias, ficando desobrigada a parte inocente a dar continuidade a este contrato.</p>
+
+<h3 style="color:#1a1a2e;border-left:3px solid #f59e0b;padding-left:12px;margin-top:24px">CLÁUSULA SEXTA — DISPOSIÇÕES GERAIS</h3>
+<p><strong>6.1.</strong> A retomada de relacionamento com o mercado financeiro é de 45 (quarenta e cinco) dias após a entrega do NADA CONSTA, ressaltando que não há a garantia de crédito conforme a cláusula segunda (2.5).</p>
+<p><strong>6.2.</strong> A CONTRATANTE se responsabiliza por toda ou quaisquer tentativas frustradas de retomada no mercado antes do prazo de 45 (quarenta e cinco) dias, ciente de que esse ato poderá prejudicar a pontuação do Score.</p>
+<p><strong>6.3.</strong> O principal PROPÓSITO da CONTRATADA ao prestar esse serviço é a reestruturação da vida financeira da CONTRATANTE, para que esta tenha novos hábitos financeiros a fim de sair da inadimplência e se tornar uma boa consumidora. Sendo assim, a CONTRATANTE se compromete a ter uma boa conduta perante o mercado financeiro.</p>
+<p><strong>6.4.</strong> O presente contrato é um título executivo extrajudicial conforme previsão legal e, em caso de inadimplemento da CONTRATANTE, permite a propositura de ação de execução autônoma para o recebimento dos honorários devidos e não pagos.</p>
+<p><strong>6.5.</strong> Fica pactuada a total inexistência de vínculo trabalhista entre as partes, excluindo as obrigações previdenciárias e os encargos sociais, não havendo entre as partes qualquer tipo de relação de subordinação.</p>
+<p><strong>6.6.</strong> Este contrato, cumpridas todas as formalidades legais, afasta a qualidade de empregado prevista no art. 3º da CLT, nos termos do art. 442-B da CLT.</p>
+<p><strong>6.7.</strong> A tolerância, por qualquer das partes, com relação ao descumprimento de qualquer termo ou condição aqui ajustado, não será considerada como desistência em exigir o cumprimento de disposição nele contida, nem representará novação com relação à obrigação passada, presente ou futura.</p>
+<p><strong>6.8.</strong> Fica eleito o foro do município de Ribeirão Preto, Estado de São Paulo, com exclusão de qualquer outro, por mais privilegiado que seja, para dirimir eventuais conflitos oriundos do presente contrato.</p>
+
+<p style="text-align:center;margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;color:#64748b;font-size:.82rem">Documento eletrônico com validade jurídica — Credbusiness © ${new Date().getFullYear()}</p>
+`, '1.0', 1, 1);
+    }
+
 }
 
 module.exports = { getDB, initDatabase };

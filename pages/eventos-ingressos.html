@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Meus Ingressos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Meus Ingressos</h2><p>Ingressos para eventos adquiridos</p></div>
+
+        <div id="ticketsList">Carregando...</div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'eventos-ingressos', title: 'Meus Ingressos' });
+
+        (async () => {
+            const tickets = await DB.api('GET', '/api/wallet/events/tickets') || [];
+            const el = document.getElementById('ticketsList');
+
+            if (!tickets.length) {
+                el.innerHTML = '<div class="empty-state"><i class="fas fa-ticket-alt"></i><p>Nenhum ingresso</p></div>';
+                return;
+            }
+
+            const months = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            el.innerHTML = `<div style="display:grid;gap:12px">${tickets.map(t => {
+                const parts = (t.event_date || '').split('-');
+                const isUsed = t.status === 'usado';
+                return `<div class="event-card" style="opacity:${isUsed ? '.6' : '1'}">
+                    <div class="event-date"><div class="day">${parseInt(parts[2]) || '?'}</div><div class="month">${months[parseInt(parts[1])] || '?'}</div></div>
+                    <div class="event-info" style="flex:1">
+                        <h4>${t.event_title}</h4>
+                        <div class="event-meta">
+                            <span><i class="fas fa-clock"></i>${t.event_time || 'N/A'}</span>
+                            <span><i class="fas fa-map-marker-alt"></i>${t.event_location || 'N/A'}</span>
+                            <span class="badge badge-${t.event_type==='online'?'blue':'green'}">${t.event_type}</span>
+                        </div>
+                        <div style="margin-top:8px;display:flex;align-items:center;gap:12px">
+                            <code style="background:var(--bg2);padding:4px 10px;border-radius:6px;font-size:.85rem;font-weight:700">${t.ticket_code}</code>
+                            <span class="badge badge-${isUsed?'gray':'green'}">${isUsed ? 'Usado' : 'Ativo'}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('')}</div>`;
+        })();
+    </script>
+</body>
+</html>

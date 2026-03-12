@@ -55,11 +55,17 @@
     <script>
         Layout.init({ basePath: '../', page: 'admin-news', title: 'Informativos', admin: true });
 
+        let newsList = [];
+
+        async function loadNews() {
+            newsList = await DB.api('GET', '/api/admin/news') || [];
+            renderTable();
+        }
+
         function renderTable() {
-            const news = DB.get('news') || [];
-            const catColors = { Novidade: 'primary', novidade: 'primary', Atualização: 'info', sistema: 'info', Promoção: 'success', promocao: 'success', Comunicado: 'warning', evento: 'warning' };
+            const catColors = { novidade: 'primary', sistema: 'info', promocao: 'success', evento: 'warning' };
             const tbody = document.querySelector('#newsTable tbody');
-            tbody.innerHTML = news.length ? news.map(n => `<tr>
+            tbody.innerHTML = newsList.length ? newsList.map(n => `<tr>
                 <td>${n.id}</td>
                 <td>${n.title}</td>
                 <td><span class="badge badge-${catColors[n.category] || 'secondary'}">${n.category}</span></td>
@@ -70,7 +76,6 @@
                 </td>
             </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#64748b">Nenhum informativo</td></tr>';
         }
-        renderTable();
 
         function openNewsModal() {
             document.getElementById('newsModal').style.display = 'flex';
@@ -81,7 +86,7 @@
         function closeNewsModal() { document.getElementById('newsModal').style.display = 'none'; }
 
         function editNews(id) {
-            const n = (DB.get('news')||[]).find(x => x.id === id);
+            const n = newsList.find(x => x.id === id);
             if (!n) return;
             document.getElementById('newsModal').style.display = 'flex';
             document.getElementById('newsModalTitle').textContent = 'Editar Informativo';
@@ -91,38 +96,32 @@
             document.getElementById('newsContent').value = n.content;
         }
 
-        function saveNews(e) {
+        async function saveNews(e) {
             e.preventDefault();
-            const news = DB.get('news') || [];
             const id = document.getElementById('newsEditId').value;
             const obj = {
                 title: document.getElementById('newsTitle').value.trim(),
                 category: document.getElementById('newsCat').value,
-                content: document.getElementById('newsContent').value.trim(),
-                date: new Date().toISOString()
+                content: document.getElementById('newsContent').value.trim()
             };
             if (id) {
-                const idx = news.findIndex(x => x.id === parseInt(id));
-                if (idx !== -1) news[idx] = { ...news[idx], ...obj };
+                await DB.api('PUT', '/api/admin/news/' + id, obj);
             } else {
-                obj.id = Date.now();
-                news.push(obj);
+                await DB.api('POST', '/api/admin/news', obj);
             }
-            DB.set('news', news);
-            DB.apiBackground('PUT', '/api/admin/content/news', news);
             closeNewsModal();
-            renderTable();
+            await loadNews();
             Layout.toast('Informativo salvo!', 'success');
         }
 
-        function deleteNews(id) {
+        async function deleteNews(id) {
             if (!confirm('Excluir este informativo?')) return;
-            const news = (DB.get('news')||[]).filter(x => x.id !== id);
-            DB.set('news', news);
-            DB.apiBackground('PUT', '/api/admin/content/news', news);
-            renderTable();
+            await DB.api('DELETE', '/api/admin/news/' + id);
+            await loadNews();
             Layout.toast('Informativo excluído', 'success');
         }
+
+        loadNews();
     </script>
 </body>
 </html>

@@ -3,42 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credbusiness — Consultar CPF</title>
+    <title>Credbusiness — Consulta CPF/CNPJ</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .type-toggle{display:flex;gap:4px;background:var(--bg);border-radius:var(--radius);padding:4px;margin-bottom:20px}
+        .type-toggle button{flex:1;padding:10px 16px;border:none;border-radius:var(--radius);font-size:.85rem;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .2s}
+        .type-toggle button.active{background:var(--primary);color:#fff;box-shadow:var(--shadow-primary)}
+    </style>
 </head>
 <body>
     <div id="app"></div>
 
     <template id="page-content">
         <div class="page-header">
-            <h2>Limpa Nome — Consultar CPF</h2>
-            <p>Verifique a situação do CPF nos órgãos de proteção ao crédito</p>
+            <h2><i class="fas fa-search" style="color:var(--primary);margin-right:8px"></i>Limpa Nome — Consulta</h2>
+            <p>Verifique a situação do CPF ou CNPJ nos órgãos de proteção ao crédito</p>
         </div>
 
         <div class="grid-2">
             <div class="card">
                 <div class="card-header"><h3><i class="fas fa-search"></i> Nova Consulta</h3></div>
                 <div class="card-body">
-                    <div class="form-group">
-                        <label>CPF</label>
-                        <input class="form-control" id="cpfInput" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
+                    <!-- Toggle PF / PJ -->
+                    <div class="type-toggle">
+                        <button class="active" id="btnPF" onclick="setType('pf')"><i class="fas fa-user"></i> Pessoa Física (CPF)</button>
+                        <button id="btnPJ" onclick="setType('pj')"><i class="fas fa-building"></i> Pessoa Jurídica (CNPJ)</button>
                     </div>
-                    <div class="form-group">
-                        <label>Nome Completo</label>
-                        <input class="form-control" id="nameInput" placeholder="Nome do titular">
+
+                    <div id="formPF">
+                        <div class="form-group">
+                            <label>CPF</label>
+                            <input class="form-control" id="cpfInput" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this); lookupCPF(this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>Nome Completo</label>
+                            <input class="form-control" id="nameInputPF" placeholder="Nome do titular (preenchido automaticamente)">
+                        </div>
                     </div>
-                    <button class="btn btn-primary w-full" onclick="consultarCPF()"><i class="fas fa-search"></i> Consultar</button>
+
+                    <div id="formPJ" style="display:none">
+                        <div class="form-group">
+                            <label>CNPJ</label>
+                            <input class="form-control" id="cnpjInput" placeholder="00.000.000/0000-00" maxlength="18" oninput="maskCNPJ(this)">
+                        </div>
+                        <div class="form-group">
+                            <label>Razão Social</label>
+                            <input class="form-control" id="nameInputPJ" placeholder="Razão social da empresa">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary w-full" id="consultBtn" onclick="consultar()"><i class="fas fa-search"></i> Consultar</button>
                 </div>
             </div>
             <div class="card">
                 <div class="card-header"><h3><i class="fas fa-info-circle"></i> Como funciona?</h3></div>
                 <div class="card-body">
                     <ul class="activity-list">
-                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-1"></i></div><div class="activity-info"><div class="title">Informe o CPF</div><div class="desc">Digite o CPF que deseja consultar</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-1"></i></div><div class="activity-info"><div class="title">Informe o documento</div><div class="desc">Digite o CPF ou CNPJ que deseja consultar</div></div></li>
                         <li class="activity-item"><div class="activity-icon stat-icon purple"><i class="fas fa-2"></i></div><div class="activity-info"><div class="title">Análise automática</div><div class="desc">Verificamos nos principais órgãos de crédito</div></div></li>
                         <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-3"></i></div><div class="activity-info"><div class="title">Resultado</div><div class="desc">Receba o relatório completo em instantes</div></div></li>
                     </ul>
+                    <div style="margin-top:16px;padding:14px;background:var(--bg);border-radius:var(--radius)">
+                        <div style="font-size:.82rem;font-weight:600;margin-bottom:6px"><i class="fas fa-shield-halved" style="color:var(--primary)"></i> Consulta Segura</div>
+                        <div style="font-size:.78rem;color:var(--text3)">Todos os dados são protegidos e criptografados conforme LGPD.</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -50,7 +79,7 @@
 
         <!-- Histórico de consultas -->
         <div class="card" style="margin-top:24px">
-            <div class="card-header"><h3><i class="fas fa-history"></i> Histórico de Consultas CPF</h3></div>
+            <div class="card-header"><h3><i class="fas fa-history"></i> Histórico de Consultas</h3></div>
             <div class="card-body"><div class="table-wrap" id="historyTable"></div></div>
         </div>
     </template>
@@ -58,7 +87,17 @@
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
-        Layout.init({ basePath: '../', page: 'limpa-nome-consulta', title: 'Consultar CPF' });
+        Layout.init({ basePath: '../', page: 'limpa-nome-consulta', title: 'Consulta CPF/CNPJ' });
+
+        let consultType = 'pf';
+
+        function setType(type) {
+            consultType = type;
+            document.getElementById('formPF').style.display = type === 'pf' ? 'block' : 'none';
+            document.getElementById('formPJ').style.display = type === 'pj' ? 'block' : 'none';
+            document.getElementById('btnPF').classList.toggle('active', type === 'pf');
+            document.getElementById('btnPJ').classList.toggle('active', type === 'pj');
+        }
 
         function maskCPF(el) {
             let v = el.value.replace(/\D/g, '');
@@ -68,19 +107,53 @@
             el.value = v;
         }
 
-        async function consultarCPF() {
-            const cpf = document.getElementById('cpfInput').value;
-            const name = document.getElementById('nameInput').value;
-            if (cpf.length < 14) { Layout.toast('CPF inválido', 'error'); return; }
+        function maskCNPJ(el) {
+            let v = el.value.replace(/\D/g, '');
+            v = v.replace(/(\d{2})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1/$2');
+            v = v.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+            el.value = v;
+        }
 
-            const btn = document.querySelector('.btn-primary');
+        let _lookupTimer = null;
+        function lookupCPF(value) {
+            clearTimeout(_lookupTimer);
+            const digits = value.replace(/\D/g, '');
+            if (digits.length < 11) return;
+            _lookupTimer = setTimeout(async () => {
+                try {
+                    const r = await DB.api('GET', `/api/services/lookup-cpf?cpf=${encodeURIComponent(value)}`);
+                    if (r && r.found && r.name) {
+                        document.getElementById('nameInputPF').value = r.name;
+                        Layout.toast('Nome preenchido automaticamente', 'info');
+                    }
+                } catch {}
+            }, 400);
+        }
+
+        async function consultar() {
+            const btn = document.getElementById('consultBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
 
             try {
-                const result = await DB.api('POST', '/api/services/consultar-cpf', { cpf, nome: name });
+                let result;
+                if (consultType === 'pf') {
+                    const cpf = document.getElementById('cpfInput').value;
+                    const name = document.getElementById('nameInputPF').value;
+                    if (cpf.replace(/\D/g,'').length < 11) { Layout.toast('CPF inválido', 'error'); return; }
+                    result = await DB.api('POST', '/api/services/consultar-cpf', { cpf, nome: name });
+                } else {
+                    const cnpj = document.getElementById('cnpjInput').value;
+                    const name = document.getElementById('nameInputPJ').value;
+                    if (cnpj.replace(/\D/g,'').length < 14) { Layout.toast('CNPJ inválido', 'error'); return; }
+                    result = await DB.api('POST', '/api/services/consultar-cnpj', { cnpj, nome: name });
+                }
+
                 const card = document.getElementById('resultCard');
                 card.style.display = 'block';
+                const doc = consultType === 'pf' ? document.getElementById('cpfInput').value : document.getElementById('cnpjInput').value;
 
                 if (!result || result.error) {
                     document.getElementById('resultBody').innerHTML = `
@@ -92,7 +165,7 @@
                     document.getElementById('resultBody').innerHTML = `
                         <div style="padding:16px;background:var(--danger-bg);border-radius:var(--radius);margin-bottom:16px">
                             <h4 style="color:var(--danger);font-size:.9rem;margin-bottom:4px"><i class="fas fa-exclamation-triangle"></i> Restrições Encontradas</h4>
-                            <p style="font-size:.82rem;color:var(--text2)">Foram encontradas pendências no CPF ${cpf}</p>
+                            <p style="font-size:.82rem;color:var(--text2)">Foram encontradas pendências no ${consultType === 'pf' ? 'CPF' : 'CNPJ'} ${doc}</p>
                         </div>
                         <div class="table-wrap"><table>
                             <thead><tr><th>Órgão</th><th>Tipo</th><th>Valor</th><th>Data</th></tr></thead>
@@ -102,11 +175,25 @@
                             </tr>`).join('')}</tbody>
                         </table></div>
                         <div style="margin-top:16px"><button class="btn btn-primary" onclick="window.location.href='limpa-nome-processos.html'"><i class="fas fa-plus"></i> Abrir Processo de Limpeza</button></div>`;
+                } else if (result.razao_social) {
+                    // CNPJ result from ReceitaWS
+                    document.getElementById('resultBody').innerHTML = `
+                        <div style="padding:16px;background:var(--success-bg);border-radius:var(--radius);margin-bottom:16px">
+                            <h4 style="color:var(--success);font-size:.9rem"><i class="fas fa-check-circle"></i> Dados da Empresa</h4>
+                        </div>
+                        <div style="display:grid;gap:10px">
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Razão Social</span><strong style="font-size:.85rem">${result.razao_social || result.nome || '—'}</strong></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Nome Fantasia</span><strong style="font-size:.85rem">${result.fantasia || '—'}</strong></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Situação</span><strong style="font-size:.85rem;color:${result.situacao === 'ATIVA' ? 'var(--success)' : 'var(--danger)'}">${result.situacao || '—'}</strong></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">CNPJ</span><strong style="font-size:.85rem">${doc}</strong></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Atividade Principal</span><strong style="font-size:.85rem">${(result.atividade_principal && result.atividade_principal[0]) ? result.atividade_principal[0].text : '—'}</strong></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text3);font-size:.85rem">Endereço</span><strong style="font-size:.85rem">${result.logradouro || ''} ${result.numero || ''}, ${result.municipio || ''} - ${result.uf || ''}</strong></div>
+                        </div>`;
                 } else {
                     document.getElementById('resultBody').innerHTML = `
                         <div style="padding:16px;background:var(--success-bg);border-radius:var(--radius)">
-                            <h4 style="color:var(--success);font-size:.9rem"><i class="fas fa-check-circle"></i> CPF Limpo</h4>
-                            <p style="font-size:.82rem;color:var(--text2)">Nenhuma restrição encontrada para o CPF ${cpf}</p>
+                            <h4 style="color:var(--success);font-size:.9rem"><i class="fas fa-check-circle"></i> ${consultType === 'pf' ? 'CPF' : 'CNPJ'} Limpo</h4>
+                            <p style="font-size:.82rem;color:var(--text2)">Nenhuma restrição encontrada para ${doc}</p>
                         </div>`;
                 }
                 card.scrollIntoView({ behavior: 'smooth' });
@@ -122,15 +209,16 @@
         async function loadHistory() {
             try {
                 const data = await DB.api('GET', '/api/services/consultations');
-                const cpfList = (data || []).filter(c => c.type === 'cpf');
-                document.getElementById('historyTable').innerHTML = cpfList.length ? `<table>
-                    <thead><tr><th>CPF</th><th>Nome</th><th>Status</th><th>Data</th></tr></thead>
-                    <tbody>${cpfList.map(c => {
+                const list = data || [];
+                document.getElementById('historyTable').innerHTML = list.length ? `<table>
+                    <thead><tr><th>Tipo</th><th>Documento</th><th>Nome</th><th>Status</th><th>Data</th></tr></thead>
+                    <tbody>${list.map(c => {
                         const r = c.result || {};
                         const st = r.status === 'restricao' ? '<span class="badge badge-danger">Restrição</span>'
                                  : r.status === 'limpo' ? '<span class="badge badge-success">Limpo</span>'
-                                 : '<span class="badge badge-secondary">—</span>';
-                        return `<tr><td>${c.cpf}</td><td>${c.name||'—'}</td><td>${st}</td><td>${new Date(c.created_at).toLocaleDateString('pt-BR')}</td></tr>`;
+                                 : '<span class="badge badge-secondary">OK</span>';
+                        const tipo = c.type === 'cnpj' ? '<span class="badge badge-purple">CNPJ</span>' : '<span class="badge badge-blue">CPF</span>';
+                        return `<tr><td>${tipo}</td><td>${c.cpf || c.cnpj || '—'}</td><td>${c.name||'—'}</td><td>${st}</td><td>${new Date(c.created_at).toLocaleDateString('pt-BR')}</td></tr>`;
                     }).join('')}</tbody>
                 </table>` : '<div class="table-empty"><i class="fas fa-search"></i><p>Nenhuma consulta realizada</p></div>';
             } catch {}

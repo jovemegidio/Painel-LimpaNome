@@ -17,7 +17,10 @@
         <div class="card" style="margin-top:24px">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
                 <h3><i class="fas fa-chart-line"></i> Histórico de Consultas</h3>
-                <button class="btn btn-sm btn-outline" onclick="window.location.href='bacen-consulta.html'"><i class="fas fa-plus"></i> Nova Consulta</button>
+                <div style="display:flex;gap:8px">
+                    <button class="btn btn-sm btn-outline" onclick="exportBacenPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="btn btn-sm btn-outline" onclick="window.location.href='bacen-consulta.html'"><i class="fas fa-plus"></i> Nova Consulta</button>
+                </div>
             </div>
             <div class="card-body"><div class="table-wrap" id="reportTable"></div></div>
         </div>
@@ -62,6 +65,21 @@
             } catch {
                 document.getElementById('reportTable').innerHTML = '<div class="table-empty"><i class="fas fa-chart-line"></i><p>Nenhum relatório disponível</p><small>Faça uma <a href="bacen-consulta.html" style="color:var(--primary)">consulta Bacen</a> para gerar relatórios</small></div>';
             }
+        }
+
+        let _bacenListForPdf = [];
+        const _origLoadReports = loadReports;
+        loadReports = async function() {
+            await _origLoadReports();
+        };
+
+        function exportBacenPDF() {
+            const rows = document.querySelectorAll('#reportTable table tbody tr');
+            if (!rows.length) { Layout.toast('Nenhum dado para exportar', 'error'); return; }
+            const data = Array.from(rows).map(tr => Array.from(tr.cells).map(td => td.textContent.trim()));
+            ExportPDF.download('bacen-relatorios', 'Relatório Bacen — Consultas SVR',
+                ['#', 'CPF/CNPJ', 'Valor', 'Instituições', 'Data', 'Detalhes'], data
+            );
         }
         loadReports();
     </script>

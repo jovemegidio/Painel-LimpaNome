@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Contratos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .contract-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all .2s;background:var(--surface)}
+        .contract-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+        .contract-header{padding:20px 24px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border-light)}
+        .contract-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+        .contract-icon.termos{background:rgba(59,130,246,.1);color:#3b82f6}
+        .contract-icon.privacidade{background:rgba(16,185,129,.1);color:#10b981}
+        .contract-icon.consultoria{background:rgba(139,92,246,.1);color:#8b5cf6}
+        .contract-icon.ficha{background:rgba(99,102,241,.1);color:#6366f1}
+        .contract-body{padding:16px 24px}
+        .contract-footer{padding:12px 24px;border-top:1px solid var(--border-light);display:flex;gap:8px;flex-wrap:wrap;background:var(--bg)}
+        .pdf-viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1001;display:none;align-items:center;justify-content:center}
+        .pdf-viewer-overlay.show{display:flex}
+        .pdf-viewer{background:var(--surface);border-radius:var(--radius);width:90vw;max-width:900px;height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.25)}
+        .pdf-viewer-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .pdf-viewer-header h3{font-size:1rem;margin:0}
+        .pdf-viewer-body{flex:1;overflow-y:auto;padding:40px 48px;font-size:.9rem;line-height:1.8;color:var(--text2)}
+        .pdf-viewer-body h3{color:var(--text);margin-top:24px;margin-bottom:8px;font-size:1rem}
+        .pdf-viewer-body p{margin-bottom:12px}
+        .pdf-viewer-footer{padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+        @media print{.pdf-viewer-header,.pdf-viewer-footer{display:none}.pdf-viewer{height:auto;width:100%;box-shadow:none}.pdf-viewer-body{overflow:visible}}
+        @media(max-width:768px){
+            .pdf-viewer{width:100vw;max-width:100vw;height:100vh;border-radius:0}
+            .pdf-viewer-body{padding:20px 16px;font-size:.85rem;line-height:1.7}
+            .pdf-viewer-header{padding:12px 16px}
+            .pdf-viewer-footer{padding:10px 16px;flex-wrap:wrap}
+            .pdf-viewer-footer .btn{flex:1;min-width:0;font-size:.78rem;padding:8px 12px}
+            .contract-header{padding:14px 16px;gap:12px}
+            .contract-body{padding:12px 16px}
+            .contract-footer{padding:10px 16px}
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- PDF Viewer Overlay -->
+<div class="pdf-viewer-overlay" id="pdfViewer">
+    <div class="pdf-viewer">
+        <div class="pdf-viewer-header">
+            <h3 id="pdfTitle"></h3>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-sm btn-outline" onclick="printContract()"><i class="fas fa-print"></i> Imprimir</button>
+                <button class="btn btn-sm btn-outline" onclick="downloadContractPDF()"><i class="fas fa-download"></i> PDF</button>
+                <button class="btn btn-sm btn-outline" onclick="closePdfViewer()" style="border:none;font-size:1.2rem"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="pdf-viewer-body" id="pdfContent"></div>
+        <div class="pdf-viewer-footer" id="pdfFooter"></div>
+    </div>
+</div>
+
+<template id="page-content">
+    <div class="page-header">
+        <h2><i class="fas fa-file-contract" style="color:var(--primary);margin-right:8px"></i>Contratos e Termos</h2>
+        <p>Documentos legais da plataforma — visualize, aceite e envie para seus clientes</p>
+    </div>
+
+    <div style="display:grid;gap:16px" id="contractsList">
+        <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando contratos...</p></div>
+    </div>
+</template>
+
+<script src="../js/data.js"></script>
+<script src="../js/components.js"></script>
+<script>
+Layout.init({ basePath: '../', page: 'contratos', title: 'Contratos' });
+
+const contractIcons = {
+    'Ficha Associativa': 'ficha',
+    'Termos de Uso': 'termos',
+    'Política de Privacidade': 'privacidade',
+    'Contrato de Consultoria': 'consultoria'
+};
+
+let allContracts = [];
+
+async function loadContracts() {
+    const contracts = await DB.getContracts();
+    allContracts = contracts || [];
+    const container = document.getElementById('contractsList');
+    if (!contracts || contracts.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-file-contract" style="font-size:2rem;opacity:.5;margin-bottom:8px"></i><p>Nenhum contrato disponível</p></div>';
+        return;
+    }
+
+    container.innerHTML = contracts.map(c => {
+        const iconClass = Object.entries(contractIcons).find(([k]) => c.title.includes(k))?.[1] || 'termos';
+        const iconMap = { ficha: 'fa-file-signature', termos: 'fa-file-shield', privacidade: 'fa-user-shield', consultoria: 'fa-handshake' };
+        return `
+        <div class="contract-card">
+            <div class="contract-header">
+                <div class="contract-icon ${iconClass}"><i class="fas ${iconMap[iconClass] || 'fa-file-contract'}"></i></div>
+                <div style="flex:1">
+                    <h3 style="font-size:1rem;margin-bottom:2px">${c.title}</h3>
+                    <p style="font-size:.78rem;color:var(--text3);margin:0">${c.description || ''}</p>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    ${c.required ? '<span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> Obrigatório</span>' : ''}
+                    ${c.accepted ? '<span class="badge badge-success"><i class="fas fa-check"></i> Aceito</span>' : '<span class="badge badge-secondary"><i class="fas fa-clock"></i> Pendente</span>'}
+                </div>
+            </div>
+            <div class="contract-body">
+                <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:.82rem;color:var(--text3)">
+                    <div><i class="fas fa-code-branch" style="margin-right:4px"></i> Versão ${c.version || '1.0'}</div>
+                    <div><i class="fas fa-calendar" style="margin-right:4px"></i> ${new Date(c.created_at).toLocaleDateString('pt-BR')}</div>
+                    ${c.accepted ? `<div style="color:var(--success)"><i class="fas fa-check-circle" style="margin-right:4px"></i> Aceito em ${new Date(c.accepted_at).toLocaleDateString('pt-BR')}</div>` : ''}
+                </div>
+            </div>
+            <div class="contract-footer">
+                <button class="btn btn-sm btn-primary" onclick="viewContractPDF(${c.id})"><i class="fas fa-eye"></i> Visualizar Documento</button>
+                ${!c.accepted ? `<button class="btn btn-sm btn-success" onclick="acceptContract(${c.id})"><i class="fas fa-check"></i> Aceitar</button>` : ''}
+                <button class="btn btn-sm btn-outline" onclick="sendToClient(${c.id})"><i class="fas fa-paper-plane"></i> Enviar ao Cliente</button>
+                <button class="btn btn-sm btn-outline" onclick="downloadContractById(${c.id})"><i class="fas fa-download"></i> Download</button>
+            </div>
+        </div>
+    `}).join('');
+}
+
+async function viewContractPDF(id) {
+    const contract = allContracts.find(c => c.id === id);
+    if (!contract && id) {
+        const fetched = await DB.getContract(id);
+        if (fetched) allContracts.push(fetched);
+    }
+    const c = allContracts.find(c => c.id === id);
+    if (!c) return;
+
+    document.getElementById('pdfTitle').textContent = c.title;
+    document.getElementById('pdfContent').innerHTML = `
+        <div style="text-align:center;margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid var(--border)">
+            <div style="font-size:1.3rem;font-weight:700;color:var(--text)">${c.title}</div>
+            <div style="font-size:.82rem;color:var(--text3);margin-top:4px">Versão ${c.version || '1.0'} — ${new Date(c.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+        ${c.content || '<p>Conteúdo não disponível.</p>'}
+        <div style="margin-top:32px;padding-top:24px;border-top:2px solid var(--border);text-align:center;font-size:.78rem;color:var(--text3)">
+            <p>Credbusiness — Documento gerado eletronicamente</p>
+            <p>Data de emissão: ${new Date().toLocaleDateString('pt-BR')}</p>
+        </div>
+    `;
+    document.getElementById('pdfFooter').innerHTML = `
+        ${!c.accepted ? `<button class="btn btn-success" onclick="acceptContract(${c.id});closePdfViewer()"><i class="fas fa-check"></i> Aceitar Contrato</button>` : ''}
+        <button class="btn btn-outline" onclick="closePdfViewer()">Fechar</button>
+    `;
+    document.getElementById('pdfViewer').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closePdfViewer() {
+    document.getElementById('pdfViewer').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// Close with ESC
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePdfViewer(); });
+
+function printContract() {
+    const content = document.getElementById('pdfContent').innerHTML;
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>Contrato</title><style>body{font-family:Arial,sans-serif;padding:40px;line-height:1.8;color:#333}h3{margin-top:20px;margin-bottom:8px}p{margin-bottom:10px}</style></head><body>${content}</body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+}
+
+function downloadContractPDF() {
+    printContract();
+}
+
+function downloadContractById(id) {
+    viewContractPDF(id);
+    setTimeout(printContract, 500);
+}
+
+function sendToClient(id) {
+    const c = allContracts.find(c => c.id === id);
+    if (!c) return;
+    Layout.openModal('Enviar Contrato ao Cliente', `
+        <div style="padding:8px">
+            <p style="font-size:.85rem;color:var(--text2);margin-bottom:16px">Envie o contrato "<strong>${c.title}</strong>" para um cliente via e-mail ou WhatsApp.</p>
+            <div class="form-group">
+                <label>E-mail do Cliente</label>
+                <input class="form-control" id="sendEmail" placeholder="cliente@email.com" type="email">
+            </div>
+            <div class="form-group">
+                <label>WhatsApp do Cliente (opcional)</label>
+                <input class="form-control" id="sendWhatsapp" placeholder="(11) 99999-9999">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px">
+                <button class="btn btn-primary" onclick="doSendEmail(${id})"><i class="fas fa-envelope"></i> Enviar por E-mail</button>
+                <button class="btn btn-success" onclick="doSendWhatsapp(${id})"><i class="fab fa-whatsapp"></i> Enviar por WhatsApp</button>
+            </div>
+        </div>
+    `);
+}
+
+async function doSendEmail(id) {
+    const email = document.getElementById('sendEmail').value;
+    if (!email) { Layout.toast('Informe o e-mail', 'error'); return; }
+    const result = await DB.api('POST', '/api/users/contracts/' + id + '/send', { email });
+    Layout.closeModal();
+    Layout.toast(result?.success ? 'Contrato enviado por e-mail!' : 'Envio registrado. O cliente receberá o contrato.', 'success');
+}
+
+function doSendWhatsapp(id) {
+    const c = allContracts.find(c => c.id === id);
+    const phone = (document.getElementById('sendWhatsapp').value || '').replace(/\D/g, '');
+    const baseUrl = window.location.origin;
+    const msg = `Olá! Segue o contrato "${c?.title || 'Contrato'}" da Credbusiness para sua análise e aceite. Acesse: ${baseUrl}/pages/contratos.html`;
+    window.open(`https://wa.me/${phone ? '55' + phone : ''}?text=${encodeURIComponent(msg)}`);
+    Layout.closeModal();
+}
+
+async function acceptContract(id) {
+    if(!confirm('Ao aceitar, você concorda com todos os termos deste contrato. Deseja continuar?')) return;
+    const result = await DB.acceptContract(id);
+    if (result && result.success) {
+        Layout.toast('Contrato aceito com sucesso!', 'success');
+        loadContracts();
+    } else {
+        Layout.toast(result?.error || 'Erro ao aceitar contrato', 'error');
+    }
+}
+
+loadContracts();
+</script>
+</body>
+</html>

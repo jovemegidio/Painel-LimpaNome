@@ -303,7 +303,10 @@ async function cancelSubscription(subscriptionId) {
  * @param {string} token - Header `asaas-access-token` do request
  */
 function validateWebhookToken(token) {
-    if (!ASAAS_WEBHOOK_TOKEN) return true; // Se não configurou, aceitar tudo (sandbox)
+    if (!ASAAS_WEBHOOK_TOKEN) {
+        console.error('[Webhook] ASAAS_WEBHOOK_TOKEN não configurado — rejeitando request por segurança');
+        return false;
+    }
     return token === ASAAS_WEBHOOK_TOKEN;
 }
 

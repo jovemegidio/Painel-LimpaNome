@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Meu PIX</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header"><h2>Meu PIX e Conta Bancária</h2><p>Cadastre seus dados para recebimento de bônus e comissões</p></div>
+
+        <div class="grid-2 mb-24">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-key"></i> Minha Chave PIX</h3></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Tipo de Chave</label>
+                        <select class="form-control" id="pixType">
+                            <option value="cpf">CPF</option>
+                            <option value="cnpj">CNPJ</option>
+                            <option value="email">E-mail</option>
+                            <option value="phone">Telefone</option>
+                            <option value="random">Chave Aleatória</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Chave PIX</label>
+                        <input class="form-control" id="pixKey" placeholder="Digite sua chave PIX">
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-university"></i> Conta Bancária</h3></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Banco</label>
+                        <input class="form-control" id="bankName" placeholder="Ex: Nubank, Bradesco, Itaú...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Agência</label>
+                            <input class="form-control" id="bankAgency" placeholder="0001">
+                        </div>
+                        <div class="form-group">
+                            <label>Conta</label>
+                            <input class="form-control" id="bankAccount" placeholder="12345-6">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Conta</label>
+                        <select class="form-control" id="bankType">
+                            <option value="corrente">Conta Corrente</option>
+                            <option value="poupanca">Conta Poupança</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:24px">
+            <button class="btn btn-primary" onclick="saveAll()" style="flex:1"><i class="fas fa-save"></i> Salvar Dados Bancários e PIX</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-info-circle"></i> Informações</h3></div>
+            <div class="card-body">
+                <ul class="activity-list">
+                    <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-shield-alt"></i></div><div class="activity-info"><div class="title">Segurança</div><div class="desc">Seus dados são protegidos e usados apenas para repasse de bônus e comissões</div></div></li>
+                    <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-bolt"></i></div><div class="activity-info"><div class="title">Instantâneo</div><div class="desc">Saques via PIX são processados em até 24 horas</div></div></li>
+                    <li class="activity-item"><div class="activity-icon stat-icon orange"><i class="fas fa-exchange-alt"></i></div><div class="activity-info"><div class="title">Altere quando quiser</div><div class="desc">Você pode alterar seus dados a qualquer momento</div></div></li>
+                </ul>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'meu-pix', title: 'Meu PIX' });
+
+        // Load current PIX and bank data
+        (async () => {
+            const data = await DB.api('GET', '/api/wallet/pix');
+            if (data) {
+                document.getElementById('pixType').value = data.pix_type || 'cpf';
+                document.getElementById('pixKey').value = data.pix_key || '';
+                document.getElementById('bankName').value = data.bank_name || '';
+                document.getElementById('bankAgency').value = data.bank_agency || '';
+                document.getElementById('bankAccount').value = data.bank_account || '';
+                document.getElementById('bankType').value = data.bank_type || 'corrente';
+            }
+        })();
+
+        async function saveAll() {
+            const pix_type = document.getElementById('pixType').value;
+            const pix_key = document.getElementById('pixKey').value.trim();
+            const bank_name = document.getElementById('bankName').value.trim();
+            const bank_agency = document.getElementById('bankAgency').value.trim();
+            const bank_account = document.getElementById('bankAccount').value.trim();
+            const bank_type = document.getElementById('bankType').value;
+            if (!pix_key) { Layout.toast('Informe a chave PIX', 'error'); return; }
+
+            const result = await DB.api('PUT', '/api/wallet/pix', { pix_key, pix_type, bank_name, bank_agency, bank_account, bank_type });
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
+            if (result.error) { Layout.toast(result.error, 'error'); return; }
+            Layout.toast('Dados bancários e PIX salvos com sucesso!', 'success');
+        }
+    </script>
+</body>
+</html>

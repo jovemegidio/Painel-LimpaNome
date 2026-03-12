@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness Admin — Downloads</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2>Gerenciar Downloads</h2><p>Materiais de marketing para a equipe</p></div>
+            <button class="btn btn-primary" onclick="openDlModal()"><i class="fas fa-plus"></i> Novo Material</button>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="dlTable"><thead><tr>
+                    <th>ID</th><th>Título</th><th>Categoria</th><th>Tipo</th><th>Tamanho</th><th>Status</th><th style="width:120px">Ações</th>
+                </tr></thead><tbody id="dlBody"></tbody></table>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="dlModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:12px;width:540px;max-width:95vw;padding:24px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                    <h3 id="dlModalTitle">Novo Material</h3>
+                    <button onclick="closeDlModal()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+                <form id="dlForm" onsubmit="saveDl(event)">
+                    <input type="hidden" id="dlEditId">
+                    <div class="form-group"><label>Título</label><input type="text" id="dlTitle" class="form-control" required></div>
+                    <div class="form-group"><label>Descrição</label><textarea id="dlDesc" class="form-control" rows="2"></textarea></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Categoria</label>
+                            <select id="dlCategory" class="form-control">
+                                <option value="geral">Geral</option>
+                                <option value="marca">Marca</option>
+                                <option value="apresentacoes">Apresentações</option>
+                                <option value="redes-sociais">Redes Sociais</option>
+                                <option value="documentos">Documentos</option>
+                                <option value="videos">Vídeos</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Tipo do Arquivo</label>
+                            <select id="dlFileType" class="form-control">
+                                <option value="application/pdf">PDF</option>
+                                <option value="image/png">Imagem PNG</option>
+                                <option value="image/jpeg">Imagem JPEG</option>
+                                <option value="video/mp4">Vídeo MP4</option>
+                                <option value="application/zip">ZIP</option>
+                                <option value="application/vnd.ms-powerpoint">PowerPoint</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>URL do Arquivo</label><input type="text" id="dlFileUrl" class="form-control" required placeholder="https://..."></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="form-group"><label>Tamanho</label><input type="text" id="dlFileSize" class="form-control" placeholder="Ex: 2.3 MB"></div>
+                        <div class="form-group"><label>Ordem</label><input type="number" id="dlSortOrder" class="form-control" value="0"></div>
+                    </div>
+                    <div class="form-group" style="margin-top:8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="dlActive" checked> Ativo</label></div>
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:16px">
+                        <button type="button" class="btn btn-outline" onclick="closeDlModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-downloads', title: 'Downloads', admin: true });
+
+        async function loadDownloads() {
+            const downloads = await DB.api('GET', '/api/admin/downloads') || [];
+            const catLabels = { marca: 'Marca', apresentacoes: 'Apresentações', 'redes-sociais': 'Redes Sociais', documentos: 'Documentos', videos: 'Vídeos', geral: 'Geral' };
+            const tbody = document.getElementById('dlBody');
+            if (!downloads.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Nenhum material</td></tr>';
+                return;
+            }
+            tbody.innerHTML = downloads.map(d => `<tr>
+                <td>${d.id}</td>
+                <td><strong>${d.title}</strong><br><small style="color:var(--text3)">${d.description || ''}</small></td>
+                <td><span class="badge badge-blue">${catLabels[d.category] || d.category}</span></td>
+                <td>${d.file_type || ''}</td>
+                <td>${d.file_size || ''}</td>
+                <td><span class="badge badge-${d.active ? 'green' : 'red'}">${d.active ? 'Ativo' : 'Inativo'}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="editDl(${d.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline text-danger" onclick="deleteDl(${d.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+            window._downloads = downloads;
+        }
+
+        function openDlModal(d) {
+            document.getElementById('dlModalTitle').textContent = d ? 'Editar Material' : 'Novo Material';
+            document.getElementById('dlEditId').value = d ? d.id : '';
+            document.getElementById('dlTitle').value = d ? d.title : '';
+            document.getElementById('dlDesc').value = d ? d.description : '';
+            document.getElementById('dlCategory').value = d ? d.category : 'geral';
+            document.getElementById('dlFileType').value = d ? d.file_type : 'application/pdf';
+            document.getElementById('dlFileUrl').value = d ? d.file_url : '';
+            document.getElementById('dlFileSize').value = d ? d.file_size : '';
+            document.getElementById('dlSortOrder').value = d ? d.sort_order : 0;
+            document.getElementById('dlActive').checked = d ? !!d.active : true;
+            document.getElementById('dlModal').style.display = 'flex';
+        }
+
+        function closeDlModal() { document.getElementById('dlModal').style.display = 'none'; }
+
+        function editDl(id) {
+            const d = (window._downloads || []).find(x => x.id === id);
+            if (d) openDlModal(d);
+        }
+
+        async function saveDl(e) {
+            e.preventDefault();
+            const id = document.getElementById('dlEditId').value;
+            const body = {
+                title: document.getElementById('dlTitle').value,
+                description: document.getElementById('dlDesc').value,
+                category: document.getElementById('dlCategory').value,
+                file_type: document.getElementById('dlFileType').value,
+                file_url: document.getElementById('dlFileUrl').value,
+                file_size: document.getElementById('dlFileSize').value,
+                sort_order: Number(document.getElementById('dlSortOrder').value) || 0,
+                active: document.getElementById('dlActive').checked ? 1 : 0
+            };
+
+            const result = id
+                ? await DB.api('PUT', `/api/admin/downloads/${id}`, body)
+                : await DB.api('POST', '/api/admin/downloads', body);
+
+            if (!result || result.error) { Layout.toast(result?.error || 'Erro ao salvar', 'error'); return; }
+            Layout.toast('Material salvo!', 'success');
+            closeDlModal();
+            loadDownloads();
+        }
+
+        async function deleteDl(id) {
+            if (!confirm('Excluir este material?')) return;
+            const result = await DB.api('DELETE', `/api/admin/downloads/${id}`);
+            if (!result || result.error) { Layout.toast('Erro ao excluir', 'error'); return; }
+            Layout.toast('Material excluído', 'success');
+            loadDownloads();
+        }
+
+        loadDownloads();
+    </script>
+</body>
+</html>

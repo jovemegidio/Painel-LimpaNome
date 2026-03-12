@@ -30,6 +30,27 @@ function sanitize(str) { return str ? String(str).trim().replace(/<[^>]*>/g, '')
 function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 function isValidCPF(c) { return /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/.test(c); }
 
+// ── Verificar Patrocinador (público) ──
+router.get('/check-sponsor', (req, res) => {
+    try {
+        const username = sanitize(req.query.username);
+        if (!username) return res.json({ valid: false });
+        const db = getDB();
+        const user = db.prepare('SELECT id, name, level FROM users WHERE LOWER(username) = ? AND active = 1').get(username.toLowerCase());
+        if (user) {
+            const LEVEL_HIERARCHY = { diamante: 'ouro', ouro: 'prata', prata: 'bronze', bronze: 'start', start: null };
+            const childLevel = LEVEL_HIERARCHY[user.level];
+            if (childLevel === null || childLevel === undefined) {
+                return res.json({ valid: false, reason: 'Este patrocinador (nível Start) não pode cadastrar novos membros.' });
+            }
+            return res.json({ valid: true, name: user.name, sponsorLevel: user.level, yourLevel: childLevel });
+        }
+        return res.json({ valid: false });
+    } catch (err) {
+        return res.json({ valid: false });
+    }
+});
+
 // ── Login de Usuário ──
 router.post('/login', (req, res) => {
     try {
@@ -45,19 +66,13 @@ router.post('/login', (req, res) => {
         }
         if (!user.active) return res.status(403).json({ success: false, error: 'Conta desativada. Entre em contato com o suporte.' });
 
-        // Verificar se 2FA está habilitado
-        if (user.totp_enabled) {
-            // Gerar token temporário para etapa 2FA
-            const tempToken = crypto.randomBytes(32).toString('hex');
-            db.prepare("UPDATE users SET totp_temp_token = ?, totp_temp_expires = datetime('now', '+5 minutes') WHERE id = ?")
-                .run(tempToken, user.id);
-            return res.json({ 
-                success: true, 
-                requires2FA: true, 
-                tempToken,
-                message: 'Informe o código do autenticador'
-            });
-        }
+        // 2FA temporariamente desabilitado
+        // if (user.totp_enabled) {
+        //     const tempToken = crypto.randomBytes(32).toString('hex');
+        //     db.prepare("UPDATE users SET totp_temp_token = ?, totp_temp_expires = datetime('now', '+5 minutes') WHERE id = ?")
+        //         .run(tempToken, user.id);
+        //     return res.json({ success: true, requires2FA: true, tempToken, message: 'Informe o código do autenticador' });
+        // }
 
         // Atualizar último login
         db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
@@ -77,12 +92,23 @@ router.post('/login', (req, res) => {
     }
 });
 
+// ── Rate limit para 2FA (máx 5 tentativas por token) ──
+const twoFaAttempts = new Map();
+const TWO_FA_MAX = 5;
+setInterval(() => { const now = Date.now(); for (const [k, v] of twoFaAttempts) { if (now - v.ts > 10 * 60 * 1000) twoFaAttempts.delete(k); } }, 5 * 60 * 1000);
+
 // ── Verificar 2FA (segunda etapa do login) ──
 router.post('/verify-2fa', (req, res) => {
     try {
         const tempToken = sanitize(req.body.tempToken);
         const totpCode = sanitize(req.body.code);
         if (!tempToken || !totpCode) return res.status(400).json({ success: false, error: 'Preencha todos os campos' });
+
+        // Rate limit por token
+        const attempt = twoFaAttempts.get(tempToken) || { count: 0, ts: Date.now() };
+        if (attempt.count >= TWO_FA_MAX) {
+            return res.status(429).json({ success: false, error: 'Muitas tentativas. Faça login novamente.' });
+        }
 
         const db = getDB();
         const user = db.prepare("SELECT * FROM users WHERE totp_temp_token = ? AND totp_temp_expires > datetime('now')").get(tempToken);
@@ -96,7 +122,14 @@ router.post('/verify-2fa', (req, res) => {
             window: 1
         });
 
-        if (!verified) return res.status(401).json({ success: false, error: 'Código 2FA inválido' });
+        if (!verified) {
+            attempt.count++;
+            attempt.ts = Date.now();
+            twoFaAttempts.set(tempToken, attempt);
+            return res.status(401).json({ success: false, error: `Código 2FA inválido (tentativa ${attempt.count}/${TWO_FA_MAX})` });
+        }
+
+        twoFaAttempts.delete(tempToken);
 
         // Limpar token temporário e atualizar último login
         db.prepare("UPDATE users SET totp_temp_token = NULL, totp_temp_expires = NULL, last_login = datetime('now') WHERE id = ?")
@@ -150,8 +183,8 @@ router.post('/register', (req, res) => {
         const phone = sanitize(req.body.phone);
         const sponsor = sanitize(req.body.sponsor);
 
-        if (!username || !password || !name || !email) {
-            return res.status(400).json({ success: false, error: 'Preencha os campos obrigatórios' });
+        if (!username || !password || !name || !email || !sponsor) {
+            return res.status(400).json({ success: false, error: 'Preencha os campos obrigatórios (incluindo patrocinador)' });
         }
         if (username.length < 3 || username.length > 30) {
             return res.status(400).json({ success: false, error: 'Usuário deve ter entre 3 e 30 caracteres' });
@@ -159,8 +192,11 @@ router.post('/register', (req, res) => {
         if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
             return res.status(400).json({ success: false, error: 'Usuário só pode conter letras, números, ponto, hífen e underline' });
         }
-        if (password.length < 6 || password.length > 100) {
-            return res.status(400).json({ success: false, error: 'A senha deve ter entre 6 e 100 caracteres' });
+        if (password.length < 8 || password.length > 100) {
+            return res.status(400).json({ success: false, error: 'A senha deve ter entre 8 e 100 caracteres' });
+        }
+        if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+            return res.status(400).json({ success: false, error: 'A senha deve conter pelo menos uma letra maiúscula e um número' });
         }
         if (!isValidEmail(email)) {
             return res.status(400).json({ success: false, error: 'E-mail inválido' });
@@ -182,19 +218,36 @@ router.post('/register', (req, res) => {
         }
 
         let sponsorId = null;
+        let assignedLevel = 'start';
         if (sponsor) {
-            const sp = db.prepare('SELECT id FROM users WHERE LOWER(username) = ? OR id = ?')
+            const sp = db.prepare('SELECT id, level FROM users WHERE LOWER(username) = ? OR id = ?')
                 .get(sponsor.toLowerCase(), isNaN(sponsor) ? -1 : Number(sponsor));
             if (!sp) return res.status(404).json({ success: false, error: 'Patrocinador não encontrado.' });
+
+            // Hierarquia de cadastro: Diamante→Ouro→Prata→Bronze→Start
+            const LEVEL_HIERARCHY = { diamante: 'ouro', ouro: 'prata', prata: 'bronze', bronze: 'start', start: null };
+            const childLevel = LEVEL_HIERARCHY[sp.level];
+            if (childLevel === null || childLevel === undefined) {
+                return res.status(400).json({ success: false, error: 'Este patrocinador (nível Start) não pode cadastrar novos membros.' });
+            }
+            assignedLevel = childLevel;
+
+            // Limite de 12 patrocinados por patrocinador (só conta quem já comprou pacote)
+            const sponsoredCount = db.prepare('SELECT COUNT(*) as c FROM users WHERE sponsor_id = ? AND has_package = 1').get(sp.id);
+            const maxSponsored = Number(db.prepare("SELECT value FROM settings WHERE key = 'maxSponsoredPerUser'").get()?.value || 12);
+            if (sponsoredCount.c >= maxSponsored) {
+                return res.status(400).json({ success: false, error: `Este patrocinador já atingiu o limite de ${maxSponsored} indicados diretos.` });
+            }
+
             sponsorId = sp.id;
         }
 
         const hashedPassword = bcrypt.hashSync(password, 12);
 
         const result = db.prepare(`
-            INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, email_verified, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'basico', 'prata', 0, 0, 0, 1, 'user', 1, datetime('now'), 0, date('now'))
-        `).run(username.toLowerCase(), hashedPassword, name, email.toLowerCase(), phone || '', cpf || '', sponsorId);
+            INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, email_verified, has_package, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'basico', ?, 0, 0, 0, 1, 'user', 1, datetime('now'), 0, 0, date('now'))
+        `).run(username.toLowerCase(), hashedPassword, name, email.toLowerCase(), phone || '', cpf || '', sponsorId, assignedLevel);
 
         const userId = result.lastInsertRowid;
 
@@ -337,8 +390,11 @@ router.post('/reset-password', (req, res) => {
         const token = sanitize(req.body.token);
         const newPassword = req.body.newPassword;
         if (!token || !newPassword) return res.status(400).json({ success: false, error: 'Preencha todos os campos' });
-        if (newPassword.length < 6 || newPassword.length > 100) {
-            return res.status(400).json({ success: false, error: 'A senha deve ter entre 6 e 100 caracteres' });
+        if (newPassword.length < 8 || newPassword.length > 100) {
+            return res.status(400).json({ success: false, error: 'A senha deve ter entre 8 e 100 caracteres' });
+        }
+        if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+            return res.status(400).json({ success: false, error: 'A senha deve conter pelo menos uma letra maiúscula e um número' });
         }
 
         const db = getDB();
@@ -369,8 +425,11 @@ router.post('/change-password', auth, (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
         if (!currentPassword || !newPassword) return res.status(400).json({ success: false, error: 'Preencha todos os campos' });
-        if (newPassword.length < 6 || newPassword.length > 100) {
-            return res.status(400).json({ success: false, error: 'A nova senha deve ter entre 6 e 100 caracteres' });
+        if (newPassword.length < 8 || newPassword.length > 100) {
+            return res.status(400).json({ success: false, error: 'A nova senha deve ter entre 8 e 100 caracteres' });
+        }
+        if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+            return res.status(400).json({ success: false, error: 'A senha deve conter pelo menos uma letra maiúscula e um número' });
         }
 
         const db = getDB();
@@ -395,8 +454,10 @@ router.post('/change-password', auth, (req, res) => {
 //   2FA — Autenticação em Dois Fatores
 // ══════════════════════════════════════════
 
-// ── Gerar QR Code para configurar 2FA ──
+// ── Gerar QR Code para configurar 2FA (DESABILITADO) ──
 router.post('/2fa/setup', auth, async (req, res) => {
+    return res.status(400).json({ success: false, error: '2FA está temporariamente desabilitado' });
+    /* --- 2FA DESABILITADO ---
     try {
         const db = getDB();
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
@@ -428,10 +489,13 @@ router.post('/2fa/setup', auth, async (req, res) => {
         console.error('Erro 2fa/setup:', err.message);
         res.status(500).json({ success: false, error: 'Erro interno do servidor' });
     }
+    --- */
 });
 
-// ── Ativar 2FA (verifica código e habilita) ──
+// ── Ativar 2FA (DESABILITADO) ──
 router.post('/2fa/enable', auth, async (req, res) => {
+    return res.status(400).json({ success: false, error: '2FA está temporariamente desabilitado' });
+    /* --- 2FA DESABILITADO ---
     try {
         const code = sanitize(req.body.code);
         if (!code) return res.status(400).json({ success: false, error: 'Informe o código do autenticador' });
@@ -461,6 +525,7 @@ router.post('/2fa/enable', auth, async (req, res) => {
         console.error('Erro 2fa/enable:', err.message);
         res.status(500).json({ success: false, error: 'Erro interno do servidor' });
     }
+    --- */
 });
 
 // ── Desativar 2FA ──

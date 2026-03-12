@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness Admin — Auditoria</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header">
+            <h2>Log de Auditoria</h2>
+            <p>Registro completo de ações realizadas na plataforma</p>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card" style="margin-bottom:20px">
+            <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                    <label>Buscar</label>
+                    <input type="text" id="filterSearch" class="form-control" placeholder="Buscar por ação, entidade, detalhes..." oninput="debounceLoad()">
+                </div>
+                <div class="form-group" style="min-width:160px;margin:0">
+                    <label>Ação</label>
+                    <select id="filterAction" class="form-control" onchange="loadLogs(1)">
+                        <option value="">Todas</option>
+                        <option value="admin_login">Login Admin</option>
+                        <option value="user_login">Login Usuário</option>
+                        <option value="admin_create_user">Criar Usuário</option>
+                        <option value="admin_update_user">Atualizar Usuário</option>
+                        <option value="admin_delete_user">Excluir Usuário</option>
+                        <option value="admin_update_settings">Atualizar Config</option>
+                        <option value="admin_broadcast_notification">Notificação</option>
+                        <option value="admin_update_landing">Atualizar Landing</option>
+                    </select>
+                </div>
+                <div class="form-group" style="min-width:140px;margin:0">
+                    <label>Tipo Usuário</label>
+                    <select id="filterUserType" class="form-control" onchange="loadLogs(1)">
+                        <option value="">Todos</option>
+                        <option value="admin">Admin</option>
+                        <option value="user">Usuário</option>
+                    </select>
+                </div>
+                <button class="btn btn-outline" onclick="clearFilters()" style="height:42px"><i class="fas fa-times"></i> Limpar</button>
+            </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="card">
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="logsTable"><thead><tr>
+                    <th style="width:160px">Data/Hora</th>
+                    <th>Tipo</th>
+                    <th>Ação</th>
+                    <th>Entidade</th>
+                    <th>Detalhes</th>
+                    <th>IP</th>
+                </tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+
+        <!-- Paginação -->
+        <div id="pagination" style="display:flex;justify-content:center;gap:8px;margin-top:16px"></div>
+    </template>
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-audit', title: 'Auditoria', admin: true });
+
+        let currentPage = 1;
+        let debounceTimer;
+
+        function debounceLoad() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => loadLogs(1), 400);
+        }
+
+        async function loadLogs(page) {
+            currentPage = page || 1;
+            const search = document.getElementById('filterSearch').value.trim();
+            const action = document.getElementById('filterAction').value;
+            const userType = document.getElementById('filterUserType').value;
+
+            let url = `/api/admin/audit-log?page=${currentPage}&limit=50`;
+            if (search) url += '&search=' + encodeURIComponent(search);
+            if (action) url += '&action=' + encodeURIComponent(action);
+            if (userType) url += '&userType=' + encodeURIComponent(userType);
+
+            const data = await DB.api('GET', url);
+            if (!data) return;
+            renderTable(data.logs || []);
+            renderPagination(data.page, data.totalPages, data.total);
+        }
+
+        function renderTable(logs) {
+            const typeColors = { admin: 'primary', user: 'success', system: 'secondary' };
+            const tbody = document.querySelector('#logsTable tbody');
+            tbody.innerHTML = logs.length ? logs.map(l => {
+                let details = l.details || '';
+                if (details.length > 80) details = details.substring(0, 80) + '…';
+                const date = l.created_at ? new Date(l.created_at).toLocaleString('pt-BR') : '—';
+                return `<tr>
+                    <td style="white-space:nowrap;font-size:13px">${date}</td>
+                    <td><span class="badge badge-${typeColors[l.user_type] || 'secondary'}">${l.user_type || '—'}</span></td>
+                    <td style="font-size:13px;font-family:monospace">${esc(l.action || '')}</td>
+                    <td>${esc(l.entity || '—')}</td>
+                    <td style="font-size:12px;color:#64748b;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.details || '')}">${esc(details)}</td>
+                    <td style="font-size:12px;font-family:monospace">${esc(l.ip || '—')}</td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b">Nenhum registro encontrado</td></tr>';
+        }
+
+        function renderPagination(page, totalPages, total) {
+            const div = document.getElementById('pagination');
+            if (totalPages <= 1) { div.innerHTML = `<span style="color:#64748b;font-size:13px">${total} registro(s)</span>`; return; }
+            let html = '';
+            if (page > 1) html += `<button class="btn btn-sm btn-outline" onclick="loadLogs(${page - 1})"><i class="fas fa-chevron-left"></i></button>`;
+            const start = Math.max(1, page - 2);
+            const end = Math.min(totalPages, page + 2);
+            for (let i = start; i <= end; i++) {
+                html += `<button class="btn btn-sm ${i === page ? 'btn-primary' : 'btn-outline'}" onclick="loadLogs(${i})">${i}</button>`;
+            }
+            if (page < totalPages) html += `<button class="btn btn-sm btn-outline" onclick="loadLogs(${page + 1})"><i class="fas fa-chevron-right"></i></button>`;
+            html += `<span style="color:#64748b;font-size:13px;margin-left:12px">${total} registro(s)</span>`;
+            div.innerHTML = html;
+        }
+
+        function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        function clearFilters() {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterAction').value = '';
+            document.getElementById('filterUserType').value = '';
+            loadLogs(1);
+        }
+
+        loadLogs(1);
+    </script>
+</body>
+</html>

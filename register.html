@@ -4,59 +4,208 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Credbusiness — Cadastro</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="/favicon.ico" type="image/svg+xml">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+
+        .register-wrapper{display:flex;min-height:100vh}
+
+        /* ── Left Panel ── */
+        .register-left{
+            width:420px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
+            background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 50%,#f1f5f9 100%);
+            position:relative;overflow:hidden;padding:60px 36px;color:#0f172a;text-align:center;
+        }
+        .register-left::before{
+            content:'';position:absolute;inset:0;
+            background:radial-gradient(circle at 30% 20%,rgba(99,102,241,.06) 0%,transparent 50%),
+                        radial-gradient(circle at 70% 80%,rgba(16,185,129,.04) 0%,transparent 50%);
+        }
+        .register-left-content{position:relative;z-index:1;max-width:340px}
+        .register-left-logo{height:160px;object-fit:contain;margin-bottom:32px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.08))}
+        .register-left h1{font-size:1.75rem;font-weight:800;letter-spacing:-.5px;margin-bottom:12px;line-height:1.2;color:#0f172a}
+        .register-left h1 span{background:linear-gradient(135deg,#6366f1,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .register-left p{font-size:.95rem;color:#64748b;line-height:1.7;margin-bottom:36px}
+        .register-benefits{display:flex;flex-direction:column;gap:14px;text-align:left}
+        .register-benefit{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.7);border:1px solid #e2e8f0;border-radius:10px;transition:background .2s}
+        .register-benefit:hover{background:rgba(255,255,255,.9)}
+        .register-benefit i{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
+        .register-benefit i.i-blue{background:rgba(99,102,241,.1);color:#6366f1}
+        .register-benefit i.i-green{background:rgba(16,185,129,.1);color:#059669}
+        .register-benefit i.i-amber{background:rgba(251,191,36,.1);color:#d97706}
+        .register-benefit i.i-rose{background:rgba(244,63,94,.1);color:#e11d48}
+        .register-benefit span{font-size:.82rem;font-weight:500;color:#334155}
+
+        /* ── Right Panel ── */
+        .register-right{
+            flex:1;display:flex;flex-direction:column;justify-content:center;
+            padding:48px 56px;background:#fff;overflow-y:auto;
+        }
+        .register-right-header{margin-bottom:28px}
+        .register-right-header h2{font-size:1.65rem;font-weight:700;color:#0f172a;letter-spacing:-.3px;margin-bottom:6px}
+        .register-right-header p{font-size:.9rem;color:#64748b}
+
+        /* Form */
+        .form-group{margin-bottom:18px}
+        .form-group label{display:block;font-size:.82rem;font-weight:600;color:#334155;margin-bottom:5px}
+        .form-group label i{margin-right:6px;opacity:.4}
+        .form-group label .req{color:#ef4444;margin-left:2px}
+        .form-control{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;font-family:inherit;color:#0f172a;background:#f8fafc;transition:all .2s;outline:none}
+        .form-control:focus{border-color:#6366f1;background:#fff;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+        .form-control::placeholder{color:#94a3b8}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .form-hint{font-size:.75rem;color:#94a3b8;margin-top:4px}
+        .input-group{display:flex;position:relative}
+        .input-group .form-control{padding-right:44px}
+        .input-group-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;color:#94a3b8;cursor:pointer;border-radius:8px;transition:color .2s}
+        .input-group-btn:hover{color:#6366f1}
+
+        .person-type-group{display:flex;gap:8px;margin-bottom:18px}
+        .person-type-btn{display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 16px;border:1.5px solid #e2e8f0;border-radius:10px;flex:1;font-weight:500;font-size:.85rem;font-family:inherit;color:#334155;transition:all .15s;background:#fff}
+        .person-type-btn.active{border-color:#6366f1;background:rgba(99,102,241,.04);color:#6366f1}
+        .person-type-btn input{accent-color:#6366f1}
+
+        .terms-label{display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:.82rem;color:#64748b;margin-bottom:20px}
+        .terms-label input{margin-top:3px;accent-color:#6366f1}
+        .terms-label a{color:#6366f1;font-weight:600;text-decoration:none}
+        .terms-label a:hover{text-decoration:underline}
+
+        .btn-register{width:100%;padding:13px;border:none;border-radius:10px;font-size:.95rem;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+        .btn-register:hover{box-shadow:0 6px 24px rgba(99,102,241,.4);transform:translateY(-1px)}
+        .btn-register:disabled{opacity:.7;cursor:not-allowed;transform:none!important}
+
+        .register-footer{margin-top:20px;text-align:center;font-size:.82rem;color:#94a3b8}
+        .register-footer a{color:#6366f1;font-weight:600;text-decoration:none}
+        .register-footer a:hover{text-decoration:underline}
+
+        /* Success screen */
+        .success-screen{text-align:center;padding:16px 0}
+        .success-icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(16,185,129,.05));display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px}
+        .success-icon i{font-size:2rem;color:#10b981}
+        .success-info{background:#f1f5f9;border-radius:12px;padding:16px;text-align:left;margin-bottom:16px}
+        .success-info-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+        .success-info-header i{font-size:1.2rem;color:#6366f1}
+        .success-info-header span{font-weight:600;font-size:.9rem;color:#0f172a}
+        .success-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem}
+        .success-grid span{color:#64748b}
+        .success-grid strong{color:#0f172a}
+        .referral-box{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(99,102,241,.03));border:1px solid rgba(99,102,241,.15);border-radius:12px;padding:14px;margin-bottom:16px}
+        .referral-title{font-size:.78rem;color:#6366f1;font-weight:600;margin-bottom:6px}
+        .referral-row{display:flex;align-items:center;gap:6px}
+        .referral-row .form-control{font-size:.78rem;cursor:pointer}
+        .referral-row button{padding:8px 12px;white-space:nowrap;font-size:.78rem;border:none;background:#6366f1;color:#fff;border-radius:8px;cursor:pointer}
+        .tips-box{background:rgba(245,158,11,.06);border-radius:12px;padding:12px;margin-bottom:20px;text-align:left}
+        .tips-title{font-size:.82rem;font-weight:600;color:#f59e0b;margin-bottom:6px}
+        .tips-list{font-size:.78rem;color:#64748b;margin:0;padding-left:18px;line-height:1.8}
+        .btn-login-link{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:.95rem;font-weight:600;font-family:inherit;text-align:center;text-decoration:none;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+
+        /* Toast */
+        .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+        .toast{padding:14px 20px;border-radius:10px;color:#fff;font-size:.85rem;font-weight:500;display:flex;align-items:center;gap:10px;animation:slideIn .3s;transition:opacity .3s;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+        .toast.success{background:#059669}.toast.error{background:#dc2626}.toast.warning{background:#d97706}.toast.info{background:#2563eb}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+        /* Sponsor validation */
+        .sponsor-status{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;font-weight:600;margin-top:4px}
+        .sponsor-status.valid{color:#059669}
+        .sponsor-status.invalid{color:#dc2626}
+        .sponsor-status.checking{color:#6366f1}
+
+        @media(max-width:960px){
+            .register-wrapper{flex-direction:column}
+            .register-left{width:100%;padding:36px 24px;min-height:auto}
+            .register-left h1{font-size:1.4rem}
+            .register-left p{margin-bottom:20px}
+            .register-benefits{display:none}
+            .register-right{padding:36px 28px}
+            .form-row{grid-template-columns:1fr}
+        }
+        @media(max-width:480px){
+            .register-right{padding:28px 20px}
+            .register-right-header h2{font-size:1.35rem}
+        }
+    </style>
 </head>
 <body>
-<div class="login-page">
-    <div class="login-card" style="max-width:520px">
-        <!-- Brand -->
-        <div class="login-brand">
-            <div class="brand-icon"><img src="css/logo.png" alt="Credbusiness"></div>
+
+<div class="register-wrapper">
+    <!-- Left Branding Panel -->
+    <div class="register-left">
+        <div class="register-left-content">
+            <img src="css/logo-footer.png" alt="Credbusiness" class="register-left-logo">
+            <h1>Comece sua jornada <span>financeira</span></h1>
+            <p>Crie sua conta gratuita e tenha acesso a todas as ferramentas de recuperacao de credito.</p>
+            <div class="register-benefits">
+                <div class="register-benefit">
+                    <i class="fas fa-shield-halved i-blue"></i>
+                    <span>Plataforma segura e confiavel</span>
+                </div>
+                <div class="register-benefit">
+                    <i class="fas fa-chart-line i-green"></i>
+                    <span>Acompanhamento em tempo real</span>
+                </div>
+                <div class="register-benefit">
+                    <i class="fas fa-users i-amber"></i>
+                    <span>Ganhe comissoes por indicacao</span>
+                </div>
+                <div class="register-benefit">
+                    <i class="fas fa-headset i-rose"></i>
+                    <span>Suporte especializado</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Form Panel -->
+    <div class="register-right">
+        <div class="register-right-header">
             <h2>Criar sua conta</h2>
-            <p>Preencha os dados para começar</p>
+            <p>Preencha os dados abaixo para comecar</p>
         </div>
 
         <form id="registerForm" onsubmit="doRegister(event)">
-            <!-- Sponsor -->
+            <!-- Sponsor (required) -->
             <div class="form-group">
-                <label><i class="fas fa-user-plus" style="margin-right:6px;opacity:.4"></i>Patrocinador <span style="font-weight:400;color:var(--text3)">(opcional)</span></label>
-                <input type="text" class="form-control" id="regSponsor" placeholder="Username do patrocinador">
-                <div class="form-hint">Informe o nome de usuário de quem indicou você</div>
+                <label><i class="fas fa-user-plus"></i>Patrocinador<span class="req">*</span></label>
+                <input type="text" class="form-control" id="regSponsor" placeholder="Username do patrocinador" required>
+                <div id="sponsorStatus"></div>
+                <div class="form-hint">Informe o nome de usuario de quem indicou voce</div>
             </div>
 
             <!-- Person type -->
-            <div class="form-group">
-                <label>Tipo de Pessoa</label>
-                <div style="display:flex;gap:8px">
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 16px;border:1.5px solid var(--border);border-radius:var(--radius);flex:1;font-weight:500;transition:all .15s" id="lblPF" onclick="setPersonType('pf')">
-                        <input type="radio" name="personType" value="pf" checked style="accent-color:var(--primary)"> Pessoa Física
-                    </label>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 16px;border:1.5px solid var(--border);border-radius:var(--radius);flex:1;font-weight:500;transition:all .15s" id="lblPJ" onclick="setPersonType('pj')">
-                        <input type="radio" name="personType" value="pj" style="accent-color:var(--primary)"> Pessoa Jurídica
-                    </label>
-                </div>
+            <div class="person-type-group">
+                <label class="person-type-btn active" id="lblPF" onclick="setPersonType('pf')">
+                    <input type="radio" name="personType" value="pf" checked> Pessoa Fisica
+                </label>
+                <label class="person-type-btn" id="lblPJ" onclick="setPersonType('pj')">
+                    <input type="radio" name="personType" value="pj"> Pessoa Juridica
+                </label>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Nome completo *</label>
-                    <input type="text" class="form-control" id="regName" placeholder="Seu nome" required>
+                    <label>Nome completo<span class="req">*</span></label>
+                    <input type="text" class="form-control" id="regName" placeholder="Seu nome completo" required>
                 </div>
                 <div class="form-group">
-                    <label>Usuário *</label>
+                    <label>Usuario<span class="req">*</span></label>
                     <input type="text" class="form-control" id="regUsername" placeholder="nome.sobrenome" required>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>E-mail *</label>
+                <label>E-mail<span class="req">*</span></label>
                 <input type="email" class="form-control" id="regEmail" placeholder="seu@email.com" required>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label id="docLabel">CPF *</label>
+                    <label id="docLabel">CPF<span class="req">*</span></label>
                     <input type="text" class="form-control" id="regCpf" placeholder="000.000.000-00" required>
                 </div>
                 <div class="form-group">
@@ -67,14 +216,14 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Senha *</label>
+                    <label>Senha<span class="req">*</span></label>
                     <div class="input-group">
-                        <input type="password" class="form-control" id="regPassword" placeholder="Mínimo 6 caracteres" required minlength="6">
+                        <input type="password" class="form-control" id="regPassword" placeholder="Minimo 6 caracteres" required minlength="6">
                         <button type="button" class="input-group-btn" onclick="togglePass('regPassword',this)"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Confirmar Senha *</label>
+                    <label>Confirmar Senha<span class="req">*</span></label>
                     <div class="input-group">
                         <input type="password" class="form-control" id="regPassword2" placeholder="Repita a senha" required minlength="6">
                         <button type="button" class="input-group-btn" onclick="togglePass('regPassword2',this)"><i class="fas fa-eye"></i></button>
@@ -82,66 +231,61 @@
                 </div>
             </div>
 
-            <div style="margin-bottom:20px">
-                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:.82rem;color:var(--text2)">
-                    <input type="checkbox" id="regTerms" required style="margin-top:3px;accent-color:var(--primary)">
-                    Li e aceito os <a href="termos-de-uso.html" target="_blank" style="margin-left:4px">Termos de Uso</a> <span style="margin:0 2px">&</span> <a href="politica-de-privacidade.html" target="_blank">Política de Privacidade</a>
-                </label>
-            </div>
+            <label class="terms-label">
+                <input type="checkbox" id="regTerms" required>
+                Li e aceito os <a href="termos-de-uso.html" target="_blank">Termos de Uso</a>&nbsp;e&nbsp;<a href="politica-de-privacidade.html" target="_blank">Politica de Privacidade</a>
+            </label>
 
-            <button type="submit" class="btn btn-primary w-full" id="regBtn" style="padding:12px;font-size:.95rem">
+            <button type="submit" class="btn-register" id="regBtn">
                 <span class="btn-text">Criar Conta</span>
                 <i class="fas fa-spinner fa-spin" style="display:none"></i>
             </button>
         </form>
 
         <!-- Success Screen (hidden) -->
-        <div id="successScreen" style="display:none;text-align:center;padding:16px 0">
-            <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px">
-                <i class="fas fa-check-circle" style="font-size:2rem;color:#10b981"></i>
-            </div>
-            <h2 style="margin:0 0 4px;font-size:1.3rem;color:var(--text1)">Conta Criada!</h2>
-            <p style="color:var(--text3);font-size:.85rem;margin-bottom:20px">Seu cadastro foi realizado com sucesso</p>
+        <div id="successScreen" class="success-screen" style="display:none">
+            <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+            <h2 style="font-size:1.3rem;color:#0f172a;margin-bottom:4px">Conta Criada!</h2>
+            <p style="color:#64748b;font-size:.85rem;margin-bottom:20px">Seu cadastro foi realizado com sucesso</p>
 
-            <div style="background:var(--bg2);border-radius:var(--radius);padding:16px;text-align:left;margin-bottom:16px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                    <i class="fas fa-user-circle" style="font-size:1.2rem;color:var(--primary)"></i>
-                    <span style="font-weight:600;font-size:.9rem;color:var(--text1)" id="successName"></span>
+            <div class="success-info">
+                <div class="success-info-header">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="successName"></span>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem">
-                    <div><span style="color:var(--text3)">Usuário:</span> <strong id="successUser"></strong></div>
-                    <div><span style="color:var(--text3)">Plano:</span> <strong>Básico</strong></div>
-                    <div><span style="color:var(--text3)">Nível:</span> <strong>🥈 Prata</strong></div>
-                    <div><span style="color:var(--text3)">Status:</span> <strong style="color:#10b981">Ativo</strong></div>
+                <div class="success-grid">
+                    <div><span>Usuario:</span> <strong id="successUser"></strong></div>
+                    <div><span>Plano:</span> <strong>Basico</strong></div>
+                    <div><span>Nivel:</span> <strong>Prata</strong></div>
+                    <div><span>Status:</span> <strong style="color:#10b981">Ativo</strong></div>
                 </div>
             </div>
 
-            <!-- Referral link -->
-            <div style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(99,102,241,0.03));border:1px solid rgba(99,102,241,0.15);border-radius:var(--radius);padding:14px;margin-bottom:16px">
-                <div style="font-size:.78rem;color:var(--primary);font-weight:600;margin-bottom:6px"><i class="fas fa-link" style="margin-right:4px"></i>Seu link de indicação</div>
-                <div style="display:flex;align-items:center;gap:6px">
-                    <input type="text" id="refLink" class="form-control" readonly style="font-size:.78rem;background:var(--card);cursor:pointer" onclick="copyRef()">
-                    <button class="btn" style="padding:8px 12px;white-space:nowrap;font-size:.78rem" onclick="copyRef()"><i class="fas fa-copy"></i></button>
+            <div class="referral-box">
+                <div class="referral-title"><i class="fas fa-link" style="margin-right:4px"></i>Seu link de indicacao</div>
+                <div class="referral-row">
+                    <input type="text" id="refLink" class="form-control" readonly onclick="copyRef()">
+                    <button onclick="copyRef()"><i class="fas fa-copy"></i></button>
                 </div>
             </div>
 
-            <div style="background:rgba(245,158,11,0.06);border-radius:var(--radius);padding:12px;margin-bottom:20px;text-align:left">
-                <div style="font-size:.82rem;font-weight:600;color:#f59e0b;margin-bottom:6px"><i class="fas fa-lightbulb" style="margin-right:4px"></i>Próximos passos</div>
-                <ul style="font-size:.78rem;color:var(--text2);margin:0;padding-left:18px;line-height:1.8">
-                    <li>Faça login com seu usuário e senha</li>
-                    <li>Ative o <strong>2FA</strong> nas Configurações para mais segurança</li>
-                    <li>Explore os <strong>pacotes disponíveis</strong> para crescer sua rede</li>
-                    <li>Compartilhe seu <strong>link de indicação</strong> com amigos</li>
+            <div class="tips-box">
+                <div class="tips-title"><i class="fas fa-lightbulb" style="margin-right:4px"></i>Proximos passos</div>
+                <ul class="tips-list">
+                    <li>Faca login com seu usuario e senha</li>
+                    <li>Ative o <strong>2FA</strong> nas Configuracoes para mais seguranca</li>
+                    <li>Explore os <strong>pacotes disponiveis</strong> para crescer sua rede</li>
+                    <li>Compartilhe seu <strong>link de indicacao</strong> com amigos</li>
                 </ul>
             </div>
 
-            <a href="login.html" class="btn btn-primary w-full" style="padding:12px;font-size:.95rem;text-decoration:none">
+            <a href="login.html" class="btn-login-link">
                 <i class="fas fa-sign-in-alt" style="margin-right:6px"></i>Fazer Login
             </a>
         </div>
 
-        <div class="login-footer" id="footerLinks">
-            Já tem uma conta? <a href="login.html">Faça login</a>
+        <div class="register-footer" id="footerLinks">
+            Ja tem uma conta? <a href="login.html">Faca login</a>
         </div>
     </div>
 </div>
@@ -153,23 +297,52 @@
     DB.init();
     const _s = DB.getSettings();
     document.title = (_s.siteName||'Credbusiness') + ' — Cadastro';
-    // Logo is now an image, no need to set text
+
+    let sponsorValid = false;
+    let sponsorTimer = null;
 
     function setPersonType(type) {
-        document.getElementById('docLabel').textContent = type === 'pf' ? 'CPF *' : 'CNPJ *';
+        document.getElementById('docLabel').innerHTML = type === 'pf' ? 'CPF<span class="req">*</span>' : 'CNPJ<span class="req">*</span>';
         document.getElementById('regCpf').placeholder = type === 'pf' ? '000.000.000-00' : '00.000.000/0000-00';
-        document.getElementById('lblPF').style.borderColor = type === 'pf' ? 'var(--primary)' : 'var(--border)';
-        document.getElementById('lblPF').style.background = type === 'pf' ? 'var(--primary-light)' : '';
-        document.getElementById('lblPJ').style.borderColor = type === 'pj' ? 'var(--primary)' : 'var(--border)';
-        document.getElementById('lblPJ').style.background = type === 'pj' ? 'var(--primary-light)' : '';
+        document.getElementById('lblPF').classList.toggle('active', type === 'pf');
+        document.getElementById('lblPJ').classList.toggle('active', type === 'pj');
     }
-    setPersonType('pf');
 
     // Auto-fill sponsor from URL ?ref= parameter
     const urlParams = new URLSearchParams(window.location.search);
     const refParam = urlParams.get('ref');
     if (refParam) {
         document.getElementById('regSponsor').value = refParam;
+        validateSponsor(refParam);
+    }
+
+    // Validate sponsor on input
+    document.getElementById('regSponsor').addEventListener('input', function() {
+        clearTimeout(sponsorTimer);
+        const val = this.value.trim();
+        if (!val) {
+            document.getElementById('sponsorStatus').innerHTML = '';
+            sponsorValid = false;
+            return;
+        }
+        document.getElementById('sponsorStatus').innerHTML = '<span class="sponsor-status checking"><i class="fas fa-spinner fa-spin"></i> Verificando...</span>';
+        sponsorTimer = setTimeout(() => validateSponsor(val), 500);
+    });
+
+    async function validateSponsor(username) {
+        try {
+            const result = await DB.api('GET', '/api/auth/check-sponsor?username=' + encodeURIComponent(username));
+            if (result && result.valid) {
+                document.getElementById('sponsorStatus').innerHTML = '<span class="sponsor-status valid"><i class="fas fa-check-circle"></i> ' + result.name + '</span>';
+                sponsorValid = true;
+            } else {
+                document.getElementById('sponsorStatus').innerHTML = '<span class="sponsor-status invalid"><i class="fas fa-times-circle"></i> Patrocinador nao encontrado</span>';
+                sponsorValid = false;
+            }
+        } catch {
+            document.getElementById('sponsorStatus').innerHTML = '<span class="sponsor-status invalid"><i class="fas fa-times-circle"></i> Erro ao verificar</span>';
+            sponsorValid = false;
+        }
     }
 
     function togglePass(id, btn) {
@@ -181,9 +354,17 @@
 
     async function doRegister(e) {
         e.preventDefault();
+
+        const sponsor = document.getElementById('regSponsor').value.trim();
+        if (!sponsor) {
+            showToast('Informe o patrocinador.', 'error');
+            document.getElementById('regSponsor').focus();
+            return;
+        }
+
         const pass = document.getElementById('regPassword').value;
         const pass2 = document.getElementById('regPassword2').value;
-        if (pass !== pass2) { showToast('As senhas não conferem.', 'error'); return; }
+        if (pass !== pass2) { showToast('As senhas nao conferem.', 'error'); return; }
 
         const btn = document.getElementById('regBtn');
         btn.querySelector('.btn-text').style.display = 'none';
@@ -192,7 +373,7 @@
 
         try {
             const result = await DB.register({
-                sponsor: document.getElementById('regSponsor').value.trim(),
+                sponsor: sponsor,
                 name: document.getElementById('regName').value.trim(),
                 username: document.getElementById('regUsername').value.toLowerCase().trim(),
                 email: document.getElementById('regEmail').value.trim(),
@@ -202,7 +383,6 @@
             });
 
             if (result.success) {
-                // Show success screen with user info
                 document.getElementById('registerForm').style.display = 'none';
                 document.getElementById('footerLinks').style.display = 'none';
                 document.getElementById('successScreen').style.display = 'block';
@@ -221,7 +401,7 @@
                 btn.disabled = false;
             }
         } catch (err) {
-            showToast('Erro de conexão com o servidor.', 'error');
+            showToast('Erro de conexao com o servidor.', 'error');
             btn.querySelector('.btn-text').style.display = 'inline';
             btn.querySelector('.fa-spin').style.display = 'none';
             btn.disabled = false;
@@ -233,7 +413,7 @@
         const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
         const el = document.createElement('div');
         el.className = 'toast ' + type;
-        el.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span>${msg}</span>`;
+        el.innerHTML = '<i class="fas ' + (icons[type]||icons.info) + '"></i><span>' + msg + '</span>';
         c.appendChild(el);
         setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
     }

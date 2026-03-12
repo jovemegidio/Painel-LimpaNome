@@ -30,7 +30,10 @@
             <div class="stat-card"><div class="stat-icon green"><i class="fas fa-hand-holding-usd"></i></div><div class="stat-info"><h3 id="totalComm"></h3><p>Total Comissões</p></div></div>
             <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar"></i></div><div class="stat-info"><h3 id="monthComm"></h3><p>Comissão do Mês</p></div></div>
         </div>
-        <div class="card"><div class="card-body"><table class="table" id="commTable"><thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-list"></i> Comissões</h3><button class="btn btn-sm btn-outline" onclick="exportCommPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button></div>
+            <div class="card-body"><table class="table" id="commTable"><thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div>
+        </div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
@@ -71,6 +74,23 @@
             });
         }
         renderComm();
+
+        function exportCommPDF() {
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+            const type = document.getElementById('filterType').value;
+            let tx = allTx;
+            if (from) tx = tx.filter(t => t.date >= from);
+            if (to) tx = tx.filter(t => t.date <= to + 'T23:59:59');
+            if (type) tx = tx.filter(t => t.type === type);
+            const total = tx.reduce((s, t) => s + Math.abs(t.amount), 0);
+            const monthTotal = tx.filter(t => t.date.startsWith(currentMonth)).reduce((s, t) => s + Math.abs(t.amount), 0);
+            ExportPDF.download('comissoes', 'Relatório de Comissões',
+                ['Tipo', 'Descrição', 'Valor', 'Status', 'Data'],
+                tx.map(t => [t.type, t.description, 'R$ ' + fmt(Math.abs(t.amount)), t.status, t.date]),
+                { summary: [{ label: 'Total', value: 'R$ ' + fmt(total), color: '#28a745' }, { label: 'Mês Atual', value: 'R$ ' + fmt(monthTotal), color: '#007bff' }] }
+            );
+        }
     </script>
 </body>
 </html>

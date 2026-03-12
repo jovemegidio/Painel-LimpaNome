@@ -6,6 +6,21 @@
     <title>Credbusiness — Tickets de Suporte</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .ticket-list{display:grid;gap:12px}
+        .ticket-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .2s}
+        .ticket-item:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+        .ticket-id{font-size:.75rem;color:var(--text3);font-weight:600;min-width:40px}
+        .ticket-info{flex:1;min-width:0}
+        .ticket-info h4{font-size:.9rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .ticket-info p{font-size:.78rem;color:var(--text3)}
+        .ticket-meta{display:flex;gap:8px;align-items:center;flex-shrink:0}
+        .thread-msg{padding:14px 16px;border-radius:var(--radius);margin-bottom:8px;font-size:.85rem;line-height:1.6}
+        .thread-msg.user-msg{background:var(--bg);border:1px solid var(--border-light)}
+        .thread-msg.admin-msg{background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);border-left:3px solid var(--primary)}
+        .thread-msg .msg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:.78rem}
+        .thread-msg .msg-header strong{font-size:.82rem}
+    </style>
 </head>
 <body>
     <div id="app"></div>
@@ -14,74 +29,104 @@
             <div class="page-header" style="margin-bottom:0"><h2>Tickets de Suporte</h2><p>Envie e acompanhe seus chamados</p></div>
             <button class="btn btn-primary" onclick="openNewTicket()"><i class="fas fa-plus"></i> Novo Ticket</button>
         </div>
-        <div class="card" style="margin-top:24px"><div class="card-body"><div class="table-wrap" id="ticketsTable"></div></div></div>
+        <div class="tabs" style="margin-top:20px;margin-bottom:20px">
+            <div class="tab active" onclick="filterTickets('todos',this)">Todos</div>
+            <div class="tab" onclick="filterTickets('aberto',this)">Abertos</div>
+            <div class="tab" onclick="filterTickets('respondido',this)">Respondidos</div>
+            <div class="tab" onclick="filterTickets('fechado',this)">Fechados</div>
+        </div>
+        <div id="ticketsList"></div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
         Layout.init({ basePath: '../', page: 'suporte-tickets', title: 'Suporte' });
-        const user = Layout.user;
+        let allTickets = [];
+        let currentFilter = 'todos';
 
-        function render() {
-            const tickets = DB.getTickets(user.id);
-            const statusBadge = { aberto: 'badge-yellow', respondido: 'badge-green', fechado: 'badge-gray' };
-
-            document.getElementById('ticketsTable').innerHTML = tickets.length ? `<table>
-                <thead><tr><th>#</th><th>Assunto</th><th>Prioridade</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
-                <tbody>${tickets.map(t => `<tr>
-                    <td>${t.id}</td><td style="font-weight:500">${t.subject}</td>
-                    <td><span class="badge badge-${t.priority==='alta'?'red':t.priority==='media'?'yellow':'gray'}">${t.priority}</span></td>
-                    <td><span class="badge ${statusBadge[t.status]}">${t.status}</span></td>
-                    <td>${t.createdAt}</td>
-                    <td><button class="btn btn-sm btn-outline" onclick="viewTicket(${t.id})"><i class="fas fa-eye"></i> Ver</button></td>
-                </tr>`).join('')}</tbody>
-            </table>` : '<div class="table-empty"><i class="fas fa-headset"></i><p>Nenhum ticket</p><small>Clique em "Novo Ticket" para abrir um chamado</small></div>';
+        async function loadTickets() {
+            const data = await DB.api('GET', '/api/tickets');
+            allTickets = Array.isArray(data) ? data : [];
+            renderTickets();
         }
-        render();
+
+        function filterTickets(filter, el) {
+            currentFilter = filter;
+            document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderTickets();
+        }
+
+        function renderTickets() {
+            const filtered = currentFilter === 'todos' ? allTickets : allTickets.filter(t => t.status === currentFilter);
+            const statusMap = { aberto: ['badge-warning','Aberto'], respondido: ['badge-success','Respondido'], fechado: ['badge-secondary','Fechado'] };
+            const prioMap = { alta: ['badge-danger','Alta'], media: ['badge-warning','Média'], baixa: ['badge-secondary','Baixa'] };
+            document.getElementById('ticketsList').innerHTML = filtered.length ? `<div class="ticket-list">${filtered.map(t => {
+                const [sCls, sLbl] = statusMap[t.status] || ['badge-secondary', t.status];
+                const [pCls, pLbl] = prioMap[t.priority] || ['badge-secondary', t.priority];
+                const date = t.created_at ? new Date(t.created_at).toLocaleDateString('pt-BR') : '';
+                const respCount = (t.responses || []).length;
+                return `<div class="ticket-item" onclick="viewTicket(${t.id})">
+                    <div class="ticket-id">#${t.id}</div>
+                    <div class="ticket-info"><h4>${t.subject}</h4><p><i class="fas fa-calendar-alt"></i> ${date}${respCount ? ` · <i class="fas fa-comments"></i> ${respCount} respostas` : ''}</p></div>
+                    <div class="ticket-meta"><span class="badge ${pCls}">${pLbl}</span><span class="badge ${sCls}">${sLbl}</span></div>
+                </div>`;
+            }).join('')}</div>` : `<div class="empty-state"><i class="fas fa-headset" style="font-size:2rem;opacity:.4;margin-bottom:8px"></i><p>Nenhum ticket encontrado</p><small>Clique em "Novo Ticket" para abrir um chamado</small></div>`;
+        }
 
         function openNewTicket() {
             Layout.openModal('Novo Ticket', `
                 <div class="form-group"><label>Assunto</label><input class="form-control" id="tkSubject" placeholder="Resumo do problema"></div>
                 <div class="form-group"><label>Prioridade</label><select class="form-control" id="tkPriority"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option></select></div>
-                <div class="form-group"><label>Mensagem</label><textarea class="form-control" id="tkMessage" placeholder="Descreva sua dúvida ou problema..."></textarea></div>
-            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveTicket()">Enviar</button>`);
+                <div class="form-group"><label>Mensagem</label><textarea class="form-control" id="tkMessage" rows="4" placeholder="Descreva sua dúvida ou problema..."></textarea></div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveTicket()">Enviar Ticket</button>`);
         }
 
-        function saveTicket() {
-            const subject = document.getElementById('tkSubject').value;
-            const message = document.getElementById('tkMessage').value;
+        async function saveTicket() {
+            const subject = document.getElementById('tkSubject').value.trim();
+            const message = document.getElementById('tkMessage').value.trim();
+            const priority = document.getElementById('tkPriority').value;
             if (!subject || !message) { Layout.toast('Preencha todos os campos', 'error'); return; }
-            DB.addTicket({ userId: user.id, subject, message, priority: document.getElementById('tkPriority').value });
-            Layout.closeModal();
-            Layout.toast('Ticket enviado!', 'success');
-            render();
+            const result = await DB.api('POST', '/api/tickets', { subject, message, priority });
+            if (result && result.success) { Layout.closeModal(); Layout.toast('Ticket enviado!', 'success'); loadTickets(); }
+            else { Layout.toast(result?.error || 'Erro ao enviar', 'error'); }
         }
 
         function viewTicket(id) {
-            const tickets = DB.getTickets(user.id);
-            const t = tickets.find(x => x.id === id);
+            const t = allTickets.find(x => x.id === id);
             if (!t) return;
-            Layout.openModal(`Ticket #${t.id}: ${t.subject}`, `
-                <div style="background:var(--bg);padding:14px;border-radius:var(--radius);margin-bottom:16px">
-                    <p style="font-size:.85rem">${t.message}</p>
-                    <p style="font-size:.75rem;color:var(--text3);margin-top:6px">${t.createdAt}</p>
+            const responses = t.responses || [];
+            const statusBadge = { aberto: 'badge-warning', respondido: 'badge-success', fechado: 'badge-secondary' };
+            Layout.openModal(`Ticket #${t.id}`, `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <h4 style="font-size:.95rem">${t.subject}</h4>
+                    <span class="badge ${statusBadge[t.status] || 'badge-secondary'}">${t.status}</span>
                 </div>
-                ${t.responses.map(r => `<div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><strong style="font-size:.82rem;color:${r.from==='admin'?'var(--accent)':'var(--text)'}">${r.from==='admin'?'Suporte':'Você'}</strong><span style="font-size:.72rem;color:var(--text3)">${r.date}</span></div>
-                    <p style="font-size:.85rem">${r.message}</p>
+                <div class="thread-msg user-msg">
+                    <div class="msg-header"><strong>Você</strong><span style="color:var(--text3)">${t.created_at ? new Date(t.created_at).toLocaleString('pt-BR') : ''}</span></div>
+                    <p>${t.message}</p>
+                </div>
+                ${responses.map(r => `<div class="thread-msg ${r.from_type === 'admin' ? 'admin-msg' : 'user-msg'}">
+                    <div class="msg-header"><strong>${r.from_type === 'admin' ? '<i class="fas fa-shield-halved" style="color:var(--primary)"></i> Suporte' : 'Você'}</strong><span style="color:var(--text3)">${r.date ? new Date(r.date).toLocaleString('pt-BR') : ''}</span></div>
+                    <p>${r.message}</p>
                 </div>`).join('')}
-                <div class="form-group" style="margin-top:12px"><label>Responder</label><textarea class="form-control" id="tkReply" placeholder="Sua resposta..."></textarea></div>
-            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button><button class="btn btn-primary" onclick="replyTicket(${id})">Enviar</button>`);
+                ${t.status !== 'fechado' ? `<div class="form-group" style="margin-top:16px"><label>Responder</label><textarea class="form-control" id="tkReply" rows="3" placeholder="Sua resposta..."></textarea></div>` : '<div style="text-align:center;padding:12px;color:var(--text3);font-size:.85rem"><i class="fas fa-lock"></i> Este ticket está fechado</div>'}
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>${t.status !== 'fechado' ? `<button class="btn btn-primary" onclick="replyTicket(${id})">Enviar Resposta</button>` : ''}`);
         }
 
-        function replyTicket(id) {
-            const msg = document.getElementById('tkReply').value;
-            if (!msg) return;
-            DB.respondTicket(id, { from: 'user', message: msg });
-            Layout.closeModal();
-            Layout.toast('Resposta enviada!', 'success');
-            render();
+        async function replyTicket(id) {
+            const msg = document.getElementById('tkReply').value.trim();
+            if (!msg) { Layout.toast('Digite uma resposta', 'error'); return; }
+            const result = await DB.api('POST', '/api/tickets/' + id + '/respond', { message: msg });
+            if (result && result.success) { Layout.closeModal(); Layout.toast('Resposta enviada!', 'success'); loadTickets(); }
+            else { Layout.toast(result?.error || 'Erro ao responder', 'error'); }
         }
+
+        loadTickets();
+
+        window.onRealtimeUpdate = function(detail) {
+            if (detail.entity === 'tickets') loadTickets();
+        };
     </script>
 </body>
 </html>

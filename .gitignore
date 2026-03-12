@@ -8,5 +8,6 @@ database/*.db
 database/*.db-shm
 database/*.db-wal
 uploads/
+backups/
 *.old.js
 test-local.js

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -6,18 +6,23 @@
     <title>Credbusiness Admin — Tickets</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .thread-msg{padding:14px 16px;border-radius:var(--radius);margin-bottom:8px;font-size:.85rem;line-height:1.6}
+        .thread-msg.user-msg{background:#f8fafc;border:1px solid #e2e8f0}
+        .thread-msg.admin-msg{background:#e8f4fd;border-left:3px solid #007bff}
+        .thread-msg .msg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:.78rem}
+        .thread-msg .msg-header strong{font-size:.82rem}
+    </style>
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
         <div class="page-header"><h2>Gerenciar Tickets</h2><p>Responda e gerencie os chamados de suporte</p></div>
-
         <div class="stats-grid" id="statsGrid"></div>
-
         <div class="card" style="margin-top:24px">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
                 <h3>Todos os Tickets</h3>
-                <select id="filterStatus" class="form-control" style="max-width:180px" onchange="renderTable()">
+                <select id="filterStatus" class="form-control" style="max-width:180px" onchange="loadTickets()">
                     <option value="">Todos</option>
                     <option value="aberto">Aberto</option>
                     <option value="respondido">Respondido</option>
@@ -26,27 +31,8 @@
             </div>
             <div class="card-body" style="overflow-x:auto">
                 <table class="table" id="ticketTable"><thead><tr>
-                    <th>ID</th><th>Assunto</th><th>Usuário</th><th>Data</th><th>Status</th><th style="width:160px">Ações</th>
-                </tr></thead><tbody></tbody></table>
-            </div>
-        </div>
-
-        <!-- Reply Modal -->
-        <div id="replyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
-            <div style="background:#fff;border-radius:12px;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:24px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                    <h3 id="replyTitle">Ticket</h3>
-                    <button onclick="closeReply()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
-                </div>
-                <div id="replyThread" style="margin-bottom:16px"></div>
-                <form onsubmit="sendReply(event)">
-                    <input type="hidden" id="replyTicketId">
-                    <div class="form-group"><label>Resposta do Admin</label><textarea id="replyText" class="form-control" rows="4" required></textarea></div>
-                    <div style="display:flex;gap:12px;justify-content:flex-end">
-                        <button type="button" class="btn btn-success" onclick="closeTicket()">Fechar Ticket</button>
-                        <button type="submit" class="btn btn-primary">Enviar Resposta</button>
-                    </div>
-                </form>
+                    <th>ID</th><th>Assunto</th><th>Usuário</th><th>Data</th><th>Prioridade</th><th>Status</th><th style="width:160px">Ações</th>
+                </tr></thead><tbody id="ticketBody"></tbody></table>
             </div>
         </div>
     </template>
@@ -54,96 +40,93 @@
     <script src="../js/components.js"></script>
     <script>
         Layout.init({ basePath: '../', page: 'admin-tickets', title: 'Tickets', admin: true });
+        let allTickets = [];
+
+        async function loadTickets() {
+            const status = document.getElementById('filterStatus')?.value || '';
+            const url = '/api/admin/tickets' + (status ? '?status=' + status : '');
+            const data = await DB.api('GET', url);
+            allTickets = data?.tickets || [];
+            renderStats();
+            renderTable();
+        }
 
         function renderStats() {
-            const tks = DB.getTickets();
-            const aberto = tks.filter(t => t.status === 'aberto').length;
-            const respondido = tks.filter(t => t.status === 'respondido').length;
-            const fechado = tks.filter(t => t.status === 'fechado').length;
-            const items = [
+            const aberto = allTickets.filter(t => t.status === 'aberto').length;
+            const respondido = allTickets.filter(t => t.status === 'respondido').length;
+            const fechado = allTickets.filter(t => t.status === 'fechado').length;
+            document.getElementById('statsGrid').innerHTML = [
                 { icon: 'fa-envelope-open', color: '#dc3545', label: 'Abertos', value: aberto },
                 { icon: 'fa-reply', color: '#007bff', label: 'Respondidos', value: respondido },
                 { icon: 'fa-check-double', color: '#28a745', label: 'Fechados', value: fechado },
-                { icon: 'fa-ticket', color: '#6366f1', label: 'Total', value: tks.length }
-            ];
-            document.getElementById('statsGrid').innerHTML = items.map(s => `
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:${s.color}20;color:${s.color}"><i class="fas ${s.icon}"></i></div>
-                    <div class="stat-info"><span class="stat-value">${s.value}</span><span class="stat-label">${s.label}</span></div>
-                </div>`).join('');
+                { icon: 'fa-ticket', color: '#6366f1', label: 'Total', value: allTickets.length }
+            ].map(s => `<div class="stat-card"><div class="stat-icon" style="background:${s.color}20;color:${s.color}"><i class="fas ${s.icon}"></i></div><div class="stat-info"><span class="stat-value">${s.value}</span><span class="stat-label">${s.label}</span></div></div>`).join('');
         }
 
         function renderTable() {
-            const filter = document.getElementById('filterStatus').value;
-            let tks = DB.getTickets();
-            if (filter) tks = tks.filter(t => t.status === filter);
             const stMap = { aberto: 'danger', respondido: 'info', fechado: 'success' };
-            const tbody = document.querySelector('#ticketTable tbody');
-            tbody.innerHTML = tks.length ? tks.map(t => {
-                const u = DB.getUser(t.userId);
-                return `<tr>
-                    <td>#${t.id}</td>
-                    <td>${t.subject}</td>
-                    <td>${u ? u.name : '—'}</td>
-                    <td>${new Date(t.createdAt).toLocaleDateString('pt-BR')}</td>
-                    <td><span class="badge badge-${stMap[t.status] || 'secondary'}">${t.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="openReply(${t.id})"><i class="fas fa-reply"></i> Responder</button>
-                    </td>
-                </tr>`;
-            }).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b">Nenhum ticket encontrado</td></tr>';
+            document.getElementById('ticketBody').innerHTML = allTickets.length ? allTickets.map(t => `<tr>
+                <td>#${t.id}</td>
+                <td style="font-weight:500">${t.subject}</td>
+                <td>${t.user_name || '—'}</td>
+                <td>${t.created_at ? new Date(t.created_at).toLocaleDateString('pt-BR') : ''}</td>
+                <td><select class="form-control" style="font-size:12px;padding:2px 6px;width:90px" onchange="changePriority(${t.id},this.value)">
+                    <option value="baixa" ${t.priority==='baixa'?'selected':''}>Baixa</option>
+                    <option value="media" ${t.priority==='media'?'selected':''}>Média</option>
+                    <option value="alta" ${t.priority==='alta'?'selected':''}>Alta</option>
+                </select></td>
+                <td><span class="badge badge-${stMap[t.status] || 'secondary'}">${t.status}</span></td>
+                <td><button class="btn btn-sm btn-primary" onclick="openReply(${t.id})" title="Responder"><i class="fas fa-reply"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteTicket(${t.id})" title="Excluir"><i class="fas fa-trash"></i></button></td>
+            </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:24px">Nenhum ticket encontrado</td></tr>';
         }
 
         function openReply(id) {
-            const t = DB.getTickets().find(x => x.id === Number(id));
+            const t = allTickets.find(x => x.id === id);
             if (!t) return;
-            document.getElementById('replyModal').style.display = 'flex';
-            document.getElementById('replyTicketId').value = id;
-            document.getElementById('replyTitle').textContent = '#' + t.id + ' — ' + t.subject;
-            document.getElementById('replyText').value = '';
-
-            const u = DB.getUser(t.userId);
-            let html = `<div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:8px">
-                <strong>${u ? u.name : 'Usuário'}</strong> <span style="color:#64748b;font-size:13px">${new Date(t.createdAt).toLocaleString('pt-BR')}</span>
-                <p style="margin-top:6px">${t.message}</p>
+            const responses = t.responses || [];
+            let threadHtml = `<div class="thread-msg user-msg">
+                <div class="msg-header"><strong>${t.user_name || 'Usuário'}</strong><span style="color:#64748b">${t.created_at ? new Date(t.created_at).toLocaleString('pt-BR') : ''}</span></div>
+                <p>${t.message}</p>
             </div>`;
-            if (t.responses && t.responses.length) {
-                t.responses.forEach(r => {
-                    html += `<div style="background:${r.from==='admin'?'#e8f4fd':'#f8fafc'};border-radius:8px;padding:12px;margin-bottom:8px;${r.from==='admin'?'border-left:3px solid #007bff':''}">
-                        <strong>${r.from === 'admin' ? '🛡️ Admin' : (u ? u.name : 'Usuário')}</strong> <span style="color:#64748b;font-size:13px">${new Date(r.date).toLocaleString('pt-BR')}</span>
-                        <p style="margin-top:6px">${r.message}</p>
-                    </div>`;
-                });
-            }
-            document.getElementById('replyThread').innerHTML = html;
-        }
-        function closeReply() { document.getElementById('replyModal').style.display = 'none'; }
-
-        function sendReply(e) {
-            e.preventDefault();
-            const id = Number(document.getElementById('replyTicketId').value);
-            const msg = document.getElementById('replyText').value.trim();
-            if (!msg) return;
-            DB.respondTicket(id, { from: 'admin', message: msg });
-            Layout.toast('Resposta enviada!', 'success');
-            closeReply();
-            renderStats();
-            renderTable();
+            responses.forEach(r => {
+                threadHtml += `<div class="thread-msg ${r.from_type === 'admin' ? 'admin-msg' : 'user-msg'}">
+                    <div class="msg-header"><strong>${r.from_type === 'admin' ? '<i class="fas fa-shield-halved"></i> Admin' : (t.user_name || 'Usuário')}</strong><span style="color:#64748b">${r.date ? new Date(r.date).toLocaleString('pt-BR') : ''}</span></div>
+                    <p>${r.message}</p>
+                </div>`;
+            });
+            Layout.openModal(`Ticket #${t.id} — ${t.subject}`, `
+                <div style="max-height:400px;overflow-y:auto;margin-bottom:16px">${threadHtml}</div>
+                ${t.status !== 'fechado' ? `<div class="form-group"><label>Resposta do Suporte</label><textarea id="replyText" class="form-control" rows="4" placeholder="Digite sua resposta..."></textarea></div>` : ''}
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>
+                ${t.status !== 'fechado' ? `<button class="btn btn-success" onclick="closeTicket(${id})"><i class="fas fa-check"></i> Fechar Ticket</button><button class="btn btn-primary" onclick="sendReply(${id})"><i class="fas fa-paper-plane"></i> Enviar</button>` : ''}`);
         }
 
-        function closeTicket() {
-            const id = Number(document.getElementById('replyTicketId').value);
-            const tickets = DB.get('tickets') || [];
-            const t = tickets.find(x => x.id === id);
-            if (t) { t.status = 'fechado'; DB.set('tickets', tickets); }
-            Layout.toast('Ticket fechado', 'success');
-            closeReply();
-            renderStats();
-            renderTable();
+        async function sendReply(id) {
+            const msg = document.getElementById('replyText')?.value?.trim();
+            if (!msg) { Layout.toast('Digite uma resposta', 'error'); return; }
+            const result = await DB.api('POST', '/api/admin/tickets/' + id + '/respond', { message: msg });
+            if (result && result.success) { Layout.closeModal(); Layout.toast('Resposta enviada!', 'success'); loadTickets(); }
+            else { Layout.toast(result?.error || 'Erro ao responder', 'error'); }
         }
 
-        renderStats();
-        renderTable();
+        async function closeTicket(id) {
+            const result = await DB.api('PUT', '/api/admin/tickets/' + id, { status: 'fechado' });
+            if (result && result.success) { Layout.closeModal(); Layout.toast('Ticket fechado', 'success'); loadTickets(); }
+        }
+
+        async function changePriority(id, priority) {
+            await DB.api('PUT', '/api/admin/tickets/' + id, { priority });
+            Layout.toast('Prioridade atualizada', 'success');
+        }
+
+        async function deleteTicket(id) {
+            if (!confirm('Excluir este ticket?')) return;
+            const result = await DB.api('DELETE', '/api/admin/tickets/' + id);
+            if (result && result.success) { Layout.toast('Ticket excluído', 'success'); loadTickets(); }
+        }
+
+        loadTickets();
     </script>
 </body>
 </html>

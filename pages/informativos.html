@@ -17,16 +17,19 @@
     <script src="../js/components.js"></script>
     <script>
         Layout.init({ basePath: '../', page: 'informativos', title: 'Informativos' });
-        const news = DB.get('news') || [];
         const catBadge = { novidade: 'badge-blue', evento: 'badge-purple', sistema: 'badge-gray', promocao: 'badge-orange' };
 
-        document.getElementById('newsList').innerHTML = news.length ? news.map(n => `
-            <div class="news-item">
-                <div class="news-meta"><span class="badge ${catBadge[n.category] || 'badge-gray'}">${n.category}</span><span style="font-size:.78rem;color:var(--text3)">${n.date}</span></div>
-                <h4>${n.title}</h4>
-                <p>${n.content}</p>
-            </div>
-        `).join('') : '<div class="empty-state"><i class="fas fa-newspaper"></i><p>Nenhum informativo</p></div>';
+        async function loadNews() {
+            const news = await DB.api('GET', '/api/content/news') || [];
+            document.getElementById('newsList').innerHTML = news.length ? news.map(n => `
+                <div class="news-item">
+                    <div class="news-meta"><span class="badge ${catBadge[n.category] || 'badge-gray'}">${n.category}</span><span style="font-size:.78rem;color:var(--text3)">${n.date}</span></div>
+                    <h4>${n.title}</h4>
+                    <p>${n.content}</p>
+                </div>
+            `).join('') : '<div class="empty-state"><i class="fas fa-newspaper"></i><p>Nenhum informativo</p></div>';
+        }
+        loadNews();
     </script>
 </body>
 </html>

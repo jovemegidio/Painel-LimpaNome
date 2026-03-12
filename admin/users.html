@@ -114,6 +114,7 @@
                 <td><span class="badge badge-${u.active ? 'success' : 'danger'}">${st}</span></td>
                 <td>
                     <button class="btn btn-sm btn-outline" onclick="openModal('edit',${u.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-warning" onclick="resetPassword(${u.id})" title="Resetar Senha"><i class="fas fa-key"></i></button>
                     <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" title="Excluir"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
@@ -185,12 +186,34 @@
             renderTable();
         }
 
+        async function resetPassword(id) {
+            if (!confirm('Resetar a senha desse usuário para o padrão (123456)?')) return;
+            const res = await DB.api('POST', `/api/admin/users/${id}/reset-password`);
+            if (res && res.success) {
+                Layout.toast('Senha resetada com sucesso!', 'success');
+            } else {
+                Layout.toast(res?.error || 'Erro ao resetar senha', 'error');
+            }
+        }
+
         function exportUsers() {
-            const users = DB.getAllUsers();
-            ExportCSV.download('usuarios',
-                ['ID', 'Nome', 'Email', 'CPF', 'Telefone', 'Plano', 'Nível', 'Pontos', 'Saldo', 'Status', 'Criado em'],
-                users.map(u => [u.id, u.name, u.email, u.cpf, u.phone, u.plan, u.level, u.points, u.balance, u.active ? 'Ativo' : 'Inativo', u.createdAt || ''])
-            );
+            Layout.toast('Gerando relatório...', 'info');
+            try {
+                const resp = await fetch(`${DB.baseUrl || ''}/api/admin/export/users?format=csv`, {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || localStorage.getItem('token')) }
+                });
+                if (!resp.ok) throw new Error('Erro ao gerar relatório');
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'cadastros_credbusiness.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+                Layout.toast('Relatório exportado!', 'success');
+            } catch (err) {
+                Layout.toast('Erro ao exportar: ' + err.message, 'error');
+            }
         }
     </script>
 </body>

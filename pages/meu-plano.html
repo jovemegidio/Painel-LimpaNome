@@ -6,47 +6,107 @@
     <title>Credbusiness — Meu Plano</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .profile-hero{background:linear-gradient(135deg,var(--primary),#4f46e5);border-radius:var(--radius);padding:0;color:#fff;position:relative;overflow:hidden;margin-bottom:24px}
+        .profile-hero::before{content:'';position:absolute;top:-40%;right:-10%;width:300px;height:300px;background:rgba(255,255,255,.06);border-radius:50%}
+        .profile-hero::after{content:'';position:absolute;bottom:-50%;left:10%;width:200px;height:200px;background:rgba(255,255,255,.04);border-radius:50%}
+        .profile-hero-inner{display:flex;align-items:center;gap:24px;padding:32px;position:relative;z-index:1;flex-wrap:wrap}
+        .profile-avatar{width:96px;height:96px;border-radius:50%;border:4px solid rgba(255,255,255,.3);object-fit:cover;box-shadow:0 8px 32px rgba(0,0,0,.2);flex-shrink:0}
+        .profile-info{flex:1;min-width:200px}
+        .profile-info h2{font-size:1.5rem;font-weight:700;margin:0 0 4px;color:#fff}
+        .profile-info .profile-nick{font-size:.9rem;opacity:.85;margin-bottom:8px}
+        .profile-info .profile-email{font-size:.82rem;opacity:.7;display:flex;align-items:center;gap:6px}
+        .profile-badges{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+        .profile-badges .pbadge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:.78rem;font-weight:600;backdrop-filter:blur(4px)}
+        .pbadge-level{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.25)}
+        .pbadge-plan{background:rgba(16,185,129,.3);border:1px solid rgba(16,185,129,.4)}
+        .pbadge-status{background:rgba(34,197,94,.3);border:1px solid rgba(34,197,94,.4)}
+        .profile-actions{display:flex;gap:10px;flex-wrap:wrap}
+        .profile-actions .btn{background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);color:#fff;padding:8px 20px;border-radius:10px;font-weight:600;font-size:.85rem;transition:all .2s}
+        .profile-actions .btn:hover{background:rgba(255,255,255,.25);transform:translateY(-1px)}
+        .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+        .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;align-items:center;gap:16px;transition:all .2s}
+        .stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+        .stat-card .stat-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+        .stat-card .stat-value{font-size:1.3rem;font-weight:700;line-height:1.2}
+        .stat-card .stat-label{font-size:.75rem;color:var(--text3);margin-top:2px}
+        .ic-blue{background:rgba(59,130,246,.1);color:#3b82f6}
+        .ic-green{background:rgba(16,185,129,.1);color:#10b981}
+        .ic-purple{background:rgba(139,92,246,.1);color:#8b5cf6}
+        .ic-orange{background:rgba(245,158,11,.1);color:#f59e0b}
+        .detail-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
+        .detail-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-weight:600;font-size:.95rem}
+        .detail-header i{color:var(--primary);font-size:1rem}
+        .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+        .detail-item{padding:14px 20px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center}
+        .detail-item:nth-child(odd){border-right:1px solid var(--border-light)}
+        .detail-item .dl{font-size:.82rem;color:var(--text3)}
+        .detail-item .dv{font-size:.85rem;font-weight:600}
+        .pkg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+        .pkg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;text-align:center;position:relative;transition:all .3s}
+        .pkg-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+        .pkg-card.featured{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+        .pkg-card .pkg-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:.7rem;font-weight:700;padding:3px 16px;border-radius:12px;text-transform:uppercase;letter-spacing:.5px}
+        .pkg-card .pkg-name{font-size:1.1rem;font-weight:700;margin-bottom:4px}
+        .pkg-card .pkg-price{font-size:1.8rem;font-weight:800;color:var(--primary);margin:12px 0}
+        .pkg-card .pkg-price span{font-size:.85rem;font-weight:400;color:var(--text3)}
+        .pkg-card .pkg-features{list-style:none;padding:0;margin:16px 0 20px;text-align:left}
+        .pkg-card .pkg-features li{padding:6px 0;font-size:.85rem;display:flex;align-items:center;gap:8px;color:var(--text2)}
+        .pkg-card .pkg-features li i{color:var(--success);font-size:.75rem}
+        @media(max-width:768px){
+            .profile-hero-inner{flex-direction:column;text-align:center;padding:24px}
+            .profile-badges{justify-content:center}
+            .profile-actions{justify-content:center}
+            .profile-info .profile-email{justify-content:center}
+            .detail-grid{grid-template-columns:1fr}
+            .detail-item:nth-child(odd){border-right:none}
+        }
+    </style>
 </head>
 <body>
     <div id="app"></div>
 
     <template id="page-content">
-        <div class="page-header">
-            <h2>Meu Plano</h2>
-            <p>Seu perfil e informações de plano</p>
-        </div>
-
-        <!-- Profile Card -->
-        <div class="card mb-24">
-            <div class="card-body" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
-                <img id="userAvatar" src="" alt="" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--border)">
-                <div style="flex:1;min-width:200px">
-                    <h3 id="userName" style="font-size:1.2rem"></h3>
-                    <p id="userEmail" style="color:var(--text3);font-size:.85rem"></p>
-                    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                        <span class="badge badge-blue" id="userLevel"></span>
-                        <span class="badge badge-green" id="userPlan"></span>
+        <!-- Profile Hero -->
+        <div class="profile-hero">
+            <div class="profile-hero-inner">
+                <img id="userAvatar" class="profile-avatar" src="" alt="">
+                <div class="profile-info">
+                    <h2 id="userName"></h2>
+                    <div class="profile-nick" id="userNickname"></div>
+                    <div class="profile-email" id="userEmail"><i class="fas fa-envelope"></i> <span></span></div>
+                    <div class="profile-badges">
+                        <span class="pbadge pbadge-level" id="userLevel"></span>
+                        <span class="pbadge pbadge-plan" id="userPlan"></span>
+                        <span class="pbadge pbadge-status" id="userStatus"></span>
                     </div>
                 </div>
-                <button class="btn btn-outline" onclick="openEditProfile()"><i class="fas fa-edit"></i> Editar Perfil</button>
+                <div class="profile-actions">
+                    <button class="btn btn-outline" onclick="openEditProfile()"><i class="fas fa-user-edit"></i> Editar Perfil</button>
+                </div>
             </div>
         </div>
 
-        <!-- Info Grid -->
+        <!-- Stats Row -->
+        <div class="stats-row" id="statsRow"></div>
+
+        <!-- Personal Info & Summary -->
         <div class="grid-2 mb-24">
-            <div class="card">
-                <div class="card-header"><h3><i class="fas fa-info-circle"></i> Informações Pessoais</h3></div>
-                <div class="card-body" id="personalInfo"></div>
+            <div class="detail-section">
+                <div class="detail-header"><i class="fas fa-id-card"></i> Dados Pessoais</div>
+                <div class="detail-grid" id="personalInfo"></div>
             </div>
-            <div class="card">
-                <div class="card-header"><h3><i class="fas fa-chart-line"></i> Resumo</h3></div>
-                <div class="card-body" id="summaryInfo"></div>
+            <div class="detail-section">
+                <div class="detail-header"><i class="fas fa-chart-pie"></i> Resumo Financeiro</div>
+                <div class="detail-grid" id="summaryInfo"></div>
             </div>
         </div>
 
-        <!-- Plans -->
-        <div class="page-header"><h2>Planos Disponíveis</h2><p>Escolha o plano ideal para você</p></div>
-        <div class="grid-3" id="planCards"></div>
+        <!-- Packages -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+            <div><h2 style="font-size:1.25rem;margin:0">Pacotes Disponíveis</h2><p style="font-size:.85rem;color:var(--text3);margin:4px 0 0">Impulsione seus resultados com o pacote ideal</p></div>
+        </div>
+        <div class="pkg-grid" id="packageCards"></div>
     </template>
 
     <script src="../js/data.js"></script>
@@ -57,127 +117,213 @@
         const levels = DB.get('levels');
         const plans = DB.get('plans');
 
-        document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3b82f6&color=fff&size=80&rounded=true&bold=true`;
+        const avatarSrc = user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `../${user.avatar}`) : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nickname || user.name)}&background=3b82f6&color=fff&size=96&rounded=true&bold=true`;
+        document.getElementById('userAvatar').src = avatarSrc;
         document.getElementById('userName').textContent = user.name;
-        document.getElementById('userEmail').textContent = user.email;
-        document.getElementById('userLevel').innerHTML = `${levels[user.level].icon} ${levels[user.level].name}`;
-        document.getElementById('userPlan').textContent = `Plano ${(plans.find(p => p.id === user.plan) || {}).name || 'Básico'}`;
+        document.getElementById('userNickname').textContent = user.nickname ? `@${user.nickname}` : '';
+        document.getElementById('userEmail').querySelector('span').textContent = user.email;
 
-        document.getElementById('personalInfo').innerHTML = `
-            <div style="display:grid;gap:12px">
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Username</span><strong style="font-size:.85rem">${user.username}</strong></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Email</span><strong style="font-size:.85rem">${user.email}</strong></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Telefone</span><strong style="font-size:.85rem">${user.phone}</strong></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">CPF</span><strong style="font-size:.85rem">${user.cpf}</strong></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text3);font-size:.85rem">Cadastro</span><strong style="font-size:.85rem">${user.createdAt}</strong></div>
-            </div>`;
+        const lvl = levels && levels[user.level] ? levels[user.level] : { name: 'Prata', icon: 'fa-medal' };
+        document.getElementById('userLevel').innerHTML = `<i class="fas ${lvl.icon || 'fa-medal'}"></i> ${lvl.name}`;
+        document.getElementById('userPlan').innerHTML = `<i class="fas fa-gem"></i> Plano ${(plans && plans.find(p => p.id === user.plan) || {}).name || 'Básico'}`;
+        document.getElementById('userStatus').innerHTML = user.active ? '<i class="fas fa-check-circle"></i> Ativo' : '<i class="fas fa-times-circle"></i> Inativo';
 
-        document.getElementById('summaryInfo').innerHTML = `
-            <div style="display:grid;gap:12px">
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Pontos</span><strong style="font-size:.85rem;color:var(--accent)">${user.points}</strong></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Bônus Total</span><strong style="font-size:.85rem;color:var(--success)">R$ ${fmt(user.bonus)}</strong></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Saldo</span><strong style="font-size:.85rem">R$ ${fmt(user.balance)}</strong></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)"><span style="color:var(--text3);font-size:.85rem">Indicados</span><strong style="font-size:.85rem">${user.referrals.length}</strong></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text3);font-size:.85rem">Status</span><span class="badge ${user.active ? 'badge-green' : 'badge-red'}">${user.active ? 'Ativo' : 'Inativo'}</span></div>
-            </div>`;
+        // Stats — dados reais do usuário
+        const referralCount = Array.isArray(user.referrals) ? user.referrals.length : 0;
+        document.getElementById('statsRow').innerHTML = `
+            <div class="stat-card"><div class="stat-icon ic-green"><i class="fas fa-coins"></i></div><div><div class="stat-value">R$ ${fmt(user.bonus || 0)}</div><div class="stat-label">Bônus Total</div></div></div>
+            <div class="stat-card"><div class="stat-icon ic-purple"><i class="fas fa-wallet"></i></div><div><div class="stat-value">R$ ${fmt(user.balance || 0)}</div><div class="stat-label">Saldo Disponível</div></div></div>
+            <div class="stat-card"><div class="stat-icon ic-orange"><i class="fas fa-users"></i></div><div><div class="stat-value">${referralCount}</div><div class="stat-label">Indicados</div></div></div>
+        `;
 
-        document.getElementById('planCards').innerHTML = plans.map(p => `
-            <div class="plan-card ${user.plan === p.id ? 'featured' : ''}">
-                ${p.id === 'plus' ? '<div class="plan-recommended">Recomendado</div>' : ''}
-                <div class="plan-name">${p.name}</div>
-                <div class="plan-price">R$ ${fmt(p.price)}<small>/mês</small></div>
-                <ul class="plan-features">${p.features.map(f => `<li><i class="fas fa-check"></i>${f}</li>`).join('')}</ul>
-                <button class="btn ${user.plan === p.id ? 'btn-outline' : 'btn-primary'} w-full" ${user.plan === p.id ? 'disabled' : `onclick="changePlan('${p.id}')"`}>
-                    ${user.plan === p.id ? '<i class="fas fa-check"></i> Plano Atual' : 'Selecionar'}
-                </button>
-            </div>
-        `).join('');
+        const infoRow = (l, v) => `<div class="detail-item"><span class="dl">${l}</span><span class="dv">${v || '—'}</span></div>`;
+        document.getElementById('personalInfo').innerHTML = [
+            infoRow('Username', user.username),
+            infoRow('Apelido', user.nickname),
+            infoRow('Email', user.email),
+            infoRow('Telefone', user.phone),
+            infoRow('CPF', user.cpf),
+            infoRow('Nascimento', user.birth_date),
+            infoRow('Gênero', user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : ''),
+            infoRow('Desde', user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '')
+        ].join('');
+
+        document.getElementById('summaryInfo').innerHTML = [
+            infoRow('Graduação', lvl.name),
+            infoRow('Pontos', `<span style="color:var(--accent)">${user.points || 0}</span>`),
+            infoRow('Bônus Total', `<span style="color:var(--success)">R$ ${fmt(user.bonus || 0)}</span>`),
+            infoRow('Saldo Disponível', `R$ ${fmt(user.balance || 0)}`),
+            infoRow('Indicados Diretos', (user.referrals || []).length),
+            infoRow('Status', `<span class="badge ${user.active ? 'badge-green' : 'badge-red'}">${user.active ? 'Ativo' : 'Inativo'}</span>`),
+            infoRow('Tipo Pessoa', user.person_type === 'pj' ? 'Jurídica' : 'Física'),
+            infoRow('Pacote Ativo', user.has_package ? '<span style="color:var(--success)">Sim</span>' : '<span style="color:var(--text3)">Não</span>')
+        ].join('');
+
+        // Load Packages
+        const levelOrder = ['start', 'bronze', 'prata', 'ouro', 'diamante'];
+        const userLevelIdx = levelOrder.indexOf(user.level || 'start');
+        (async function loadPackages() {
+            try {
+                const pkgs = await DB.api('GET', '/api/content/packages');
+                const userPkgs = await DB.api('GET', '/api/content/my-packages') || [];
+                const ownedIds = Array.isArray(userPkgs) ? userPkgs.map(p => p.package_id) : [];
+                const allPkgs = Array.isArray(pkgs) ? pkgs : [];
+                // Filtra pacotes: só mostra níveis acima do atual
+                const list = allPkgs.filter(p => {
+                    const pkgLevelIdx = levelOrder.indexOf(p.level_key || '');
+                    return pkgLevelIdx > userLevelIdx;
+                });
+                document.getElementById('packageCards').innerHTML = list.length === 0
+                    ? '<p style="color:var(--text3);text-align:center;padding:32px">Nenhum pacote disponível no momento</p>'
+                    : list.map((p, i) => `
+                    <div class="pkg-card ${i === 1 ? 'featured' : ''}">
+                        ${i === 1 ? '<div class="pkg-badge">Popular</div>' : ''}
+                        <div class="pkg-name">${p.name}</div>
+                        <div class="pkg-price">R$ ${fmt(p.price)}</div>
+                        <ul class="pkg-features">
+                            <li><i class="fas fa-check"></i> ${p.points} pontos de graduação</li>
+                            <li><i class="fas fa-check"></i> ${p.description || 'Pacote de crescimento'}</li>
+                            <li><i class="fas fa-check"></i> Suporte prioritário</li>
+                        </ul>
+                        <button class="btn ${ownedIds.includes(p.id) ? 'btn-outline' : 'btn-primary'} w-full" ${ownedIds.includes(p.id) ? 'disabled' : `onclick="buyPackage(${p.id})"`}>
+                            ${ownedIds.includes(p.id) ? '<i class="fas fa-check-circle"></i> Adquirido' : '<i class="fas fa-shopping-cart"></i> Adquirir Pacote'}
+                        </button>
+                    </div>
+                `).join('');
+            } catch(e) { document.getElementById('packageCards').innerHTML = '<p style="color:var(--text3)">Erro ao carregar pacotes</p>'; }
+        })();
 
         function openEditProfile() {
+            const genderOpts = [['', 'Selecione'], ['masculino', 'Masculino'], ['feminino', 'Feminino'], ['outro', 'Outro']];
+            const currentAvatar = user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `../${user.avatar}`) : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nickname || user.name)}&background=3b82f6&color=fff&size=80&rounded=true&bold=true`;
             Layout.openModal('Editar Perfil', `
-                <div class="form-group"><label>Nome</label><input class="form-control" id="editName" value="${user.name}"></div>
-                <div class="form-row"><div class="form-group"><label>Email</label><input class="form-control" id="editEmail" value="${user.email}"></div><div class="form-group"><label>Telefone</label><input class="form-control" id="editPhone" value="${user.phone}"></div></div>
-                <div class="form-group"><label>Nova Senha (vazio = manter)</label><input type="password" class="form-control" id="editPw" placeholder="Nova senha"></div>
-            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProfile()">Salvar</button>`);
+                <div style="display:grid;gap:16px">
+                    <div style="text-align:center;padding:8px 0">
+                        <div style="position:relative;display:inline-block">
+                            <img id="avatarPreview" src="${currentAvatar}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);box-shadow:0 4px 12px rgba(99,102,241,.25)">
+                            <button type="button" class="btn" onclick="document.getElementById('avatarFile').click()" style="position:absolute;bottom:0;right:-4px;width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;padding:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;border:2px solid var(--bg);box-shadow:0 2px 6px rgba(0,0,0,.15)"><i class="fas fa-camera"></i></button>
+                        </div>
+                        <input type="file" id="avatarFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewAvatar(this)">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Nome Completo</label><input class="form-control" id="editName" value="${user.name}"></div>
+                        <div class="form-group"><label>Apelido</label><input class="form-control" id="editNickname" value="${user.nickname || ''}" placeholder="Como quer ser chamado"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Email</label><input class="form-control" id="editEmail" value="${user.email}"></div>
+                        <div class="form-group"><label>Telefone</label><input class="form-control" id="editPhone" value="${user.phone}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>CPF</label><input class="form-control" id="editCpf" value="${user.cpf}" maxlength="14"></div>
+                        <div class="form-group"><label>Data de Nascimento</label><input type="date" class="form-control" id="editBirthDate" value="${user.birth_date || ''}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Sexo</label><select class="form-control" id="editGender">${genderOpts.map(g => `<option value="${g[0]}" ${user.gender === g[0] ? 'selected' : ''}>${g[1]}</option>`).join('')}</select></div>
+                        <div class="form-group"><label>Tipo de Pessoa</label><select class="form-control" id="editPersonType" onchange="togglePJ()"><option value="pf" ${user.person_type !== 'pj' ? 'selected' : ''}>Pessoa Física</option><option value="pj" ${user.person_type === 'pj' ? 'selected' : ''}>Pessoa Jurídica</option></select></div>
+                    </div>
+                    <div id="pjFields" style="display:${user.person_type === 'pj' ? 'grid' : 'none'};gap:12px">
+                        <div class="form-row">
+                            <div class="form-group"><label>CNPJ</label><input class="form-control" id="editCnpj" value="${user.cnpj || ''}" maxlength="18"></div>
+                            <div class="form-group"><label>Razão Social</label><input class="form-control" id="editCompanyName" value="${user.company_name || ''}"></div>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Biografia</label><textarea class="form-control" id="editBio" rows="3" placeholder="Conte um pouco sobre você" style="resize:vertical">${user.bio || ''}</textarea></div>
+                </div>
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProfile()"><i class="fas fa-save"></i> Salvar Alterações</button>`);
         }
 
-        function saveProfile() {
-            const data = { name: document.getElementById('editName').value, email: document.getElementById('editEmail').value, phone: document.getElementById('editPhone').value };
-            const pw = document.getElementById('editPw').value;
-            if (pw) data.password = pw;
-            DB.updateUser(user.id, data);
-            Layout.closeModal();
-            Layout.toast('Perfil atualizado!', 'success');
-            setTimeout(() => location.reload(), 500);
-        }
-
-        function changePlan(planId) {
-            const plan = plans.find(p => p.id === planId);
-            if (!plan) return;
-            if (plan.price <= 0) {
-                // Plano gratuito — ativar direto
-                processChangePlan(planId, 'pix');
-                return;
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => document.getElementById('avatarPreview').src = e.target.result;
+                reader.readAsDataURL(input.files[0]);
             }
-            Layout.openModal('Alterar Plano - Pagamento', `
+        }
+
+        function togglePJ() {
+            document.getElementById('pjFields').style.display = document.getElementById('editPersonType').value === 'pj' ? 'grid' : 'none';
+        }
+
+        async function saveProfile() {
+            const avatarFile = document.getElementById('avatarFile');
+            if (avatarFile && avatarFile.files && avatarFile.files[0]) {
+                const formData = new FormData();
+                formData.append('avatar', avatarFile.files[0]);
+                try {
+                    const token = localStorage.getItem('token');
+                    const avatarRes = await fetch((DB.BASE || '') + '/api/users/avatar', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    const avatarResult = await avatarRes.json();
+                    if (!avatarResult.success) Layout.toast(avatarResult.error || 'Erro ao enviar foto', 'error');
+                } catch(e) { console.error('Avatar upload error', e); }
+            }
+
+            const data = {
+                name: document.getElementById('editName').value,
+                email: document.getElementById('editEmail').value,
+                phone: document.getElementById('editPhone').value,
+                nickname: document.getElementById('editNickname').value,
+                cpf: document.getElementById('editCpf').value,
+                birth_date: document.getElementById('editBirthDate').value,
+                gender: document.getElementById('editGender').value,
+                person_type: document.getElementById('editPersonType').value,
+                cnpj: document.getElementById('editCnpj')?.value || '',
+                company_name: document.getElementById('editCompanyName')?.value || '',
+                bio: document.getElementById('editBio').value
+            };
+            const result = await DB.api('PUT', '/api/users/me', data);
+            if (result && result.success) {
+                Layout.closeModal();
+                Layout.toast('Perfil atualizado com sucesso!', 'success');
+                await DB.syncData();
+                setTimeout(() => location.reload(), 500);
+            } else {
+                Layout.toast(result?.error || 'Erro ao salvar', 'error');
+            }
+        }
+
+        async function buyPackage(pkgId) {
+            Layout.openModal('Adquirir Pacote — Pagamento', `
                 <div style="text-align:center;padding:16px">
-                    <h3 style="margin-bottom:4px">Plano ${plan.name}</h3>
-                    <p style="font-size:1.5rem;font-weight:700;color:var(--accent);margin:12px 0">R$ ${fmt(plan.price)}<small>/mês</small></p>
                     <p style="color:var(--text3);font-size:.85rem;margin-bottom:20px">Escolha a forma de pagamento:</p>
                     <div style="display:flex;flex-direction:column;gap:10px">
-                        <button class="btn btn-success w-full" onclick="processChangePlan('${planId}', 'pix')"><i class="fas fa-qrcode"></i> Pagar com PIX</button>
-                        <button class="btn btn-primary w-full" onclick="processChangePlan('${planId}', 'boleto')"><i class="fas fa-barcode"></i> Pagar com Boleto</button>
-                        <button class="btn btn-outline w-full" onclick="processChangePlan('${planId}', 'credit_card')"><i class="fas fa-credit-card"></i> Cartão de Crédito</button>
+                        <button class="btn btn-success w-full" onclick="processPackage(${pkgId}, 'pix')"><i class="fas fa-qrcode"></i> Pagar com PIX</button>
+                        <button class="btn btn-primary w-full" onclick="processPackage(${pkgId}, 'boleto')"><i class="fas fa-barcode"></i> Pagar com Boleto</button>
+                        <button class="btn btn-outline w-full" onclick="processPackage(${pkgId}, 'credit_card')"><i class="fas fa-credit-card"></i> Cartão de Crédito</button>
                     </div>
                 </div>
             `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button>`);
         }
 
-        async function processChangePlan(planId, method) {
+        async function processPackage(pkgId, method) {
             Layout.closeModal();
-            Layout.toast('Processando...', 'info');
-
-            const result = await DB.api('POST', `/api/payments/plan/${planId}`, { method });
+            Layout.toast('Processando pagamento...', 'info');
+            const result = await DB.api('POST', `/api/payments/package/${pkgId}`, { method });
             if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
             if (result.error) { Layout.toast(result.error, 'error'); return; }
 
             if (result.approved) {
-                Layout.toast(result.message || 'Plano ativado!', 'success');
+                Layout.toast(result.message || 'Pacote ativado com sucesso!', 'success');
                 await DB.syncData();
                 setTimeout(() => location.reload(), 1500);
                 return;
             }
 
             if (method === 'pix' && result.pix) {
-                Layout.openModal('PIX - Plano', `
+                Layout.openModal('PIX — Pagamento', `
                     <div style="text-align:center;padding:16px">
                         <h3 style="margin-bottom:12px;color:var(--success)"><i class="fas fa-qrcode"></i> PIX</h3>
                         <p style="font-size:1.5rem;font-weight:700;color:var(--accent)">R$ ${fmt(result.value)}</p>
                         ${result.pix.qrCodeImage ? `<img src="data:image/png;base64,${result.pix.qrCodeImage}" alt="QR Code" style="max-width:250px;margin:16px auto;display:block;border-radius:12px;border:2px solid var(--border)">` : ''}
-                        <div onclick="navigator.clipboard.writeText(this.textContent).then(()=>Layout.toast('Copiado!','success'))" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.75rem;word-break:break-all;cursor:pointer;margin-top:12px">${result.pix.copyPaste || ''}</div>
-                        <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="checkPlanPayment('${result.paymentId}')"><i class="fas fa-sync-alt"></i> Verificar</button>
+                        <div onclick="navigator.clipboard.writeText(this.textContent).then(()=>Layout.toast('Código copiado!','success'))" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.75rem;word-break:break-all;cursor:pointer;margin-top:12px" title="Clique para copiar">${result.pix.copyPaste || ''}</div>
                     </div>
                 `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
             } else if (method === 'boleto') {
-                Layout.openModal('Boleto - Plano', `
+                Layout.openModal('Boleto — Pagamento', `
                     <div style="text-align:center;padding:16px">
-                        <h3 style="margin-bottom:12px"><i class="fas fa-barcode"></i> Boleto</h3>
-                        <p style="font-size:1.5rem;font-weight:700;color:var(--accent)">R$ ${fmt(result.value)}</p>
+                        <h3 style="margin-bottom:12px"><i class="fas fa-barcode"></i> Boleto Bancário</h3>
                         ${result.invoiceUrl ? `<a href="${result.invoiceUrl}" target="_blank" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-external-link-alt"></i> Abrir Boleto</a>` : ''}
                     </div>
                 `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
-            }
-        }
-
-        async function checkPlanPayment(paymentId) {
-            const result = await DB.api('GET', `/api/payments/${paymentId}/status`);
-            if (result && result.status === 'pago') {
-                Layout.toast('Pagamento confirmado! Plano ativado!', 'success');
-                await DB.syncData();
-                Layout.closeModal();
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                Layout.toast('Pagamento ainda pendente. Aguarde a confirmação.', 'info');
             }
         }
     </script>

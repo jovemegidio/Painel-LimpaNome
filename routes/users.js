@@ -8,10 +8,35 @@
    ═══════════════════════════════════════════ */
 
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { getDB } = require('../database/init');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Multer for user document uploads
+const docStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '..', 'uploads', 'user-docs', String(req.user.id));
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `${Date.now()}-${Math.random().toString(36).slice(2,8)}${ext}`);
+    }
+});
+const uploadDoc = multer({
+    storage: docStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.pdf'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, allowed.includes(ext));
+    }
+});
 
 // Helper: user sem password + com referrals
 function safeUser(db, user) {
@@ -33,7 +58,7 @@ router.get('/me', auth, (req, res) => {
 
 // ── Atualizar Perfil ──
 router.put('/me', auth, (req, res) => {
-    const { name, email, phone, avatar } = req.body;
+    const { name, email, phone, avatar, nickname, birth_date, gender, bio, cpf, person_type, cnpj, company_name } = req.body;
     const db = getDB();
 
     // Check email uniqueness
@@ -43,11 +68,54 @@ router.put('/me', auth, (req, res) => {
         if (existing) return res.json({ success: false, error: 'E-mail já está em uso' });
     }
 
-    db.prepare('UPDATE users SET name = COALESCE(?, name), email = COALESCE(?, email), phone = COALESCE(?, phone), avatar = COALESCE(?, avatar) WHERE id = ?')
-        .run(name || null, email || null, phone || null, avatar || null, req.user.id);
+    const sanitize = (s, max = 200) => s ? String(s).trim().replace(/<[^>]*>/g, '').slice(0, max) : null;
+
+    db.prepare(`UPDATE users SET 
+        name = COALESCE(?, name), email = COALESCE(?, email), phone = COALESCE(?, phone), avatar = COALESCE(?, avatar),
+        nickname = COALESCE(?, nickname), birth_date = COALESCE(?, birth_date), gender = COALESCE(?, gender),
+        bio = COALESCE(?, bio), cpf = COALESCE(?, cpf), person_type = COALESCE(?, person_type),
+        cnpj = COALESCE(?, cnpj), company_name = COALESCE(?, company_name)
+        WHERE id = ?`)
+        .run(
+            sanitize(name), sanitize(email), sanitize(phone), sanitize(avatar, 500),
+            sanitize(nickname, 50), sanitize(birth_date, 10), sanitize(gender, 20),
+            sanitize(bio, 500), sanitize(cpf, 18), sanitize(person_type, 2),
+            sanitize(cnpj, 20), sanitize(company_name),
+            req.user.id
+        );
 
     const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
     res.json({ success: true, user: safeUser(db, updated) });
+});
+
+// ── Upload Avatar ──
+const avatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '..', 'uploads', 'avatars');
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `avatar-${req.user.id}-${Date.now()}${ext}`);
+    }
+});
+const uploadAvatar = multer({
+    storage: avatarStorage,
+    limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, allowed.includes(ext));
+    }
+});
+
+router.post('/avatar', auth, uploadAvatar.single('avatar'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Envie uma imagem válida (JPG, PNG ou WebP, até 2MB)' });
+    const db = getDB();
+    const avatarPath = `uploads/avatars/${req.file.filename}`;
+    db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatarPath, req.user.id);
+    res.json({ success: true, avatar: avatarPath });
 });
 
 // ── Minha Rede — Indicados Diretos ──
@@ -166,6 +234,176 @@ router.put('/preferences', auth, (req, res) => {
         tx();
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ════════════════════════════════════
+//   ADDRESS
+// ════════════════════════════════════
+
+router.get('/address', auth, (req, res) => {
+    const db = getDB();
+    const user = db.prepare('SELECT address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_zip, address_country FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+    res.json(user);
+});
+
+router.put('/address', auth, (req, res) => {
+    const db = getDB();
+    const fields = ['address_street', 'address_number', 'address_complement', 'address_neighborhood', 'address_city', 'address_state', 'address_zip', 'address_country'];
+    const sanitize = (s) => s ? String(s).trim().replace(/<[^>]*>/g, '').slice(0, 200) : '';
+    const updates = {};
+    fields.forEach(f => { if (req.body[f] !== undefined) updates[f] = sanitize(req.body[f]); });
+
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Nenhum campo para atualizar' });
+
+    const setClauses = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+    const values = Object.values(updates);
+    values.push(req.user.id);
+    db.prepare(`UPDATE users SET ${setClauses} WHERE id = ?`).run(...values);
+    res.json({ success: true, message: 'Endereço atualizado com sucesso' });
+});
+
+// ════════════════════════════════════
+//   USER DOCUMENTS (KYC)
+// ════════════════════════════════════
+
+router.get('/documents', auth, (req, res) => {
+    const db = getDB();
+    const docs = db.prepare('SELECT * FROM user_documents WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+    res.json(docs);
+});
+
+router.post('/documents', auth, uploadDoc.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Arquivo é obrigatório' });
+    const type = (['rg', 'cpf', 'cnh', 'comprovante_residencia', 'selfie', 'outro'].includes(req.body.type)) ? req.body.type : 'outro';
+
+    const db = getDB();
+    const result = db.prepare('INSERT INTO user_documents (user_id, type, filename, original_name, mimetype, size) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(req.user.id, type, req.file.filename, req.file.originalname, req.file.mimetype, req.file.size);
+
+    res.json({ success: true, id: result.lastInsertRowid, message: 'Documento enviado com sucesso' });
+});
+
+router.delete('/documents/:id', auth, (req, res) => {
+    const db = getDB();
+    const doc = db.prepare('SELECT * FROM user_documents WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    if (!doc) return res.status(404).json({ error: 'Documento não encontrado' });
+
+    // Delete file
+    const filePath = path.join(__dirname, '..', 'uploads', 'user-docs', String(req.user.id), doc.filename);
+    try { fs.unlinkSync(filePath); } catch {}
+
+    db.prepare('DELETE FROM user_documents WHERE id = ?').run(doc.id);
+    res.json({ success: true, message: 'Documento removido' });
+});
+
+// ════════════════════════════════════
+//   CONTRACTS
+// ════════════════════════════════════
+
+router.get('/contracts', auth, (req, res) => {
+    const db = getDB();
+    const contracts = db.prepare('SELECT c.*, uc.accepted, uc.accepted_at FROM contracts c LEFT JOIN user_contracts uc ON uc.contract_id = c.id AND uc.user_id = ? WHERE c.active = 1 ORDER BY c.created_at DESC').all(req.user.id);
+    res.json(contracts);
+});
+
+router.get('/contracts/:id', auth, (req, res) => {
+    const db = getDB();
+    const contract = db.prepare('SELECT c.*, uc.accepted, uc.accepted_at FROM contracts c LEFT JOIN user_contracts uc ON uc.contract_id = c.id AND uc.user_id = ? WHERE c.id = ?').get(req.user.id, req.params.id);
+    if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
+    res.json(contract);
+});
+
+router.post('/contracts/:id/accept', auth, (req, res) => {
+    const db = getDB();
+    const contract = db.prepare('SELECT id FROM contracts WHERE id = ? AND active = 1').get(req.params.id);
+    if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    db.prepare('INSERT INTO user_contracts (user_id, contract_id, accepted, accepted_at, ip) VALUES (?, ?, 1, datetime(\'now\'), ?) ON CONFLICT(user_id, contract_id) DO UPDATE SET accepted = 1, accepted_at = datetime(\'now\'), ip = ?')
+        .run(req.user.id, contract.id, ip, ip);
+
+    res.json({ success: true, message: 'Contrato aceito com sucesso' });
+});
+
+// ════════════════════════════════════
+//   SUBSCRIPTIONS
+// ════════════════════════════════════
+
+router.get('/subscriptions', auth, (req, res) => {
+    const db = getDB();
+    const subs = db.prepare('SELECT s.*, p.name as plan_name, p.price as plan_price, p.features as plan_features FROM subscriptions s JOIN plans p ON p.id = s.plan_id WHERE s.user_id = ? ORDER BY s.created_at DESC').all(req.user.id);
+    subs.forEach(s => { try { s.plan_features = JSON.parse(s.plan_features); } catch { s.plan_features = []; } });
+    res.json(subs);
+});
+
+router.get('/subscriptions/:id', auth, (req, res) => {
+    const db = getDB();
+    const sub = db.prepare('SELECT s.*, p.name as plan_name, p.price as plan_price, p.features as plan_features FROM subscriptions s JOIN plans p ON p.id = s.plan_id WHERE s.id = ? AND s.user_id = ?').get(req.params.id, req.user.id);
+    if (!sub) return res.status(404).json({ error: 'Assinatura não encontrada' });
+    try { sub.plan_features = JSON.parse(sub.plan_features); } catch { sub.plan_features = []; }
+    res.json(sub);
+});
+
+// ════════════════════════════════════
+//   REFERRAL / INDICAÇÃO REPORT
+// ════════════════════════════════════
+
+router.get('/referral-report', auth, (req, res) => {
+    const db = getDB();
+
+    const directs = db.prepare('SELECT id, name, username, email, phone, level, points, active, created_at FROM users WHERE sponsor_id = ? ORDER BY created_at DESC').all(req.user.id);
+
+    // Commissions from referral
+    const commissions = db.prepare("SELECT c.*, u.name as from_name, u.username as from_username FROM commissions c JOIN users u ON u.id = c.from_user_id WHERE c.to_user_id = ? ORDER BY c.date DESC LIMIT 50").all(req.user.id);
+
+    const totalCommissions = db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM commissions WHERE to_user_id = ?").get(req.user.id);
+
+    // Monthly stats
+    const monthlyStats = db.prepare(`
+        SELECT strftime('%Y-%m', date) as month, SUM(amount) as total, COUNT(*) as count
+        FROM commissions WHERE to_user_id = ?
+        GROUP BY strftime('%Y-%m', date) ORDER BY month DESC LIMIT 12
+    `).all(req.user.id);
+
+    res.json({
+        directs,
+        commissions,
+        totalCommissions: totalCommissions.total,
+        monthlyStats,
+        totalDirects: directs.length,
+        activeDirects: directs.filter(d => d.active).length
+    });
+});
+
+// ════════════════════════════════════
+//   LIMPA NOME DASHBOARD
+// ════════════════════════════════════
+
+router.get('/limpanome-dashboard', auth, (req, res) => {
+    const db = getDB();
+
+    const total = db.prepare('SELECT COUNT(*) as c FROM processes WHERE user_id = ?').get(req.user.id);
+    const pendentes = db.prepare("SELECT COUNT(*) as c FROM processes WHERE user_id = ? AND status = 'pendente'").get(req.user.id);
+    const emAndamento = db.prepare("SELECT COUNT(*) as c FROM processes WHERE user_id = ? AND status = 'em_andamento'").get(req.user.id);
+    const concluidos = db.prepare("SELECT COUNT(*) as c FROM processes WHERE user_id = ? AND status = 'concluido'").get(req.user.id);
+    const rejeitados = db.prepare("SELECT COUNT(*) as c FROM processes WHERE user_id = ? AND status = 'rejeitado'").get(req.user.id);
+
+    const totalValue = db.prepare('SELECT COALESCE(SUM(value), 0) as total FROM processes WHERE user_id = ?').get(req.user.id);
+    const cleanedValue = db.prepare("SELECT COALESCE(SUM(value), 0) as total FROM processes WHERE user_id = ? AND status = 'concluido'").get(req.user.id);
+
+    const recent = db.prepare('SELECT * FROM processes WHERE user_id = ? ORDER BY updated_at DESC LIMIT 5').all(req.user.id);
+
+    res.json({
+        total: total.c,
+        pendentes: pendentes.c,
+        emAndamento: emAndamento.c,
+        concluidos: concluidos.c,
+        rejeitados: rejeitados.c,
+        totalValue: totalValue.total,
+        cleanedValue: cleanedValue.total,
+        recent
+    });
 });
 
 module.exports = router;

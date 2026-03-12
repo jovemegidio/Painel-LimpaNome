@@ -3,13 +3,18 @@
    ═══════════════════════════════════════════ */
 
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const { getDB } = require('../database/init');
 
-// Fallback seguro caso JWT_SECRET não esteja definido
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
-if (!process.env.JWT_SECRET) {
-    console.warn('⚠️  JWT_SECRET não definido no .env — usando chave aleatória (tokens não persistem entre reinícios)');
+// JWT_SECRET obrigatório em produção
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+        console.error('❌ FATAL: JWT_SECRET não definido no .env — aplicação não pode iniciar em produção');
+        process.exit(1);
+    }
+    console.warn('⚠️  JWT_SECRET não definido no .env — gerando chave temporária (tokens não persistem entre reinícios)');
 }
+const EFFECTIVE_JWT_SECRET = JWT_SECRET || require('crypto').randomBytes(32).toString('hex');
 
 // Verifica token JWT
 function auth(req, res, next) {
@@ -19,7 +24,7 @@ function auth(req, res, next) {
     const token = header.startsWith('Bearer ') ? header.slice(7) : header;
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, EFFECTIVE_JWT_SECRET);
         req.user = decoded; // { id, role, username }
         next();
     } catch (err) {
@@ -35,11 +40,28 @@ function adminOnly(req, res, next) {
     next();
 }
 
+// Verifica se o usuário tem pacote ativo (libera acesso total ao painel)
+function requirePackage(req, res, next) {
+    try {
+        const db = getDB();
+        const user = db.prepare('SELECT has_package, access_blocked FROM users WHERE id = ?').get(req.user.id);
+        if (!user || !user.has_package) {
+            return res.status(403).json({ error: 'Você precisa adquirir um pacote para acessar esta funcionalidade.', code: 'PACKAGE_REQUIRED' });
+        }
+        if (user.access_blocked) {
+            return res.status(403).json({ error: 'Seu acesso está bloqueado por mensalidade pendente. Efetue o pagamento para reativar.', code: 'MONTHLY_FEE_REQUIRED' });
+        }
+        next();
+    } catch (err) {
+        return res.status(500).json({ error: 'Erro ao verificar acesso' });
+    }
+}
+
 // Gera token
 function generateToken(payload) {
-    return jwt.sign(payload, JWT_SECRET, {
+    return jwt.sign(payload, EFFECTIVE_JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d'
     });
 }
 
-module.exports = { auth, adminOnly, generateToken };
+module.exports = { auth, adminOnly, requirePackage, generateToken, EFFECTIVE_JWT_SECRET };

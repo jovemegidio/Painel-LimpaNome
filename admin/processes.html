@@ -6,31 +6,162 @@
     <title>Credbusiness Admin — Processos</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .proc-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .proc-detail-item{padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
+        .proc-detail-item label{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px}
+        .proc-detail-item span{font-size:.9rem;font-weight:600;color:var(--text1)}
+        .proc-detail-item.full{grid-column:1/-1}
+        .user-lookup{position:relative}
+        .user-lookup-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;max-height:180px;overflow-y:auto;z-index:10;box-shadow:var(--shadow-lg);display:none}
+        .user-lookup-results.show{display:block}
+        .user-lookup-item{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);font-size:.85rem}
+        .user-lookup-item:hover{background:var(--primary-light)}
+        .user-lookup-item .ulk-avatar{width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;flex-shrink:0}
+        .user-lookup-item .ulk-info{line-height:1.3}
+        .user-lookup-item .ulk-name{font-weight:600}
+        .user-lookup-item .ulk-meta{font-size:.75rem;color:var(--text3)}
+    </style>
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Gerenciar Processos</h2><p>Acompanhe e atualize os processos de limpa nome e Bacen</p></div>
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div><h2><i class="fas fa-file-alt" style="margin-right:8px;opacity:.4"></i>Processos</h2><p>Gerencie processos de limpa nome e Bacen</p></div>
+            <button class="btn btn-primary" onclick="openProcModal()"><i class="fas fa-plus"></i> Novo Processo</button>
+        </div>
 
         <div class="stats-grid" id="statsGrid"></div>
 
         <div class="card" style="margin-top:24px">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
                 <h3>Todos os Processos</h3>
-                <div style="display:flex;gap:12px">
-                    <select id="filterStatus" class="form-control" style="max-width:180px" onchange="renderTable()">
-                        <option value="">Todos os Status</option>
-                        <option value="pendente">Pendente</option>
-                        <option value="em_andamento">Em Andamento</option>
-                        <option value="concluido">Concluído</option>
-                        <option value="cancelado">Cancelado</option>
-                    </select>
+                <div style="display:flex;gap:8px">
+                    <button class="btn btn-outline btn-sm" onclick="exportProcPDF()"><i class="fas fa-file-pdf"></i> Relatório PDF</button>
+                    <button class="btn btn-outline btn-sm" onclick="exportProc()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
                 </div>
+            </div>
+            <div class="card-header" style="border-top:none;padding-top:0;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar nome, CPF ou instituição..." style="max-width:240px" oninput="searchDebounce()">
+                <select id="filterStatus" class="form-control" style="max-width:180px" onchange="loadProcesses()">
+                    <option value="">Todos os Status</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="em_andamento">Em Andamento</option>
+                    <option value="concluido">Concluído</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+                <select id="filterType" class="form-control" style="max-width:160px" onchange="loadProcesses()">
+                    <option value="">Todos os Tipos</option>
+                    <option value="limpa_nome">Limpa Nome</option>
+                    <option value="bacen">Bacen</option>
+                    <option value="cnpj">CNPJ</option>
+                </select>
             </div>
             <div class="card-body" style="overflow-x:auto">
                 <table class="table" id="processTable"><thead><tr>
-                    <th>ID</th><th>Usuário</th><th>Tipo</th><th>Documento</th><th>Data</th><th>Status</th><th style="width:180px">Alterar Status</th>
+                    <th>ID</th><th>Usuário</th><th>CPF/CNPJ</th><th>Tipo</th><th>Instituição</th><th>Valor</th><th>Data</th><th>Status</th><th style="width:140px">Ações</th>
                 </tr></thead><tbody></tbody></table>
+                <div id="procPagination" style="display:flex;justify-content:center;gap:4px;padding:16px"></div>
+            </div>
+        </div>
+
+        <!-- Modal Criar/Editar -->
+        <div id="procModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:16px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+                <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                    <h3 id="procModalTitle" style="font-weight:700"><i class="fas fa-plus-circle" style="margin-right:8px;opacity:.4"></i>Novo Processo</h3>
+                    <button onclick="closeProcModal()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">&times;</button>
+                </div>
+                <form onsubmit="saveProc(event)" style="padding:24px">
+                    <input type="hidden" id="procEditId">
+
+                    <div class="form-group user-lookup" id="procUserLookup">
+                        <label><i class="fas fa-user" style="margin-right:4px;opacity:.4"></i>Usuário</label>
+                        <input type="text" id="procUserSearch" class="form-control" placeholder="Digite o nome, email ou ID..." oninput="searchUserProc(this.value)" autocomplete="off">
+                        <input type="hidden" id="procUserId" required>
+                        <div id="procUserResults" class="user-lookup-results"></div>
+                        <div id="procUserSelected" style="display:none;margin-top:8px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:.85rem">
+                            <i class="fas fa-check-circle" style="color:#10b981;margin-right:6px"></i>
+                            <span id="procUserSelectedName"></span>
+                            <button type="button" onclick="clearUserProcSelection()" style="float:right;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.85rem"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                        <div class="form-group">
+                            <label><i class="fas fa-id-card" style="margin-right:4px;opacity:.4"></i>CPF/CNPJ</label>
+                            <input type="text" id="procCpf" class="form-control" placeholder="000.000.000-00">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-user-tag" style="margin-right:4px;opacity:.4"></i>Nome no processo</label>
+                            <input type="text" id="procName" class="form-control" placeholder="Nome completo">
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                        <div class="form-group">
+                            <label><i class="fas fa-tag" style="margin-right:4px;opacity:.4"></i>Tipo</label>
+                            <select id="procType" class="form-control" required>
+                                <option value="limpa_nome">Limpa Nome</option>
+                                <option value="bacen">Bacen</option>
+                                <option value="cnpj">CNPJ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-users" style="margin-right:4px;opacity:.4"></i>Tipo Pessoa</label>
+                            <select id="procPersonType" class="form-control">
+                                <option value="pf">Pessoa Física</option>
+                                <option value="pj">Pessoa Jurídica</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                        <div class="form-group">
+                            <label><i class="fas fa-building" style="margin-right:4px;opacity:.4"></i>Instituição</label>
+                            <input type="text" id="procInstitution" class="form-control" placeholder="Banco, financeira, etc.">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-dollar-sign" style="margin-right:4px;opacity:.4"></i>Valor (R$)</label>
+                            <input type="number" id="procValue" class="form-control" step="0.01" min="0" placeholder="0,00">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="procStatusGroup" style="display:none">
+                        <label><i class="fas fa-flag" style="margin-right:4px;opacity:.4"></i>Status</label>
+                        <select id="procStatus" class="form-control">
+                            <option value="pendente">Pendente</option>
+                            <option value="em_andamento">Em Andamento</option>
+                            <option value="concluido">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-sticky-note" style="margin-right:4px;opacity:.4"></i>Observações internas</label>
+                        <textarea id="procNotes" class="form-control" rows="3" placeholder="Notas visíveis apenas para admin..."></textarea>
+                    </div>
+
+                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+                        <button type="button" class="btn btn-outline" onclick="closeProcModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="procSaveBtn"><i class="fas fa-save" style="margin-right:6px"></i>Criar Processo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Detalhes -->
+        <div id="procDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+            <div style="background:#fff;border-radius:16px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+                <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                    <h3 style="font-weight:700"><i class="fas fa-file-alt" style="margin-right:8px;opacity:.4"></i>Detalhes do Processo</h3>
+                    <button onclick="closeDetailModal()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">&times;</button>
+                </div>
+                <div id="procDetailContent" style="padding:24px"></div>
+                <div style="padding:0 24px 20px;display:flex;gap:12px;justify-content:flex-end">
+                    <button class="btn btn-outline" onclick="closeDetailModal()">Fechar</button>
+                    <button class="btn btn-primary" onclick="editFromDetail()"><i class="fas fa-edit" style="margin-right:6px"></i>Editar</button>
+                </div>
             </div>
         </div>
     </template>
@@ -39,15 +170,45 @@
     <script>
         Layout.init({ basePath: '../', page: 'admin-processes', title: 'Processos', admin: true });
 
-        function renderStats() {
-            const all = DB.getProcesses();
+        let procData = [];
+        let procPage = 1;
+        let procTotalPages = 1;
+        let currentDetailProc = null;
+        let _searchTimer = null;
+
+        function searchDebounce() {
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(() => { procPage = 1; loadProcesses(); }, 400);
+        }
+
+        async function loadProcesses() {
+            const params = new URLSearchParams();
+            params.set('page', procPage);
+            params.set('limit', 20);
+            const status = document.getElementById('filterStatus').value;
+            const type = document.getElementById('filterType').value;
+            const search = document.getElementById('searchInput').value.trim();
+            if (status) params.set('status', status);
+            if (type) params.set('type', type);
+            if (search) params.set('search', search);
+
+            const res = await DB.api('GET', '/api/admin/processes?' + params);
+            if (!res) return;
+            procData = res.processes || [];
+            procTotalPages = res.totalPages || 1;
+            procPage = res.page || 1;
+            renderStats(res.total);
+            renderTable();
+        }
+
+        function renderStats(total) {
             const counts = { pendente: 0, em_andamento: 0, concluido: 0, cancelado: 0 };
-            all.forEach(p => { counts[p.status] = (counts[p.status] || 0) + 1; });
+            procData.forEach(p => { counts[p.status] = (counts[p.status] || 0) + 1; });
             const items = [
                 { icon: 'fa-clock', color: '#f59e0b', label: 'Pendentes', value: counts.pendente },
-                { icon: 'fa-search', color: '#007bff', label: 'Em Andamento', value: counts.em_andamento },
-                { icon: 'fa-check-circle', color: '#28a745', label: 'Concluídos', value: counts.concluido },
-                { icon: 'fa-ban', color: '#dc3545', label: 'Cancelados', value: counts.cancelado }
+                { icon: 'fa-spinner', color: '#6366f1', label: 'Em Andamento', value: counts.em_andamento },
+                { icon: 'fa-check-circle', color: '#10b981', label: 'Concluídos', value: counts.concluido },
+                { icon: 'fa-ban', color: '#ef4444', label: 'Cancelados', value: counts.cancelado }
             ];
             document.getElementById('statsGrid').innerHTML = items.map(s => `
                 <div class="stat-card">
@@ -57,41 +218,268 @@
         }
 
         function renderTable() {
-            const filter = document.getElementById('filterStatus').value;
-            let list = DB.getProcesses();
-            if (filter) list = list.filter(p => p.status === filter);
-            const tbody = document.querySelector('#processTable tbody');
             const stMap = { pendente: 'warning', em_andamento: 'info', concluido: 'success', cancelado: 'danger' };
-            tbody.innerHTML = list.length ? list.map(p => {
-                const u = DB.getUser(p.userId);
-                return `<tr>
-                    <td>#${p.id}</td>
-                    <td>${u ? u.name : '—'}</td>
-                    <td>${p.type}</td>
-                    <td>${p.cpf || '—'}</td>
-                    <td>${new Date(p.createdAt).toLocaleDateString('pt-BR')}</td>
-                    <td><span class="badge badge-${stMap[p.status] || 'secondary'}">${p.status.replace('_',' ')}</span></td>
-                    <td>
-                        <select class="form-control" style="font-size:13px;padding:4px 8px" onchange="changeStatus(${p.id},this.value)">
-                            <option value="pendente" ${p.status==='pendente'?'selected':''}>Pendente</option>
-                            <option value="em_andamento" ${p.status==='em_andamento'?'selected':''}>Em Andamento</option>
-                            <option value="concluido" ${p.status==='concluido'?'selected':''}>Concluído</option>
-                            <option value="cancelado" ${p.status==='cancelado'?'selected':''}>Cancelado</option>
-                        </select>
-                    </td>
-                </tr>`;
-            }).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b">Nenhum processo encontrado</td></tr>';
+            const typeLabels = { limpa_nome: 'Limpa Nome', bacen: 'Bacen', cnpj: 'CNPJ' };
+            const tbody = document.querySelector('#processTable tbody');
+            tbody.innerHTML = procData.length ? procData.map(p => `<tr style="cursor:pointer" ondblclick="viewProcess(${p.id})">
+                <td><strong>#${p.id}</strong></td>
+                <td>${esc(p.user_name||'—')}<br><span style="font-size:.75rem;color:var(--text3)">ID: ${p.user_id}</span></td>
+                <td>${esc(p.cpf || '—')}</td>
+                <td><span class="badge badge-secondary">${typeLabels[p.type]||p.type}</span></td>
+                <td>${esc(p.institution || '—')}</td>
+                <td style="font-weight:600">R$ ${fmt(p.value||0)}</td>
+                <td>${new Date(p.created_at).toLocaleDateString('pt-BR')}</td>
+                <td><span class="badge badge-${stMap[p.status]||'secondary'}">${(p.status||'').replace('_',' ')}</span></td>
+                <td style="display:flex;gap:4px">
+                    <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();viewProcess(${p.id})" title="Detalhes"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editProcess(${p.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteProcess(${p.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;color:#64748b;padding:40px">Nenhum processo encontrado</td></tr>';
+
+            // Pagination
+            const pg = document.getElementById('procPagination');
+            if (procTotalPages <= 1) { pg.innerHTML = ''; return; }
+            let html = `<button class="btn btn-sm btn-outline" ${procPage<=1?'disabled':''} onclick="goPage(${procPage-1})"><i class="fas fa-chevron-left"></i></button>`;
+            for (let i = Math.max(1,procPage-2); i <= Math.min(procTotalPages,procPage+2); i++) {
+                html += `<button class="btn btn-sm ${i===procPage?'btn-primary':'btn-outline'}" onclick="goPage(${i})">${i}</button>`;
+            }
+            html += `<button class="btn btn-sm btn-outline" ${procPage>=procTotalPages?'disabled':''} onclick="goPage(${procPage+1})"><i class="fas fa-chevron-right"></i></button>`;
+            pg.innerHTML = html;
         }
 
-        function changeStatus(id, newStatus) {
-            DB.updateProcess(Number(id), { status: newStatus });
-            Layout.toast('Status atualizado!', 'success');
-            renderStats();
-            renderTable();
+        function goPage(p) { procPage = p; loadProcesses(); }
+
+        // ── User Lookup ──
+        let _userSearchTimer = null;
+        function searchUserProc(q) {
+            clearTimeout(_userSearchTimer);
+            if (q.length < 2) { document.getElementById('procUserResults').classList.remove('show'); return; }
+            _userSearchTimer = setTimeout(async () => {
+                const res = await DB.api('GET', '/api/admin/users?search=' + encodeURIComponent(q) + '&limit=8');
+                if (!res || !res.users) return;
+                const div = document.getElementById('procUserResults');
+                div.innerHTML = res.users.map(u => `
+                    <div class="user-lookup-item" onclick="selectUserProc(${u.id},'${esc(u.name)} (#${u.id})')">
+                        <div class="ulk-avatar">${(u.name||'?')[0].toUpperCase()}</div>
+                        <div class="ulk-info">
+                            <div class="ulk-name">${esc(u.name)}</div>
+                            <div class="ulk-meta">${esc(u.email)} · CPF: ${esc(u.cpf||'—')} · ID: ${u.id}</div>
+                        </div>
+                    </div>`).join('');
+                div.classList.add('show');
+            }, 300);
         }
 
-        renderStats();
-        renderTable();
+        function selectUserProc(id, label) {
+            document.getElementById('procUserId').value = id;
+            document.getElementById('procUserSearch').style.display = 'none';
+            document.getElementById('procUserResults').classList.remove('show');
+            document.getElementById('procUserSelectedName').textContent = label;
+            document.getElementById('procUserSelected').style.display = '';
+        }
+
+        function clearUserProcSelection() {
+            document.getElementById('procUserId').value = '';
+            document.getElementById('procUserSearch').value = '';
+            document.getElementById('procUserSearch').style.display = '';
+            document.getElementById('procUserSelected').style.display = 'none';
+        }
+
+        // ── Modal Criar/Editar ──
+        function openProcModal(proc) {
+            const isEdit = !!proc;
+            document.getElementById('procEditId').value = proc ? proc.id : '';
+            document.getElementById('procModalTitle').innerHTML = isEdit
+                ? '<i class="fas fa-edit" style="margin-right:8px;opacity:.4"></i>Editar Processo #' + proc.id
+                : '<i class="fas fa-plus-circle" style="margin-right:8px;opacity:.4"></i>Novo Processo';
+            document.getElementById('procSaveBtn').innerHTML = isEdit
+                ? '<i class="fas fa-save" style="margin-right:6px"></i>Salvar Alterações'
+                : '<i class="fas fa-plus" style="margin-right:6px"></i>Criar Processo';
+            document.getElementById('procStatusGroup').style.display = isEdit ? '' : 'none';
+
+            if (isEdit) {
+                selectUserProc(proc.user_id, (proc.user_name || 'ID: ' + proc.user_id) + ' (#' + proc.user_id + ')');
+                document.getElementById('procCpf').value = proc.cpf || '';
+                document.getElementById('procName').value = proc.name || '';
+                document.getElementById('procType').value = proc.type || 'limpa_nome';
+                document.getElementById('procPersonType').value = proc.person_type || 'pf';
+                document.getElementById('procInstitution').value = proc.institution || '';
+                document.getElementById('procValue').value = proc.value || '';
+                document.getElementById('procStatus').value = proc.status || 'pendente';
+                document.getElementById('procNotes').value = proc.notes || '';
+                // Disable user change on edit
+                document.getElementById('procUserLookup').style.pointerEvents = 'none';
+                document.getElementById('procUserLookup').style.opacity = '.7';
+            } else {
+                clearUserProcSelection();
+                document.getElementById('procCpf').value = '';
+                document.getElementById('procName').value = '';
+                document.getElementById('procType').value = 'limpa_nome';
+                document.getElementById('procPersonType').value = 'pf';
+                document.getElementById('procInstitution').value = '';
+                document.getElementById('procValue').value = '';
+                document.getElementById('procNotes').value = '';
+                document.getElementById('procUserLookup').style.pointerEvents = '';
+                document.getElementById('procUserLookup').style.opacity = '';
+            }
+            document.getElementById('procModal').style.display = 'flex';
+        }
+
+        function closeProcModal() {
+            document.getElementById('procModal').style.display = 'none';
+            document.getElementById('procUserResults').classList.remove('show');
+        }
+
+        async function saveProc(e) {
+            e.preventDefault();
+            const editId = document.getElementById('procEditId').value;
+            const data = {
+                cpf: document.getElementById('procCpf').value.trim(),
+                name: document.getElementById('procName').value.trim(),
+                type: document.getElementById('procType').value,
+                person_type: document.getElementById('procPersonType').value,
+                institution: document.getElementById('procInstitution').value.trim(),
+                value: parseFloat(document.getElementById('procValue').value) || 0,
+                notes: document.getElementById('procNotes').value.trim()
+            };
+
+            let res;
+            if (editId) {
+                data.status = document.getElementById('procStatus').value;
+                res = await DB.api('PUT', '/api/admin/processes/' + editId, data);
+            } else {
+                data.user_id = parseInt(document.getElementById('procUserId').value);
+                if (!data.user_id) { Layout.toast('Selecione um usuário', 'error'); return; }
+                if (!data.cpf && !data.name) { Layout.toast('CPF/CNPJ ou nome são obrigatórios', 'error'); return; }
+                res = await DB.api('POST', '/api/admin/processes', data);
+            }
+            if (res && res.success) {
+                Layout.toast(editId ? 'Processo atualizado!' : 'Processo criado!', 'success');
+                closeProcModal();
+                loadProcesses();
+            } else {
+                Layout.toast(res?.error || 'Erro ao salvar', 'error');
+            }
+        }
+
+        // ── View/Edit/Delete ──
+        function viewProcess(id) {
+            const p = procData.find(x => x.id === id);
+            if (!p) return;
+            currentDetailProc = p;
+            const stMap = { pendente: 'warning', em_andamento: 'info', concluido: 'success', cancelado: 'danger' };
+            const typeLabels = { limpa_nome: 'Limpa Nome', bacen: 'Bacen', cnpj: 'CNPJ' };
+            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+            document.getElementById('procDetailContent').innerHTML = `
+                <div style="text-align:center;margin-bottom:20px">
+                    <span class="badge badge-${stMap[p.status]||'secondary'}" style="font-size:.95rem;padding:8px 20px">${statusLabels[p.status]||p.status}</span>
+                    <div style="font-size:.85rem;color:var(--text3);margin-top:8px">Processo #${p.id}</div>
+                </div>
+                <div class="proc-detail-grid">
+                    <div class="proc-detail-item"><label>Usuário</label><span>${esc(p.user_name||'—')} (ID: ${p.user_id})</span></div>
+                    <div class="proc-detail-item"><label>Email</label><span>${esc(p.user_email||'—')}</span></div>
+                    <div class="proc-detail-item"><label>CPF/CNPJ</label><span>${esc(p.cpf||'—')}</span></div>
+                    <div class="proc-detail-item"><label>Nome no processo</label><span>${esc(p.name||'—')}</span></div>
+                    <div class="proc-detail-item"><label>Tipo</label><span>${typeLabels[p.type]||p.type}</span></div>
+                    <div class="proc-detail-item"><label>Tipo Pessoa</label><span>${p.person_type==='pj'?'Jurídica':'Física'}</span></div>
+                    <div class="proc-detail-item"><label>Instituição</label><span>${esc(p.institution||'—')}</span></div>
+                    <div class="proc-detail-item"><label>Valor</label><span>R$ ${fmt(p.value||0)}</span></div>
+                    <div class="proc-detail-item"><label>Data de Criação</label><span>${new Date(p.created_at).toLocaleString('pt-BR')}</span></div>
+                    <div class="proc-detail-item"><label>Última Atualização</label><span>${p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : '—'}</span></div>
+                    ${p.notes ? `<div class="proc-detail-item full"><label>Observações</label><span>${esc(p.notes)}</span></div>` : ''}
+                </div>`;
+            document.getElementById('procDetailModal').style.display = 'flex';
+        }
+
+        function closeDetailModal() { document.getElementById('procDetailModal').style.display = 'none'; }
+        function editFromDetail() { closeDetailModal(); if (currentDetailProc) openProcModal(currentDetailProc); }
+        function editProcess(id) { const p = procData.find(x => x.id === id); if (p) openProcModal(p); }
+
+        async function deleteProcess(id) {
+            if (!confirm('Deseja realmente excluir este processo?')) return;
+            const res = await DB.api('DELETE', '/api/admin/processes/' + id);
+            if (res && res.success) {
+                Layout.toast('Processo excluído', 'success');
+                loadProcesses();
+            } else {
+                Layout.toast(res?.error || 'Erro ao excluir', 'error');
+            }
+        }
+
+        function exportProc() {
+            const headers = ['ID', 'Usuário', 'CPF', 'Tipo', 'Instituição', 'Valor', 'Status', 'Data'];
+            const rows = procData.map(p => [p.id, p.user_name||'', p.cpf||'', p.type, p.institution||'', p.value||0, p.status, p.created_at]);
+            ExportCSV.download('processos', headers, rows);
+        }
+
+        async function exportProcPDF() {
+            Layout.toast('Gerando relatório PDF...', 'info');
+            const statusFilter = document.getElementById('filterStatus').value;
+            const typeFilter = document.getElementById('filterType').value;
+            const params = new URLSearchParams();
+            if (statusFilter) params.set('status', statusFilter);
+            if (typeFilter) params.set('type', typeFilter);
+            const res = await DB.api('GET', '/api/admin/processes/report?' + params);
+            if (!res || !res.processes) { Layout.toast('Erro ao gerar relatório', 'error'); return; }
+
+            const typeLabels = { limpa_nome: 'Limpa Nome', bacen: 'Bacen', cnpj: 'CNPJ' };
+            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+            const headers = ['#', 'Usuário', 'CPF/CNPJ', 'Tipo', 'Valor (R$)', 'Status', 'Data'];
+            const rows = res.processes.map(p => [
+                p.id,
+                (p.user_name || '—'),
+                (p.cpf || '—'),
+                typeLabels[p.type] || p.type,
+                'R$ ' + fmt(p.value || 0),
+                statusLabels[p.status] || p.status,
+                new Date(p.created_at).toLocaleDateString('pt-BR')
+            ]);
+
+            // Incluir consultas realizadas no relatório
+            const consultations = res.consultations || [];
+            if (consultations.length > 0) {
+                rows.push(['', '', '', '', '', '', '']);
+                rows.push(['', '— CONSULTAS REALIZADAS —', '', '', '', '', '']);
+                consultations.forEach((c, i) => {
+                    rows.push([
+                        'C' + (i + 1),
+                        (c.user_name || '—'),
+                        (c.cpf || '—'),
+                        'Consulta CPF',
+                        '—',
+                        c.result ? 'Concluída' : 'Realizada',
+                        new Date(c.created_at).toLocaleDateString('pt-BR')
+                    ]);
+                });
+            }
+
+            const summary = [
+                { label: 'Total Processos', value: res.counts.total, color: '#6366f1' },
+                { label: 'Pendentes', value: res.counts.pendente, color: '#f59e0b' },
+                { label: 'Em Andamento', value: res.counts.em_andamento, color: '#3b82f6' },
+                { label: 'Concluídos', value: res.counts.concluido, color: '#10b981' },
+                { label: 'Cancelados', value: res.counts.cancelado, color: '#ef4444' },
+                { label: 'Valor Total', value: 'R$ ' + fmt(res.totalValue), color: '#1a1a2e' },
+                { label: 'Total Consultas', value: consultations.length, color: '#8b5cf6' }
+            ];
+
+            await ExportPDF.download('relatorio_processos_limpa_nome', 'Relatório de Processos — Limpa Nome', headers, rows, { summary });
+        }
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        // Real-time updates
+        window.onRealtimeUpdate = function(detail) {
+            if (detail.entity === 'processes') loadProcesses();
+        };
+
+        // Click outside modal to close
+        document.getElementById('procModal').addEventListener('click', function(e) { if (e.target === this) closeProcModal(); });
+        document.getElementById('procDetailModal').addEventListener('click', function(e) { if (e.target === this) closeDetailModal(); });
+        document.addEventListener('click', function(e) { if (!e.target.closest('.user-lookup')) document.getElementById('procUserResults')?.classList.remove('show'); });
+
+        loadProcesses();
     </script>
 </body>
 </html>
