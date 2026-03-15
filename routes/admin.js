@@ -1,40 +1,3 @@
-// ════════════════════════════════════
-//   CANDIDATURAS (TRABALHE CONOSCO)
-// ════════════════════════════════════
-// Listar candidaturas
-router.get('/careers', (req, res) => {
-    const db = getDB();
-    db.exec(`CREATE TABLE IF NOT EXISTS career_applications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        email TEXT NOT NULL,
-        whatsapp TEXT,
-        cidade TEXT,
-        area TEXT,
-        sobre TEXT,
-        status TEXT DEFAULT 'pendente',
-        created_at TEXT DEFAULT (datetime('now'))
-    )`);
-    const candidaturas = db.prepare('SELECT id, nome, email, whatsapp as telefone, cidade, area as cargo, sobre as mensagem, status, created_at as data FROM career_applications ORDER BY created_at DESC').all();
-    res.json({ success: true, candidaturas });
-});
-
-// Chamar para entrevista (envia email)
-router.post('/careers/interview', async (req, res) => {
-    const { email, nome } = req.body;
-    if (!email || !nome) return res.status(400).json({ success: false, error: 'Nome e email obrigatórios' });
-    try {
-        // Enviar email de convite (usa utilitário já existente se houver)
-        const { sendNotificationEmail } = require('../utils/email');
-        await sendNotificationEmail(email, nome,
-            'Convite para Entrevista — Credbusiness',
-            `<p>Olá ${nome},</p><p>Recebemos sua candidatura no Trabalhe Conosco e gostaríamos de convidá-lo(a) para uma entrevista. Responda este e-mail para agendar um horário.</p><p>Atenciosamente,<br>Equipe Credbusiness</p>`
-        );
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ success: false, error: 'Erro ao enviar convite.' });
-    }
-});
 /* ═══════════════════════════════════════════
    Credbusiness — Admin Routes (CRUD completo)
    ═══════════════════════════════════════════ */
@@ -1072,6 +1035,40 @@ router.get('/contract-acceptances', auth, adminOnly, (req, res) => {
     const todayCount = acceptances.filter(a => (a.accepted_at || '').startsWith(today)).length;
     const uniqueCpfs = new Set(acceptances.map(a => a.client_cpf)).size;
     res.json({ acceptances, total: acceptances.length, today: todayCount, uniqueClients: uniqueCpfs });
+});
+
+// ════════════════════════════════════
+//   CANDIDATURAS (TRABALHE CONOSCO)
+// ════════════════════════════════════
+router.get('/careers', (req, res) => {
+    const db = getDB();
+    db.exec(`CREATE TABLE IF NOT EXISTS career_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        email TEXT NOT NULL,
+        whatsapp TEXT,
+        cidade TEXT,
+        area TEXT,
+        sobre TEXT,
+        status TEXT DEFAULT 'pendente',
+        created_at TEXT DEFAULT (datetime('now'))
+    )`);
+    const candidaturas = db.prepare('SELECT id, nome, email, whatsapp as telefone, cidade, area as cargo, sobre as mensagem, status, created_at as data FROM career_applications ORDER BY created_at DESC').all();
+    res.json({ success: true, candidaturas });
+});
+
+router.post('/careers/interview', async (req, res) => {
+    const { email, nome } = req.body;
+    if (!email || !nome) return res.status(400).json({ success: false, error: 'Nome e email obrigatórios' });
+    try {
+        await sendNotificationEmail(email, nome,
+            'Convite para Entrevista — Credbusiness',
+            `<p>Olá ${nome},</p><p>Recebemos sua candidatura no Trabalhe Conosco e gostaríamos de convidá-lo(a) para uma entrevista. Responda este e-mail para agendar um horário.</p><p>Atenciosamente,<br>Equipe Credbusiness</p>`
+        );
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: 'Erro ao enviar convite.' });
+    }
 });
 
 module.exports = router;
