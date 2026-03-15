@@ -1259,6 +1259,54 @@ router.post('/payments/:id/activate', (req, res) => {
 // ════════════════════════════════════
 //   LISTAR PAGAMENTOS PENDENTES
 // ════════════════════════════════════
+// ════════════════════════════════════
+//   PERFIL DO ADMIN
+// ════════════════════════════════════
+router.get('/profile', (req, res) => {
+    try {
+        const db = getDB();
+        const admin = db.prepare('SELECT id, username, name, email, phone, role FROM admins WHERE id = ?').get(req.user.id);
+        if (!admin) return res.status(404).json({ error: 'Admin não encontrado' });
+        res.json({ success: true, admin });
+    } catch (err) {
+        console.error('Erro get admin profile:', err.message);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+router.put('/profile', (req, res) => {
+    try {
+        const db = getDB();
+        const admin = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.user.id);
+        if (!admin) return res.status(404).json({ error: 'Admin não encontrado' });
+
+        const { name, email, phone, current_password, new_password } = req.body;
+        if (!name || !name.trim()) return res.status(400).json({ error: 'Nome é obrigatório' });
+
+        // Se quer trocar senha, validar senha atual
+        if (new_password) {
+            if (!current_password || !bcrypt.compareSync(current_password, admin.password)) {
+                return res.status(400).json({ error: 'Senha atual incorreta' });
+            }
+            if (new_password.length < 4) return res.status(400).json({ error: 'Nova senha deve ter ao menos 4 caracteres' });
+            const hashed = bcrypt.hashSync(new_password, 10);
+            db.prepare('UPDATE admins SET name = ?, email = ?, phone = ?, password = ? WHERE id = ?')
+                .run(name.trim(), (email || '').trim(), (phone || '').trim(), hashed, req.user.id);
+        } else {
+            db.prepare('UPDATE admins SET name = ?, email = ?, phone = ? WHERE id = ?')
+                .run(name.trim(), (email || '').trim(), (phone || '').trim(), req.user.id);
+        }
+
+        logAudit(db, { user_id: req.user.id, user_role: 'admin', action: 'admin_profile_update', details: `Admin ${admin.username} atualizou perfil`, ip: getClientIP(req) });
+
+        const updated = db.prepare('SELECT id, username, name, email, phone, role FROM admins WHERE id = ?').get(req.user.id);
+        res.json({ success: true, admin: updated });
+    } catch (err) {
+        console.error('Erro update admin profile:', err.message);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
 router.get('/payments/pending', (req, res) => {
     try {
         const db = getDB();

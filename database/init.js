@@ -394,6 +394,10 @@ function initDatabase() {
     addCol('users', 'access_blocked', 'INTEGER DEFAULT 0');
     addCol('users', 'last_withdraw_date', 'TEXT');
 
+    // v8 — Admin profile fields
+    addCol('admins', 'email', "TEXT DEFAULT ''");
+    addCol('admins', 'phone', "TEXT DEFAULT ''");
+
     // ── Novas tabelas (v2 — features AgilCred) ──
     d.exec(`
         CREATE TABLE IF NOT EXISTS event_orders (

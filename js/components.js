@@ -92,6 +92,34 @@ const Layout = {
                     <div class="modal-footer" id="modalFooter"></div>
                 </div>
             </div>
+            ${this.isAdmin ? `
+            <div id="adminProfileModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)Layout.closeAdminProfile()">
+                <div style="background:#fff;border-radius:12px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:24px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                        <h3 style="margin:0;font-size:1.15rem;color:#1e1b4b"><i class="fas fa-user-edit" style="margin-right:8px;color:#6366f1"></i>Editar Perfil</h3>
+                        <button onclick="Layout.closeAdminProfile()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">&times;</button>
+                    </div>
+                    <form id="adminProfileForm" onsubmit="Layout.saveAdminProfile(event)">
+                        <div class="modal-form-grid">
+                            <div class="form-group"><label>Username</label><input type="text" id="apUsername" class="form-control" disabled></div>
+                            <div class="form-group"><label>Nome completo</label><input type="text" id="apName" class="form-control" required></div>
+                            <div class="form-group"><label>Email</label><input type="email" id="apEmail" class="form-control" placeholder="admin@example.com"></div>
+                            <div class="form-group"><label>Telefone</label><input type="text" id="apPhone" class="form-control" placeholder="(00) 00000-0000"></div>
+                        </div>
+                        <div style="border-top:1px solid #e5e7eb;margin:16px 0;padding-top:16px">
+                            <h4 style="margin:0 0 12px;font-size:.95rem;color:#374151"><i class="fas fa-lock" style="margin-right:6px"></i>Alterar Senha <span style="font-weight:400;color:#9ca3af;font-size:.8rem">(opcional)</span></h4>
+                            <div class="modal-form-grid">
+                                <div class="form-group"><label>Senha atual</label><input type="password" id="apCurrentPass" class="form-control" placeholder="Digite a senha atual"></div>
+                                <div class="form-group"><label>Nova senha</label><input type="password" id="apNewPass" class="form-control" placeholder="Mín. 4 caracteres"></div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px">
+                            <button type="button" class="btn btn-outline" onclick="Layout.closeAdminProfile()">Cancelar</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save" style="margin-right:6px"></i>Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>` : ''}
         `;
 
         // Remove the template
@@ -266,6 +294,7 @@ const Layout = {
         const bp = this.basePath;
 
         if (this.isAdmin) {
+            const adminName = u.name || 'Admin';
             return `
                 <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu lateral" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
                 <div class="header-breadcrumb" aria-label="Navegação estrutural">Admin &rsaquo; <span>${this.title}</span></div>
@@ -274,10 +303,12 @@ const Layout = {
                     <a href="${bp}pages/dashboard.html" class="btn btn-sm btn-outline"><i class="fas fa-external-link-alt" aria-hidden="true"></i> Painel</a>
                 </div>
                 <div class="user-menu" id="userMenuBtn" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-label="Menu do usuário">
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=dc2626&color=fff&size=34&rounded=true&bold=true" alt="Avatar Admin">
-                    <div><div class="name">Admin</div></div>
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=dc2626&color=fff&size=34&rounded=true&bold=true" alt="Avatar Admin">
+                    <div><div class="name">${adminName}</div></div>
                 </div>
                 <div class="dropdown" id="userDropdown" role="menu">
+                    <a href="#" onclick="Layout.openAdminProfile();return false" role="menuitem"><i class="fas fa-user-edit" aria-hidden="true"></i>Editar Perfil</a>
+                    <div class="divider" role="separator"></div>
                     <a href="#" onclick="Layout.logout();return false" class="text-danger" role="menuitem"><i class="fas fa-sign-out-alt" aria-hidden="true"></i>Sair</a>
                 </div>`;
         }
@@ -551,6 +582,55 @@ const Layout = {
     },
 
     logout() { DB.logout(); window.location.href = this.basePath + 'login.html'; },
+
+    // ── Admin Profile Modal ──
+    async openAdminProfile() {
+        const modal = document.getElementById('adminProfileModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        document.getElementById('adminProfileForm').reset();
+        try {
+            const res = await DB.api('GET', '/api/admin/profile');
+            if (res && res.success && res.admin) {
+                document.getElementById('apUsername').value = res.admin.username || '';
+                document.getElementById('apName').value = res.admin.name || '';
+                document.getElementById('apEmail').value = res.admin.email || '';
+                document.getElementById('apPhone').value = res.admin.phone || '';
+            }
+        } catch {}
+    },
+
+    closeAdminProfile() {
+        const modal = document.getElementById('adminProfileModal');
+        if (modal) modal.style.display = 'none';
+    },
+
+    async saveAdminProfile(e) {
+        e.preventDefault();
+        const data = {
+            name: document.getElementById('apName').value.trim(),
+            email: document.getElementById('apEmail').value.trim(),
+            phone: document.getElementById('apPhone').value.trim()
+        };
+        const curPass = document.getElementById('apCurrentPass').value;
+        const newPass = document.getElementById('apNewPass').value;
+        if (newPass) {
+            if (!curPass) return Layout.toast('Informe a senha atual para alterar', 'error');
+            if (newPass.length < 4) return Layout.toast('Nova senha deve ter ao menos 4 caracteres', 'error');
+            data.current_password = curPass;
+            data.new_password = newPass;
+        }
+        const res = await DB.api('PUT', '/api/admin/profile', data);
+        if (res && res.success) {
+            Layout.toast('Perfil atualizado com sucesso!', 'success');
+            this.closeAdminProfile();
+            // Atualizar nome no header
+            const nameEl = document.querySelector('.user-menu .name');
+            if (nameEl && res.admin) nameEl.textContent = res.admin.name;
+        } else {
+            Layout.toast(res?.error || 'Erro ao atualizar perfil', 'error');
+        }
+    },
 
     // ── Modal ──
     _previousFocus: null,
