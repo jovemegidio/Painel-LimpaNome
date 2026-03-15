@@ -1050,11 +1050,30 @@ router.get('/careers', (req, res) => {
         cidade TEXT,
         area TEXT,
         sobre TEXT,
-        status TEXT DEFAULT 'pendente',
+        status TEXT DEFAULT 'nova',
         created_at TEXT DEFAULT (datetime('now'))
     )`);
-    const candidaturas = db.prepare('SELECT id, nome, email, whatsapp as telefone, cidade, area as cargo, sobre as mensagem, status, created_at as data FROM career_applications ORDER BY created_at DESC').all();
+    const { status } = req.query;
+    let sql = 'SELECT id, nome, email, whatsapp, cidade, area, sobre, status, created_at FROM career_applications';
+    const params = [];
+    if (status) { sql += ' WHERE status = ?'; params.push(status); }
+    sql += ' ORDER BY created_at DESC';
+    const candidaturas = db.prepare(sql).all(...params);
     res.json({ success: true, candidaturas });
+});
+
+router.put('/careers/:id', (req, res) => {
+    const db = getDB();
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ success: false, error: 'Status obrigatório' });
+    db.prepare('UPDATE career_applications SET status = ? WHERE id = ?').run(status, req.params.id);
+    res.json({ success: true });
+});
+
+router.delete('/careers/:id', (req, res) => {
+    const db = getDB();
+    db.prepare('DELETE FROM career_applications WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
 });
 
 router.post('/careers/interview', async (req, res) => {
