@@ -41,13 +41,13 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "url": "/pages/dashboard.html",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/icon-96x96.svg", "sizes": "96x96" }]
     },
     {
       "name": "Limpa Nome",
       "short_name": "Limpa Nome",
       "url": "/pages/limpa-nome-dashboard.html",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/icon-96x96.svg", "sizes": "96x96" }]
     }
   ]
 }

@@ -1,15 +1,15 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness Admin ‚Äî Usu√°rios</title>
+    <title>Credbusiness Admin ó Usu·rios</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -17,10 +17,10 @@
     <div id="app"></div>
     <template id="page-content">
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
-            <div><h2>Gerenciar Usu√°rios</h2><p>Adicione, edite ou remova usu√°rios do sistema</p></div>
+            <div><h2>Gerenciar Usu·rios</h2><p>Adicione, edite ou remova usu·rios do sistema</p></div>
             <div style="display:flex;gap:8px">
                 <button class="btn btn-outline" onclick="exportUsers()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
-                <button class="btn btn-primary" onclick="openModal('add')"><i class="fas fa-plus"></i> Novo Usu√°rio</button>
+                <button class="btn btn-primary" onclick="openModal('add')"><i class="fas fa-plus"></i> Novo Usu·rio</button>
             </div>
         </div>
 
@@ -28,7 +28,7 @@
             <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap">
                 <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nome, email ou CPF..." style="max-width:320px" oninput="renderTable()">
                 <select id="filterLevel" class="form-control" style="max-width:160px" onchange="renderTable()">
-                    <option value="">Todos os N√≠veis</option>
+                    <option value="">Todos os NÌveis</option>
                     <option value="start">Start</option>
                     <option value="bronze">Bronze</option>
                     <option value="prata">Prata</option>
@@ -46,7 +46,7 @@
         <div class="card">
             <div class="card-body" style="overflow-x:auto">
                 <table class="table" id="usersTable"><thead><tr>
-                    <th>ID</th><th>Nome</th><th>Email</th><th>CPF</th><th>Plano</th><th>N√≠vel</th><th>Pontos</th><th>Saldo</th><th>Status</th><th style="width:120px">A√ß√µes</th>
+                    <th>ID</th><th>Nome</th><th>Email</th><th>CPF</th><th>Plano</th><th>NÌvel</th><th>Pontos</th><th>Saldo</th><th>Status</th><th style="width:120px">AÁıes</th>
                 </tr></thead><tbody></tbody></table>
             </div>
         </div>
@@ -55,7 +55,7 @@
         <div id="userModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
             <div style="background:#fff;border-radius:12px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:24px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-                    <h3 id="modalTitle">Novo Usu√°rio</h3>
+                    <h3 id="modalTitle">Novo Usu·rio</h3>
                     <button onclick="closeUserModal()" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
                 </div>
                 <form id="userForm" onsubmit="saveUser(event)">
@@ -66,13 +66,13 @@
                         <div class="form-group"><label>Email</label><input type="email" id="fEmail" class="form-control" required></div>
                         <div class="form-group"><label>CPF</label><input type="text" id="fCpf" class="form-control" placeholder="000.000.000-00" required></div>
                         <div class="form-group"><label>Telefone</label><input type="text" id="fPhone" class="form-control" placeholder="(00) 00000-0000"></div>
-                        <div class="form-group"><label>Senha</label><input type="text" id="fPass" class="form-control" placeholder="M√≠n. 4 caracteres"></div>
+                        <div class="form-group"><label>Senha</label><input type="text" id="fPass" class="form-control" placeholder="MÌn. 4 caracteres"></div>
                         <div class="form-group"><label>Plano</label>
                             <select id="fPlan" class="form-control">
-                                <option value="basico">B√°sico</option><option value="plus">Plus</option><option value="premium">Premium</option>
+                                <option value="basico">B·sico</option><option value="plus">Plus</option><option value="premium">Premium</option>
                             </select>
                         </div>
-                        <div class="form-group"><label>N√≠vel</label>
+                        <div class="form-group"><label>NÌvel</label>
                             <select id="fLevel" class="form-control">
                                 <option value="start">Start</option><option value="bronze">Bronze</option><option value="prata">Prata</option><option value="ouro">Ouro</option><option value="diamante">Diamante</option>
                             </select>
@@ -95,7 +95,7 @@
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
-        Layout.init({ basePath: '../', page: 'admin-users', title: 'Usu√°rios', admin: true });
+        Layout.init({ basePath: '../', page: 'admin-users', title: 'Usu·rios', admin: true });
 
         function renderTable() {
             const search = document.getElementById('searchInput').value.toLowerCase();
@@ -116,7 +116,7 @@
                 <td>${u.id}</td>
                 <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar-sm" style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:#475569">${u.name.charAt(0)}</div>${u.name}</div></td>
                 <td>${u.email}</td>
-                <td>${u.cpf || '‚Äî'}</td>
+                <td>${u.cpf || 'ó'}</td>
                 <td><span class="badge badge-primary">${u.plan}</span></td>
                 <td><span class="badge badge-${u.level === 'diamante' ? 'purple' : u.level === 'ouro' ? 'warning' : 'secondary'}">${lvl.name || u.level}</span></td>
                 <td>${u.points}</td>
@@ -128,7 +128,7 @@
                     <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" title="Excluir"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
-                }).join('') : '<tr><td colspan="10" style="text-align:center;color:#64748b">Nenhum usu√°rio encontrado</td></tr>';
+                }).join('') : '<tr><td colspan="10" style="text-align:center;color:#64748b">Nenhum usu·rio encontrado</td></tr>';
             });
         }
         renderTable();
@@ -140,7 +140,7 @@
             if (mode === 'edit' && id) {
                 const u = DB.getUser(Number(id));
                 if (!u) return;
-                document.getElementById('modalTitle').textContent = 'Editar Usu√°rio';
+                document.getElementById('modalTitle').textContent = 'Editar Usu·rio';
                 document.getElementById('editId').value = u.id;
                 document.getElementById('fUsername').value = u.username || '';
                 document.getElementById('fUsername').disabled = true;
@@ -155,7 +155,7 @@
                 document.getElementById('fStatus').value = u.active ? 'ativo' : 'inativo';
                 document.getElementById('fSponsor').value = u.sponsor || '';
             } else {
-                document.getElementById('modalTitle').textContent = 'Novo Usu√°rio';
+                document.getElementById('modalTitle').textContent = 'Novo Usu·rio';
                 document.getElementById('fUsername').disabled = false;
             }
         }
@@ -182,22 +182,22 @@
             if (id) {
                 const res = await DB.api('PUT', `/api/admin/users/${id}`, data);
                 if (res && res.success) {
-                    Layout.toast('Usu√°rio atualizado com sucesso!', 'success');
+                    Layout.toast('Usu·rio atualizado com sucesso!', 'success');
                 } else {
-                    Layout.toast(res?.error || 'Erro ao atualizar usu√°rio', 'error');
+                    Layout.toast(res?.error || 'Erro ao atualizar usu·rio', 'error');
                     return;
                 }
             } else {
                 const username = document.getElementById('fUsername').value.trim();
-                if (!username) { Layout.toast('Username √© obrigat√≥rio', 'error'); return; }
+                if (!username) { Layout.toast('Username È obrigatÛrio', 'error'); return; }
                 if (!pass || pass.length < 4) return Layout.toast('Senha deve ter ao menos 4 caracteres', 'error');
                 data.username = username;
                 data.password = pass;
                 const res = await DB.api('POST', '/api/admin/users', data);
                 if (res && res.success) {
-                    Layout.toast('Usu√°rio criado com sucesso!', 'success');
+                    Layout.toast('Usu·rio criado com sucesso!', 'success');
                 } else {
-                    Layout.toast(res?.error || 'Erro ao criar usu√°rio', 'error');
+                    Layout.toast(res?.error || 'Erro ao criar usu·rio', 'error');
                     return;
                 }
             }
@@ -207,19 +207,19 @@
         }
 
         async function deleteUser(id) {
-            if (!confirm('Deseja realmente excluir este usu√°rio?')) return;
+            if (!confirm('Deseja realmente excluir este usu·rio?')) return;
             const res = await DB.api('DELETE', `/api/admin/users/${id}`);
             if (res && res.success) {
-                Layout.toast('Usu√°rio exclu√≠do', 'success');
+                Layout.toast('Usu·rio excluÌdo', 'success');
                 await DB.syncData();
                 renderTable();
             } else {
-                Layout.toast(res?.error || 'Erro ao excluir usu√°rio', 'error');
+                Layout.toast(res?.error || 'Erro ao excluir usu·rio', 'error');
             }
         }
 
         async function resetPassword(id) {
-            if (!confirm('Resetar a senha desse usu√°rio para o padr√£o (123456)?')) return;
+            if (!confirm('Resetar a senha desse usu·rio para o padr„o (123456)?')) return;
             const res = await DB.api('POST', `/api/admin/users/${id}/reset-password`);
             if (res && res.success) {
                 Layout.toast('Senha resetada com sucesso!', 'success');
@@ -229,12 +229,12 @@
         }
 
         async function exportUsers() {
-            Layout.toast('Gerando relat√≥rio...', 'info');
+            Layout.toast('Gerando relatÛrio...', 'info');
             try {
                 const resp = await fetch(`${DB.baseUrl || ''}/api/admin/export/users?format=csv`, {
                     headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || localStorage.getItem('token')) }
                 });
-                if (!resp.ok) throw new Error('Erro ao gerar relat√≥rio');
+                if (!resp.ok) throw new Error('Erro ao gerar relatÛrio');
                 const blob = await resp.blob();
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -242,7 +242,7 @@
                 a.download = 'cadastros_credbusiness.csv';
                 a.click();
                 URL.revokeObjectURL(url);
-                Layout.toast('Relat√≥rio exportado!', 'success');
+                Layout.toast('RelatÛrio exportado!', 'success');
             } catch (err) {
                 Layout.toast('Erro ao exportar: ' + err.message, 'error');
             }

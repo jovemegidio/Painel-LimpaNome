@@ -1,15 +1,15 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness Admin ‚Äî Transa√ß√µes</title>
+    <title>Credbusiness Admin ó TransaÁıes</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -36,54 +36,54 @@
     <div id="app"></div>
     <template id="page-content">
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
-            <div><h2><i class="fas fa-exchange-alt" style="margin-right:8px;opacity:.4"></i>Transa√ß√µes</h2><p>Gerencie todas as movimenta√ß√µes financeiras do sistema</p></div>
-            <button class="btn btn-primary" onclick="openTxModal()"><i class="fas fa-plus"></i> Nova Transa√ß√£o</button>
+            <div><h2><i class="fas fa-exchange-alt" style="margin-right:8px;opacity:.4"></i>TransaÁıes</h2><p>Gerencie todas as movimentaÁıes financeiras do sistema</p></div>
+            <button class="btn btn-primary" onclick="openTxModal()"><i class="fas fa-plus"></i> Nova TransaÁ„o</button>
         </div>
 
         <div class="stats-grid" id="statsGrid"></div>
 
         <div class="card" style="margin-top:24px">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-                <h3>Todas as Transa√ß√µes</h3>
+                <h3>Todas as TransaÁıes</h3>
                 <button class="btn btn-outline btn-sm" onclick="exportTx()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
             </div>
             <div class="card-header" style="border-top:none;padding-top:0;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
                 <div class="form-group" style="margin:0"><label style="font-size:.75rem">De</label><input type="date" class="form-control" id="dateFrom" onchange="loadTransactions()" style="max-width:160px"></div>
-                <div class="form-group" style="margin:0"><label style="font-size:.75rem">At√©</label><input type="date" class="form-control" id="dateTo" onchange="loadTransactions()" style="max-width:160px"></div>
+                <div class="form-group" style="margin:0"><label style="font-size:.75rem">AtÈ</label><input type="date" class="form-control" id="dateTo" onchange="loadTransactions()" style="max-width:160px"></div>
                 <select id="filterType" class="form-control" style="max-width:180px" onchange="loadTransactions()">
                     <option value="">Todos os Tipos</option>
-                    <option value="compra">Compra</option><option value="bonus">B√¥nus</option>
-                    <option value="comissao">Comiss√£o</option><option value="saque">Saque</option>
-                    <option value="ajuste_admin">Ajuste Admin</option><option value="deposito">Dep√≥sito</option>
+                    <option value="compra">Compra</option><option value="bonus">BÙnus</option>
+                    <option value="comissao">Comiss„o</option><option value="saque">Saque</option>
+                    <option value="ajuste_admin">Ajuste Admin</option><option value="deposito">DepÛsito</option>
                 </select>
                 <select id="filterStatus" class="form-control" style="max-width:160px" onchange="loadTransactions()">
                     <option value="">Todos os Status</option>
                     <option value="creditado">Creditado</option><option value="aprovado">Aprovado</option>
                     <option value="pendente">Pendente</option><option value="cancelado">Cancelado</option>
                 </select>
-                <input type="text" id="searchInput" class="form-control" placeholder="Buscar usu√°rio ou descri√ß√£o..." style="max-width:240px" oninput="searchDebounce()">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar usu·rio ou descriÁ„o..." style="max-width:240px" oninput="searchDebounce()">
             </div>
             <div class="card-body" style="overflow-x:auto">
                 <table class="table" id="txTable"><thead><tr>
-                    <th>ID</th><th>Data</th><th>Usu√°rio</th><th>Tipo</th><th>Descri√ß√£o</th><th>Valor</th><th>Status</th><th style="width:140px">A√ß√µes</th>
+                    <th>ID</th><th>Data</th><th>Usu·rio</th><th>Tipo</th><th>DescriÁ„o</th><th>Valor</th><th>Status</th><th style="width:140px">AÁıes</th>
                 </tr></thead><tbody></tbody></table>
                 <div id="txPagination" style="display:flex;justify-content:center;gap:4px;padding:16px"></div>
             </div>
         </div>
 
-        <!-- Modal Criar/Editar Transa√ß√£o -->
+        <!-- Modal Criar/Editar TransaÁ„o -->
         <div id="txModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
             <div style="background:#fff;border-radius:16px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
                 <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-                    <h3 id="txModalTitle" style="font-weight:700"><i class="fas fa-receipt" style="margin-right:8px;opacity:.4"></i>Nova Transa√ß√£o</h3>
+                    <h3 id="txModalTitle" style="font-weight:700"><i class="fas fa-receipt" style="margin-right:8px;opacity:.4"></i>Nova TransaÁ„o</h3>
                     <button onclick="closeTxModal()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">&times;</button>
                 </div>
                 <form onsubmit="saveTx(event)" style="padding:24px">
                     <input type="hidden" id="txEditId">
 
                     <div class="form-group user-lookup">
-                        <label><i class="fas fa-user" style="margin-right:4px;opacity:.4"></i>Usu√°rio</label>
-                        <input type="text" id="txUserSearch" class="form-control" placeholder="Digite o nome, email ou ID do usu√°rio..." oninput="searchUser(this.value)" autocomplete="off">
+                        <label><i class="fas fa-user" style="margin-right:4px;opacity:.4"></i>Usu·rio</label>
+                        <input type="text" id="txUserSearch" class="form-control" placeholder="Digite o nome, email ou ID do usu·rio..." oninput="searchUser(this.value)" autocomplete="off">
                         <input type="hidden" id="txUserId" required>
                         <div id="txUserResults" class="user-lookup-results"></div>
                         <div id="txUserSelected" style="display:none;margin-top:8px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:.85rem">
@@ -97,13 +97,13 @@
                         <div class="form-group">
                             <label><i class="fas fa-tag" style="margin-right:4px;opacity:.4"></i>Tipo</label>
                             <select id="txType" class="form-control" required>
-                                <option value="compra">üí≥ Compra</option>
-                                <option value="bonus">üéÅ B√¥nus</option>
-                                <option value="comissao">üí∞ Comiss√£o</option>
-                                <option value="saque">üì§ Saque</option>
-                                <option value="ajuste_admin">‚öôÔ∏è Ajuste Admin</option>
-                                <option value="deposito">üì• Dep√≥sito</option>
-                                <option value="estorno">‚Ü©Ô∏è Estorno</option>
+                                <option value="compra">?? Compra</option>
+                                <option value="bonus">?? BÙnus</option>
+                                <option value="comissao">?? Comiss„o</option>
+                                <option value="saque">?? Saque</option>
+                                <option value="ajuste_admin">?? Ajuste Admin</option>
+                                <option value="deposito">?? DepÛsito</option>
+                                <option value="estorno">?? Estorno</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -113,39 +113,39 @@
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fas fa-align-left" style="margin-right:4px;opacity:.4"></i>Descri√ß√£o</label>
-                        <input type="text" id="txDesc" class="form-control" required placeholder="Ex: Comiss√£o de venda do pacote Ouro">
+                        <label><i class="fas fa-align-left" style="margin-right:4px;opacity:.4"></i>DescriÁ„o</label>
+                        <input type="text" id="txDesc" class="form-control" required placeholder="Ex: Comiss„o de venda do pacote Ouro">
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
                         <div class="form-group">
                             <label><i class="fas fa-flag" style="margin-right:4px;opacity:.4"></i>Status</label>
                             <select id="txStatus" class="form-control">
-                                <option value="creditado">‚úÖ Creditado</option>
-                                <option value="aprovado">‚úÖ Aprovado</option>
-                                <option value="pendente">‚è≥ Pendente</option>
-                                <option value="cancelado">‚ùå Cancelado</option>
+                                <option value="creditado">? Creditado</option>
+                                <option value="aprovado">? Aprovado</option>
+                                <option value="pendente">? Pendente</option>
+                                <option value="cancelado">? Cancelado</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label><i class="fas fa-link" style="margin-right:4px;opacity:.4"></i>Refer√™ncia</label>
+                            <label><i class="fas fa-link" style="margin-right:4px;opacity:.4"></i>ReferÍncia</label>
                             <input type="text" id="txReference" class="form-control" placeholder="(opcional)">
                         </div>
                     </div>
 
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
                         <button type="button" class="btn btn-outline" onclick="closeTxModal()">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="txSaveBtn"><i class="fas fa-save" style="margin-right:6px"></i>Salvar Transa√ß√£o</button>
+                        <button type="submit" class="btn btn-primary" id="txSaveBtn"><i class="fas fa-save" style="margin-right:6px"></i>Salvar TransaÁ„o</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Modal Detalhes da Transa√ß√£o -->
+        <!-- Modal Detalhes da TransaÁ„o -->
         <div id="txDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
             <div style="background:#fff;border-radius:16px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
                 <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-                    <h3 style="font-weight:700"><i class="fas fa-receipt" style="margin-right:8px;opacity:.4"></i>Detalhes da Transa√ß√£o</h3>
+                    <h3 style="font-weight:700"><i class="fas fa-receipt" style="margin-right:8px;opacity:.4"></i>Detalhes da TransaÁ„o</h3>
                     <button onclick="closeDetailModal()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">&times;</button>
                 </div>
                 <div id="txDetailContent" style="padding:24px"></div>
@@ -159,7 +159,7 @@
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
-        Layout.init({ basePath: '../', page: 'admin-transactions', title: 'Transa√ß√µes', admin: true });
+        Layout.init({ basePath: '../', page: 'admin-transactions', title: 'TransaÁıes', admin: true });
 
         let txData = [];
         let txPage = 1;
@@ -202,8 +202,8 @@
             const items = [
                 { icon: 'fa-shopping-cart', color: '#6366f1', label: 'Compras', value: 'R$ ' + fmt(s.compras || 0) },
                 { icon: 'fa-hand-holding-usd', color: '#ef4444', label: 'Saques', value: 'R$ ' + fmt(s.saques || 0) },
-                { icon: 'fa-percentage', color: '#10b981', label: 'Comiss√µes', value: 'R$ ' + fmt(s.comissoes || 0) },
-                { icon: 'fa-gift', color: '#f59e0b', label: 'B√¥nus', value: 'R$ ' + fmt(s.bonus || 0) }
+                { icon: 'fa-percentage', color: '#10b981', label: 'Comissıes', value: 'R$ ' + fmt(s.comissoes || 0) },
+                { icon: 'fa-gift', color: '#f59e0b', label: 'BÙnus', value: 'R$ ' + fmt(s.bonus || 0) }
             ];
             document.getElementById('statsGrid').innerHTML = items.map(s => `
                 <div class="stat-card">
@@ -223,7 +223,7 @@
                     <td>${new Date(t.date).toLocaleDateString('pt-BR')}</td>
                     <td>${esc(t.user_name || 'ID: '+t.user_id)}</td>
                     <td><span class="badge badge-${typeColors[t.type] || 'secondary'}"><i class="fas ${typeIcons[t.type]||'fa-exchange-alt'}" style="margin-right:4px"></i>${t.type}</span></td>
-                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.description||'')}">${esc(t.description||'‚Äî')}</td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.description||'')}">${esc(t.description||'ó')}</td>
                     <td style="font-weight:700" class="${isSaque?'tx-amount-negative':'tx-amount-positive'}">${isSaque?'- ':'+ '}R$ ${fmt(Math.abs(t.amount))}</td>
                     <td><span class="badge badge-${t.status==='creditado'||t.status==='aprovado'?'success':t.status==='pendente'?'warning':'danger'}">${t.status}</span></td>
                     <td class="tx-row-actions">
@@ -232,7 +232,7 @@
                         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteTransaction(${t.id})" title="Excluir"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`;
-            }).join('') : '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px">Nenhuma transa√ß√£o encontrada</td></tr>';
+            }).join('') : '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:40px">Nenhuma transaÁ„o encontrada</td></tr>';
 
             // Pagination
             const pg = document.getElementById('txPagination');
@@ -247,7 +247,7 @@
 
         function goPage(p) { txPage = p; loadTransactions(); }
 
-        // ‚îÄ‚îÄ User Lookup ‚îÄ‚îÄ
+        // -- User Lookup --
         let _userSearchTimer = null;
         function searchUser(q) {
             clearTimeout(_userSearchTimer);
@@ -261,7 +261,7 @@
                         <div class="ulk-avatar">${(u.name||'?')[0].toUpperCase()}</div>
                         <div class="ulk-info">
                             <div class="ulk-name">${esc(u.name)}</div>
-                            <div class="ulk-meta">${esc(u.email)} ¬∑ ID: ${u.id} ¬∑ Saldo: R$ ${fmt(u.balance||0)}</div>
+                            <div class="ulk-meta">${esc(u.email)} ∑ ID: ${u.id} ∑ Saldo: R$ ${fmt(u.balance||0)}</div>
                         </div>
                     </div>`).join('');
                 div.classList.add('show');
@@ -283,15 +283,15 @@
             document.getElementById('txUserSelected').style.display = 'none';
         }
 
-        // ‚îÄ‚îÄ Modal Criar/Editar ‚îÄ‚îÄ
+        // -- Modal Criar/Editar --
         function openTxModal(tx) {
             document.getElementById('txEditId').value = tx ? tx.id : '';
             document.getElementById('txModalTitle').innerHTML = tx
-                ? '<i class="fas fa-edit" style="margin-right:8px;opacity:.4"></i>Editar Transa√ß√£o #' + tx.id
-                : '<i class="fas fa-plus-circle" style="margin-right:8px;opacity:.4"></i>Nova Transa√ß√£o';
+                ? '<i class="fas fa-edit" style="margin-right:8px;opacity:.4"></i>Editar TransaÁ„o #' + tx.id
+                : '<i class="fas fa-plus-circle" style="margin-right:8px;opacity:.4"></i>Nova TransaÁ„o';
             document.getElementById('txSaveBtn').innerHTML = tx
-                ? '<i class="fas fa-save" style="margin-right:6px"></i>Salvar Altera√ß√µes'
-                : '<i class="fas fa-plus" style="margin-right:6px"></i>Criar Transa√ß√£o';
+                ? '<i class="fas fa-save" style="margin-right:6px"></i>Salvar AlteraÁıes'
+                : '<i class="fas fa-plus" style="margin-right:6px"></i>Criar TransaÁ„o';
 
             if (tx) {
                 selectUser(tx.user_id, (tx.user_name || 'ID: ' + tx.user_id) + ' (#' + tx.user_id + ')');
@@ -326,7 +326,7 @@
                 description: document.getElementById('txDesc').value.trim(),
                 status: document.getElementById('txStatus').value
             };
-            if (!data.user_id) { Layout.toast('Selecione um usu√°rio', 'error'); return; }
+            if (!data.user_id) { Layout.toast('Selecione um usu·rio', 'error'); return; }
 
             let res;
             if (editId) {
@@ -335,34 +335,34 @@
                 res = await DB.api('POST', '/api/admin/transactions', data);
             }
             if (res && res.success) {
-                Layout.toast(editId ? 'Transa√ß√£o atualizada!' : 'Transa√ß√£o criada com sucesso!', 'success');
+                Layout.toast(editId ? 'TransaÁ„o atualizada!' : 'TransaÁ„o criada com sucesso!', 'success');
                 closeTxModal();
                 loadTransactions();
             } else {
-                Layout.toast(res?.error || 'Erro ao salvar transa√ß√£o', 'error');
+                Layout.toast(res?.error || 'Erro ao salvar transaÁ„o', 'error');
             }
         }
 
-        // ‚îÄ‚îÄ View/Edit/Delete ‚îÄ‚îÄ
+        // -- View/Edit/Delete --
         function viewTransaction(id) {
             const tx = txData.find(t => t.id === id);
             if (!tx) return;
             currentDetailTx = tx;
             const isSaque = ['saque','estorno'].includes(tx.type);
-            const typeLabels = { compra:'Compra', bonus:'B√¥nus', comissao:'Comiss√£o', saque:'Saque', ajuste_admin:'Ajuste Admin', deposito:'Dep√≥sito', estorno:'Estorno' };
+            const typeLabels = { compra:'Compra', bonus:'BÙnus', comissao:'Comiss„o', saque:'Saque', ajuste_admin:'Ajuste Admin', deposito:'DepÛsito', estorno:'Estorno' };
             const statusLabels = { creditado:'Creditado', aprovado:'Aprovado', pendente:'Pendente', cancelado:'Cancelado' };
             document.getElementById('txDetailContent').innerHTML = `
                 <div style="text-align:center;margin-bottom:20px">
                     <div style="font-size:2rem;font-weight:800;${isSaque?'color:#ef4444':'color:#10b981'}">${isSaque?'- ':'+ '}R$ ${fmt(Math.abs(tx.amount))}</div>
-                    <div style="font-size:.85rem;color:var(--text3);margin-top:4px">Transa√ß√£o #${tx.id}</div>
+                    <div style="font-size:.85rem;color:var(--text3);margin-top:4px">TransaÁ„o #${tx.id}</div>
                 </div>
                 <div class="tx-detail-grid">
-                    <div class="tx-detail-item"><label>Usu√°rio</label><span>${esc(tx.user_name||'‚Äî')} (ID: ${tx.user_id})</span></div>
+                    <div class="tx-detail-item"><label>Usu·rio</label><span>${esc(tx.user_name||'ó')} (ID: ${tx.user_id})</span></div>
                     <div class="tx-detail-item"><label>Data</label><span>${new Date(tx.date).toLocaleString('pt-BR')}</span></div>
                     <div class="tx-detail-item"><label>Tipo</label><span>${typeLabels[tx.type]||tx.type}</span></div>
                     <div class="tx-detail-item"><label>Status</label><span>${statusLabels[tx.status]||tx.status}</span></div>
-                    <div class="tx-detail-item full"><label>Descri√ß√£o</label><span>${esc(tx.description||'Sem descri√ß√£o')}</span></div>
-                    ${tx.reference_type ? `<div class="tx-detail-item full"><label>Refer√™ncia</label><span>${esc(tx.reference_type)}</span></div>` : ''}
+                    <div class="tx-detail-item full"><label>DescriÁ„o</label><span>${esc(tx.description||'Sem descriÁ„o')}</span></div>
+                    ${tx.reference_type ? `<div class="tx-detail-item full"><label>ReferÍncia</label><span>${esc(tx.reference_type)}</span></div>` : ''}
                 </div>`;
             document.getElementById('txDetailModal').style.display = 'flex';
         }
@@ -372,10 +372,10 @@
         function editTransaction(id) { const tx = txData.find(t => t.id === id); if (tx) openTxModal(tx); }
 
         async function deleteTransaction(id) {
-            if (!confirm('Deseja excluir esta transa√ß√£o? O saldo do usu√°rio ser√° revertido se aplic√°vel.')) return;
+            if (!confirm('Deseja excluir esta transaÁ„o? O saldo do usu·rio ser· revertido se aplic·vel.')) return;
             const res = await DB.api('DELETE', '/api/admin/transactions/' + id);
             if (res && res.success) {
-                Layout.toast('Transa√ß√£o exclu√≠da', 'success');
+                Layout.toast('TransaÁ„o excluÌda', 'success');
                 loadTransactions();
             } else {
                 Layout.toast(res?.error || 'Erro ao excluir', 'error');
@@ -383,7 +383,7 @@
         }
 
         function exportTx() {
-            const headers = ['ID', 'Data', 'Usu√°rio', 'Tipo', 'Descri√ß√£o', 'Valor', 'Status'];
+            const headers = ['ID', 'Data', 'Usu·rio', 'Tipo', 'DescriÁ„o', 'Valor', 'Status'];
             const rows = txData.map(t => [t.id, t.date, t.user_name||'', t.type, t.description||'', t.amount, t.status]);
             ExportCSV.download('transacoes', headers, rows);
         }

@@ -1,15 +1,15 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” Meu Plano</title>
+    <title>Credbusiness — Meu Plano</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -110,7 +110,7 @@
 
         <!-- Packages -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-            <div><h2 style="font-size:1.25rem;margin:0">Pacotes DisponÃ­veis</h2><p style="font-size:.85rem;color:var(--text3);margin:4px 0 0">Impulsione seus resultados com o pacote ideal</p></div>
+            <div><h2 style="font-size:1.25rem;margin:0">Pacotes Disponíveis</h2><p style="font-size:.85rem;color:var(--text3);margin:4px 0 0">Impulsione seus resultados com o pacote ideal</p></div>
         </div>
         <div class="pkg-grid" id="packageCards"></div>
     </template>
@@ -131,18 +131,18 @@
 
         const lvl = levels && levels[user.level] ? levels[user.level] : { name: 'Prata', icon: 'fa-medal' };
         document.getElementById('userLevel').innerHTML = `<i class="fas ${lvl.icon || 'fa-medal'}"></i> ${lvl.name}`;
-        document.getElementById('userPlan').innerHTML = `<i class="fas fa-gem"></i> Plano ${(plans && plans.find(p => p.id === user.plan) || {}).name || 'BÃ¡sico'}`;
+        document.getElementById('userPlan').innerHTML = `<i class="fas fa-gem"></i> Plano ${(plans && plans.find(p => p.id === user.plan) || {}).name || 'Básico'}`;
         document.getElementById('userStatus').innerHTML = user.active ? '<i class="fas fa-check-circle"></i> Ativo' : '<i class="fas fa-times-circle"></i> Inativo';
 
-        // Stats â€” dados reais do usuÃ¡rio
+        // Stats — dados reais do usuário
         const referralCount = Array.isArray(user.referrals) ? user.referrals.length : 0;
         document.getElementById('statsRow').innerHTML = `
-            <div class="stat-card"><div class="stat-icon ic-green"><i class="fas fa-coins"></i></div><div><div class="stat-value">R$ ${fmt(user.bonus || 0)}</div><div class="stat-label">BÃ´nus Total</div></div></div>
-            <div class="stat-card"><div class="stat-icon ic-purple"><i class="fas fa-wallet"></i></div><div><div class="stat-value">R$ ${fmt(user.balance || 0)}</div><div class="stat-label">Saldo DisponÃ­vel</div></div></div>
+            <div class="stat-card"><div class="stat-icon ic-green"><i class="fas fa-coins"></i></div><div><div class="stat-value">R$ ${fmt(user.bonus || 0)}</div><div class="stat-label">Bônus Total</div></div></div>
+            <div class="stat-card"><div class="stat-icon ic-purple"><i class="fas fa-wallet"></i></div><div><div class="stat-value">R$ ${fmt(user.balance || 0)}</div><div class="stat-label">Saldo Disponível</div></div></div>
             <div class="stat-card"><div class="stat-icon ic-orange"><i class="fas fa-users"></i></div><div><div class="stat-value">${referralCount}</div><div class="stat-label">Indicados</div></div></div>
         `;
 
-        const infoRow = (l, v) => `<div class="detail-item"><span class="dl">${l}</span><span class="dv">${v || 'â€”'}</span></div>`;
+        const infoRow = (l, v) => `<div class="detail-item"><span class="dl">${l}</span><span class="dv">${v || '—'}</span></div>`;
         document.getElementById('personalInfo').innerHTML = [
             infoRow('Username', user.username),
             infoRow('Apelido', user.nickname),
@@ -150,19 +150,19 @@
             infoRow('Telefone', user.phone),
             infoRow('CPF', user.cpf),
             infoRow('Nascimento', user.birth_date),
-            infoRow('GÃªnero', user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : ''),
+            infoRow('Gênero', user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : ''),
             infoRow('Desde', user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '')
         ].join('');
 
         document.getElementById('summaryInfo').innerHTML = [
-            infoRow('GraduaÃ§Ã£o', lvl.name),
+            infoRow('Graduação', lvl.name),
             infoRow('Pontos', `<span style="color:var(--accent)">${user.points || 0}</span>`),
-            infoRow('BÃ´nus Total', `<span style="color:var(--success)">R$ ${fmt(user.bonus || 0)}</span>`),
-            infoRow('Saldo DisponÃ­vel', `R$ ${fmt(user.balance || 0)}`),
+            infoRow('Bônus Total', `<span style="color:var(--success)">R$ ${fmt(user.bonus || 0)}</span>`),
+            infoRow('Saldo Disponível', `R$ ${fmt(user.balance || 0)}`),
             infoRow('Indicados Diretos', (user.referrals || []).length),
             infoRow('Status', `<span class="badge ${user.active ? 'badge-green' : 'badge-red'}">${user.active ? 'Ativo' : 'Inativo'}</span>`),
-            infoRow('Tipo Pessoa', user.person_type === 'pj' ? 'JurÃ­dica' : 'FÃ­sica'),
-            infoRow('Pacote Ativo', user.has_package ? '<span style="color:var(--success)">Sim</span>' : '<span style="color:var(--text3)">NÃ£o</span>')
+            infoRow('Tipo Pessoa', user.person_type === 'pj' ? 'Jurídica' : 'Física'),
+            infoRow('Pacote Ativo', user.has_package ? '<span style="color:var(--success)">Sim</span>' : '<span style="color:var(--text3)">Não</span>')
         ].join('');
 
         // Load Packages
@@ -174,22 +174,22 @@
                 const userPkgs = await DB.api('GET', '/api/content/my-packages') || [];
                 const ownedIds = Array.isArray(userPkgs) ? userPkgs.map(p => p.package_id) : [];
                 const allPkgs = Array.isArray(pkgs) ? pkgs : [];
-                // Filtra pacotes: sÃ³ mostra nÃ­veis acima do atual
+                // Filtra pacotes: só mostra níveis acima do atual
                 const list = allPkgs.filter(p => {
                     const pkgLevelIdx = levelOrder.indexOf(p.level_key || '');
                     return pkgLevelIdx > userLevelIdx;
                 });
                 document.getElementById('packageCards').innerHTML = list.length === 0
-                    ? '<p style="color:var(--text3);text-align:center;padding:32px">Nenhum pacote disponÃ­vel no momento</p>'
+                    ? '<p style="color:var(--text3);text-align:center;padding:32px">Nenhum pacote disponível no momento</p>'
                     : list.map((p, i) => `
                     <div class="pkg-card ${i === 1 ? 'featured' : ''}">
                         ${i === 1 ? '<div class="pkg-badge">Popular</div>' : ''}
                         <div class="pkg-name">${p.name}</div>
                         <div class="pkg-price">R$ ${fmt(p.price)}</div>
                         <ul class="pkg-features">
-                            <li><i class="fas fa-check"></i> ${p.points} pontos de graduaÃ§Ã£o</li>
+                            <li><i class="fas fa-check"></i> ${p.points} pontos de graduação</li>
                             <li><i class="fas fa-check"></i> ${p.description || 'Pacote de crescimento'}</li>
-                            <li><i class="fas fa-check"></i> Suporte prioritÃ¡rio</li>
+                            <li><i class="fas fa-check"></i> Suporte prioritário</li>
                         </ul>
                         <button class="btn ${ownedIds.includes(p.id) ? 'btn-outline' : 'btn-primary'} w-full" ${ownedIds.includes(p.id) ? 'disabled' : `onclick="buyPackage(${p.id})"`}>
                             ${ownedIds.includes(p.id) ? '<i class="fas fa-check-circle"></i> Adquirido' : '<i class="fas fa-shopping-cart"></i> Adquirir Pacote'}
@@ -225,17 +225,17 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label>Sexo</label><select class="form-control" id="editGender">${genderOpts.map(g => `<option value="${g[0]}" ${user.gender === g[0] ? 'selected' : ''}>${g[1]}</option>`).join('')}</select></div>
-                        <div class="form-group"><label>Tipo de Pessoa</label><select class="form-control" id="editPersonType" onchange="togglePJ()"><option value="pf" ${user.person_type !== 'pj' ? 'selected' : ''}>Pessoa FÃ­sica</option><option value="pj" ${user.person_type === 'pj' ? 'selected' : ''}>Pessoa JurÃ­dica</option></select></div>
+                        <div class="form-group"><label>Tipo de Pessoa</label><select class="form-control" id="editPersonType" onchange="togglePJ()"><option value="pf" ${user.person_type !== 'pj' ? 'selected' : ''}>Pessoa Física</option><option value="pj" ${user.person_type === 'pj' ? 'selected' : ''}>Pessoa Jurídica</option></select></div>
                     </div>
                     <div id="pjFields" style="display:${user.person_type === 'pj' ? 'grid' : 'none'};gap:12px">
                         <div class="form-row">
                             <div class="form-group"><label>CNPJ</label><input class="form-control" id="editCnpj" value="${user.cnpj || ''}" maxlength="18"></div>
-                            <div class="form-group"><label>RazÃ£o Social</label><input class="form-control" id="editCompanyName" value="${user.company_name || ''}"></div>
+                            <div class="form-group"><label>Razão Social</label><input class="form-control" id="editCompanyName" value="${user.company_name || ''}"></div>
                         </div>
                     </div>
-                    <div class="form-group"><label>Biografia</label><textarea class="form-control" id="editBio" rows="3" placeholder="Conte um pouco sobre vocÃª" style="resize:vertical">${user.bio || ''}</textarea></div>
+                    <div class="form-group"><label>Biografia</label><textarea class="form-control" id="editBio" rows="3" placeholder="Conte um pouco sobre você" style="resize:vertical">${user.bio || ''}</textarea></div>
                 </div>
-            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProfile()"><i class="fas fa-save"></i> Salvar AlteraÃ§Ãµes</button>`);
+            `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProfile()"><i class="fas fa-save"></i> Salvar Alterações</button>`);
         }
 
         function previewAvatar(input) {
@@ -288,13 +288,13 @@
         }
 
         async function buyPackage(pkgId) {
-            Layout.openModal('Adquirir Pacote â€” Pagamento', `
+            Layout.openModal('Adquirir Pacote — Pagamento', `
                 <div style="text-align:center;padding:16px">
                     <p style="color:var(--text3);font-size:.85rem;margin-bottom:20px">Escolha a forma de pagamento:</p>
                     <div style="display:flex;flex-direction:column;gap:10px">
                         <button class="btn btn-success w-full" onclick="processPackage(${pkgId}, 'pix')"><i class="fas fa-qrcode"></i> Pagar com PIX</button>
                         <button class="btn btn-primary w-full" onclick="processPackage(${pkgId}, 'boleto')"><i class="fas fa-barcode"></i> Pagar com Boleto</button>
-                        <button class="btn btn-outline w-full" onclick="processPackage(${pkgId}, 'credit_card')"><i class="fas fa-credit-card"></i> CartÃ£o de CrÃ©dito</button>
+                        <button class="btn btn-outline w-full" onclick="processPackage(${pkgId}, 'credit_card')"><i class="fas fa-credit-card"></i> Cartão de Crédito</button>
                     </div>
                 </div>
             `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button>`);
@@ -304,7 +304,7 @@
             Layout.closeModal();
             Layout.toast('Processando pagamento...', 'info');
             const result = await DB.api('POST', `/api/payments/package/${pkgId}`, { method });
-            if (!result) { Layout.toast('Erro de conexÃ£o', 'error'); return; }
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
             if (result.error) { Layout.toast(result.error, 'error'); return; }
 
             if (result.approved) {
@@ -315,18 +315,18 @@
             }
 
             if (method === 'pix' && result.pix) {
-                Layout.openModal('PIX â€” Pagamento', `
+                Layout.openModal('PIX — Pagamento', `
                     <div style="text-align:center;padding:16px">
                         <h3 style="margin-bottom:12px;color:var(--success)"><i class="fas fa-qrcode"></i> PIX</h3>
                         <p style="font-size:1.5rem;font-weight:700;color:var(--accent)">R$ ${fmt(result.value)}</p>
                         ${result.pix.qrCodeImage ? `<img src="data:image/png;base64,${result.pix.qrCodeImage}" alt="QR Code" style="max-width:250px;margin:16px auto;display:block;border-radius:12px;border:2px solid var(--border)">` : ''}
-                        <div onclick="navigator.clipboard.writeText(this.textContent).then(()=>Layout.toast('CÃ³digo copiado!','success'))" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.75rem;word-break:break-all;cursor:pointer;margin-top:12px" title="Clique para copiar">${result.pix.copyPaste || ''}</div>
+                        <div onclick="navigator.clipboard.writeText(this.textContent).then(()=>Layout.toast('Código copiado!','success'))" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.75rem;word-break:break-all;cursor:pointer;margin-top:12px" title="Clique para copiar">${result.pix.copyPaste || ''}</div>
                     </div>
                 `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
             } else if (method === 'boleto') {
-                Layout.openModal('Boleto â€” Pagamento', `
+                Layout.openModal('Boleto — Pagamento', `
                     <div style="text-align:center;padding:16px">
-                        <h3 style="margin-bottom:12px"><i class="fas fa-barcode"></i> Boleto BancÃ¡rio</h3>
+                        <h3 style="margin-bottom:12px"><i class="fas fa-barcode"></i> Boleto Bancário</h3>
                         ${result.invoiceUrl ? `<a href="${result.invoiceUrl}" target="_blank" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-external-link-alt"></i> Abrir Boleto</a>` : ''}
                     </div>
                 `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);

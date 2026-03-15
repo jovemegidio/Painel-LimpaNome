@@ -117,6 +117,20 @@ const filesToUpload = [
     { local: 'sw.js', remote: `${APP_DIR}/sw.js` },
     { local: 'offline.html', remote: `${APP_DIR}/offline.html` },
     { local: 'js/pwa.js', remote: `${APP_DIR}/js/pwa.js` },
+    { local: 'icons/icon.svg', remote: `${APP_DIR}/icons/icon.svg` },
+    { local: 'icons/icon-maskable.svg', remote: `${APP_DIR}/icons/icon-maskable.svg` },
+    { local: 'icons/icon-192x192.png', remote: `${APP_DIR}/icons/icon-192x192.png` },
+    { local: 'icons/icon-512x512.png', remote: `${APP_DIR}/icons/icon-512x512.png` },
+    { local: 'icons/icon-96x96.svg', remote: `${APP_DIR}/icons/icon-96x96.svg` },
+    { local: 'icons/icon-72x72.svg', remote: `${APP_DIR}/icons/icon-72x72.svg` },
+    { local: 'icons/icon-128x128.svg', remote: `${APP_DIR}/icons/icon-128x128.svg` },
+    { local: 'icons/icon-144x144.svg', remote: `${APP_DIR}/icons/icon-144x144.svg` },
+    { local: 'icons/icon-152x152.svg', remote: `${APP_DIR}/icons/icon-152x152.svg` },
+    { local: 'icons/icon-192x192.svg', remote: `${APP_DIR}/icons/icon-192x192.svg` },
+    { local: 'icons/icon-384x384.svg', remote: `${APP_DIR}/icons/icon-384x384.svg` },
+    { local: 'icons/icon-512x512.svg', remote: `${APP_DIR}/icons/icon-512x512.svg` },
+    { local: 'icons/icon-maskable-192x192.svg', remote: `${APP_DIR}/icons/icon-maskable-192x192.svg` },
+    { local: 'icons/icon-maskable-512x512.svg', remote: `${APP_DIR}/icons/icon-maskable-512x512.svg` },
 ];
 
 const c = new Client();
@@ -138,7 +152,7 @@ c.on('ready', async () => {
 
     // 1. Create directories that may not exist
     console.log('📁 Criando diretórios...');
-    await exec(c, `mkdir -p ${APP_DIR}/utils ${APP_DIR}/pages ${APP_DIR}/admin ${APP_DIR}/js ${APP_DIR}/css ${APP_DIR}/routes ${APP_DIR}/database ${APP_DIR}/middleware ${APP_DIR}/uploads`);
+    await exec(c, `mkdir -p ${APP_DIR}/utils ${APP_DIR}/pages ${APP_DIR}/admin ${APP_DIR}/js ${APP_DIR}/css ${APP_DIR}/routes ${APP_DIR}/database ${APP_DIR}/middleware ${APP_DIR}/uploads ${APP_DIR}/icons`);
     console.log('  ✅ Todos os diretórios criados');
 
     // 2. Upload files via SFTP

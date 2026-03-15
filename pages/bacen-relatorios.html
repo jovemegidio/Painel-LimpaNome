@@ -1,28 +1,28 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” Bacen RelatÃ³rios</title>
+    <title>Credbusiness — Bacen Relatórios</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Bacen â€” RelatÃ³rios</h2><p>HistÃ³rico completo de consultas ao Banco Central</p></div>
+        <div class="page-header"><h2>Bacen — Relatórios</h2><p>Histórico completo de consultas ao Banco Central</p></div>
 
         <div class="stats-grid" id="bacenStats"></div>
 
         <div class="card" style="margin-top:24px">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-                <h3><i class="fas fa-chart-line"></i> HistÃ³rico de Consultas</h3>
+                <h3><i class="fas fa-chart-line"></i> Histórico de Consultas</h3>
                 <div style="display:flex;gap:8px">
                     <button class="btn btn-sm btn-outline" onclick="exportBacenPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
                     <button class="btn btn-sm btn-outline" onclick="window.location.href='bacen-consulta.html'"><i class="fas fa-plus"></i> Nova Consulta</button>
@@ -34,7 +34,7 @@
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
-        Layout.init({ basePath: '../', page: 'bacen-relatorios', title: 'Bacen RelatÃ³rios' });
+        Layout.init({ basePath: '../', page: 'bacen-relatorios', title: 'Bacen Relatórios' });
 
         async function loadReports() {
             try {
@@ -53,7 +53,7 @@
                 `;
 
                 document.getElementById('reportTable').innerHTML = bacenList.length ? `<table>
-                    <thead><tr><th>#</th><th>CPF/CNPJ</th><th>Valor Encontrado</th><th>InstituiÃ§Ãµes</th><th>Data</th><th>Detalhes</th></tr></thead>
+                    <thead><tr><th>#</th><th>CPF/CNPJ</th><th>Valor Encontrado</th><th>Instituições</th><th>Data</th><th>Detalhes</th></tr></thead>
                     <tbody>${bacenList.map((c, i) => {
                         const r = c.result || {};
                         const dados = r.dados || {};
@@ -67,9 +67,9 @@
                             <td>${val > 0 ? '<span class="badge badge-success">Valor encontrado</span>' : '<span class="badge badge-secondary">Sem valor</span>'}</td>
                         </tr>`;
                     }).join('')}</tbody>
-                </table>` : '<div class="table-empty"><i class="fas fa-chart-line"></i><p>Nenhum relatÃ³rio disponÃ­vel</p><small>FaÃ§a uma <a href="bacen-consulta.html" style="color:var(--primary)">consulta Bacen</a> para gerar relatÃ³rios</small></div>';
+                </table>` : '<div class="table-empty"><i class="fas fa-chart-line"></i><p>Nenhum relatório disponível</p><small>Faça uma <a href="bacen-consulta.html" style="color:var(--primary)">consulta Bacen</a> para gerar relatórios</small></div>';
             } catch {
-                document.getElementById('reportTable').innerHTML = '<div class="table-empty"><i class="fas fa-chart-line"></i><p>Nenhum relatÃ³rio disponÃ­vel</p><small>FaÃ§a uma <a href="bacen-consulta.html" style="color:var(--primary)">consulta Bacen</a> para gerar relatÃ³rios</small></div>';
+                document.getElementById('reportTable').innerHTML = '<div class="table-empty"><i class="fas fa-chart-line"></i><p>Nenhum relatório disponível</p><small>Faça uma <a href="bacen-consulta.html" style="color:var(--primary)">consulta Bacen</a> para gerar relatórios</small></div>';
             }
         }
 
@@ -83,8 +83,8 @@
             const rows = document.querySelectorAll('#reportTable table tbody tr');
             if (!rows.length) { Layout.toast('Nenhum dado para exportar', 'error'); return; }
             const data = Array.from(rows).map(tr => Array.from(tr.cells).map(td => td.textContent.trim()));
-            ExportPDF.download('bacen-relatorios', 'RelatÃ³rio Bacen â€” Consultas SVR',
-                ['#', 'CPF/CNPJ', 'Valor', 'InstituiÃ§Ãµes', 'Data', 'Detalhes'], data
+            ExportPDF.download('bacen-relatorios', 'Relatório Bacen — Consultas SVR',
+                ['#', 'CPF/CNPJ', 'Valor', 'Instituições', 'Data', 'Detalhes'], data
             );
         }
         loadReports();

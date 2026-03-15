@@ -1,28 +1,28 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness ‚Äî √Årvore da Rede</title>
+    <title>Credbusiness ó ¡rvore da Rede</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>√Årvore da Rede</h2><p>Visualiza√ß√£o hier√°rquica da sua rede de indica√ß√µes</p></div>
+        <div class="page-header"><h2>¡rvore da Rede</h2><p>VisualizaÁ„o hier·rquica da sua rede de indicaÁıes</p></div>
         <div class="card"><div class="card-body tree-container" id="treeContainer"></div></div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
-        Layout.init({ basePath: '../', page: 'rede-arvore', title: '√Årvore' });
+        Layout.init({ basePath: '../', page: 'rede-arvore', title: '¡rvore' });
         const user = Layout.user;
         const levels = DB.get('levels');
         const tree = DB.getNetworkTree(user.id);
@@ -39,7 +39,7 @@
 
         document.getElementById('treeContainer').innerHTML = tree && tree.children && tree.children.length > 0
             ? `<div class="tree"><ul>${renderTree(tree)}</ul></div>`
-            : '<div class="empty-state"><i class="fas fa-sitemap"></i><p>Sua √°rvore est√° vazia</p><small>Indique pessoas para construir sua rede</small></div>';
+            : '<div class="empty-state"><i class="fas fa-sitemap"></i><p>Sua ·rvore est· vazia</p><small>Indique pessoas para construir sua rede</small></div>';
     </script>
     <script src="/js/pwa.js"></script>
 </body>

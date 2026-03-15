@@ -1,15 +1,15 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” RelatÃ³rio de Vendas</title>
+    <title>Credbusiness — Relatório de Vendas</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -18,12 +18,12 @@
     <div id="app"></div>
     <template id="page-content">
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
-            <div><h2>RelatÃ³rio de Vendas</h2><p>Acompanhe o desempenho de vendas da sua rede</p></div>
+            <div><h2>Relatório de Vendas</h2><p>Acompanhe o desempenho de vendas da sua rede</p></div>
             <button class="btn btn-outline" onclick="exportVendasPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
         </div>
         <div class="stats-grid" id="salesStats"></div>
         <div class="card" style="margin-top:24px">
-            <div class="card-header"><h3><i class="fas fa-chart-area"></i> Vendas dos Ãšltimos 6 Meses</h3></div>
+            <div class="card-header"><h3><i class="fas fa-chart-area"></i> Vendas dos Últimos 6 Meses</h3></div>
             <div class="card-body"><div style="height:300px"><canvas id="salesChart"></canvas></div></div>
         </div>
     </template>
@@ -71,8 +71,8 @@
         });
 
         function exportVendasPDF() {
-            ExportPDF.download('vendas', 'RelatÃ³rio de Vendas',
-                ['MÃªs', 'Vendas (R$)'],
+            ExportPDF.download('vendas', 'Relatório de Vendas',
+                ['Mês', 'Vendas (R$)'],
                 months.map((m, i) => [m, 'R$ ' + fmt(monthData[i])]),
                 { summary: [{ label: 'Total Vendas', value: 'R$ ' + fmt(totalVendas), color: '#28a745' }, { label: 'Pacotes Vendidos', value: txs.length, color: '#007bff' }, { label: 'Membros Rede', value: network.directs.length + network.team.length, color: '#6366f1' }] }
             );

@@ -1,22 +1,22 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” Meus Pacotes</title>
+    <title>Credbusiness — Meus Pacotes</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Meus Pacotes</h2><p>Pacotes que vocÃª adquiriu</p></div>
+        <div class="page-header"><h2>Meus Pacotes</h2><p>Pacotes que você adquiriu</p></div>
         <div id="myPkgList"></div>
     </template>
     <script src="../js/data.js"></script>
@@ -41,7 +41,7 @@
                 </div>
             `).join('');
         } else {
-            document.getElementById('myPkgList').innerHTML = '<div class="card"><div class="card-body"><div class="empty-state"><i class="fas fa-cube"></i><p>Nenhum pacote adquirido</p><small><a href="pacotes-disponiveis.html">Ver pacotes disponÃ­veis</a></small></div></div></div>';
+            document.getElementById('myPkgList').innerHTML = '<div class="card"><div class="card-body"><div class="empty-state"><i class="fas fa-cube"></i><p>Nenhum pacote adquirido</p><small><a href="pacotes-disponiveis.html">Ver pacotes disponíveis</a></small></div></div></div>';
         }
     </script>
     <script src="/js/pwa.js"></script>

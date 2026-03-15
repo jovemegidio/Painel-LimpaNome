@@ -1,22 +1,22 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” Indicados Diretos</title>
+    <title>Credbusiness — Indicados Diretos</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Indicados Diretos</h2><p>Pessoas que vocÃª indicou diretamente</p></div>
+        <div class="page-header"><h2>Indicados Diretos</h2><p>Pessoas que você indicou diretamente</p></div>
         <div class="stats-grid" id="redeStats"></div>
         <div class="card"><div class="card-body"><div class="table-wrap" id="indicadosTable"></div></div></div>
     </template>
@@ -35,7 +35,7 @@
         `;
 
         document.getElementById('indicadosTable').innerHTML = network.directs.length ? `<table>
-            <thead><tr><th>Nome</th><th>NÃ­vel</th><th>Pontos</th><th>Status</th><th>Data</th></tr></thead>
+            <thead><tr><th>Nome</th><th>Nível</th><th>Pontos</th><th>Status</th><th>Data</th></tr></thead>
             <tbody>${network.directs.map(u => `<tr>
                 <td style="font-weight:600"><img src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&size=28&rounded=true&background=e2e8f0&color=475569&bold=true" style="width:28px;height:28px;border-radius:50%;vertical-align:middle;margin-right:8px">${u.name}</td>
                 <td><span class="badge badge-${u.level==='diamante'?'cyan':u.level==='ouro'?'yellow':'gray'}">${levels[u.level].icon} ${levels[u.level].name}</span></td>
@@ -43,7 +43,7 @@
                 <td><span class="badge ${u.active?'badge-green':'badge-red'}">${u.active?'Ativo':'Inativo'}</span></td>
                 <td>${u.createdAt}</td>
             </tr>`).join('')}</tbody>
-        </table>` : '<div class="table-empty"><i class="fas fa-user-plus"></i><p>Nenhum indicado</p><small>Compartilhe seu link de indicaÃ§Ã£o</small></div>';
+        </table>` : '<div class="table-empty"><i class="fas fa-user-plus"></i><p>Nenhum indicado</p><small>Compartilhe seu link de indicação</small></div>';
     </script>
     <script src="/js/pwa.js"></script>
 </body>

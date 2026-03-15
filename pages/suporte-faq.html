@@ -1,22 +1,22 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” FAQ</title>
+    <title>Credbusiness — FAQ</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Perguntas Frequentes</h2><p>Tire suas dÃºvidas sobre o sistema</p></div>
+        <div class="page-header"><h2>Perguntas Frequentes</h2><p>Tire suas dúvidas sobre o sistema</p></div>
 
         <!-- Search -->
         <div class="form-group" style="max-width:500px;margin-bottom:24px">
@@ -30,16 +30,16 @@
         <div class="tabs" style="margin-bottom:24px">
             <div class="tab active" onclick="filterCat('todos', this)">Todos</div>
             <div class="tab" onclick="filterCat('conta', this)">Conta</div>
-            <div class="tab" onclick="filterCat('rede', this)">Rede & IndicaÃ§Ã£o</div>
-            <div class="tab" onclick="filterCat('servicos', this)">ServiÃ§os</div>
+            <div class="tab" onclick="filterCat('rede', this)">Rede & Indicação</div>
+            <div class="tab" onclick="filterCat('servicos', this)">Serviços</div>
             <div class="tab" onclick="filterCat('financeiro', this)">Financeiro</div>
         </div>
 
         <div class="card"><div class="card-body" id="faqList"></div></div>
 
         <div class="card" style="margin-top:24px;text-align:center;padding:32px">
-            <h3 style="margin-bottom:8px"><i class="fas fa-question-circle" style="color:var(--primary)"></i> NÃ£o encontrou sua dÃºvida?</h3>
-            <p style="color:var(--text3);margin-bottom:16px">Abra um ticket de suporte e nossa equipe responderÃ¡ em atÃ© 24h</p>
+            <h3 style="margin-bottom:8px"><i class="fas fa-question-circle" style="color:var(--primary)"></i> Não encontrou sua dúvida?</h3>
+            <p style="color:var(--text3);margin-bottom:16px">Abra um ticket de suporte e nossa equipe responderá em até 24h</p>
             <a href="suporte-tickets.html" class="btn btn-primary"><i class="fas fa-headset"></i> Abrir Ticket</a>
         </div>
     </template>
@@ -50,18 +50,18 @@
 
         // FAQ data - loaded from API (admin-manageable), with fallback defaults
         const defaultFaqs = [
-            { q: 'Como funciona o sistema de indicaÃ§Ã£o?', a: 'VocÃª recebe um link de indicaÃ§Ã£o exclusivo. Cada pessoa que se cadastra atravÃ©s do seu link se torna seu indicado direto. VocÃª ganha bÃ´nus e comissÃµes pelas atividades da sua rede.', cat: 'rede' },
-            { q: 'Quais sÃ£o os nÃ­veis do sistema?', a: 'Existem 3 nÃ­veis: <strong>Prata</strong> (0+ pontos, 5% bÃ´nus), <strong>Ouro</strong> (1000+ pontos, 10% bÃ´nus) e <strong>Diamante</strong> (2000+ pontos, 15% bÃ´nus). Quanto mais pontos, maior seu nÃ­vel e benefÃ­cios.', cat: 'rede' },
-            { q: 'Como solicitar um saque?', a: 'Acesse a pÃ¡gina <strong>Financeiro</strong>, informe o valor desejado (mÃ­nimo R$ 50,00) e sua chave PIX. O saque Ã© processado em atÃ© 3 dias Ãºteis.', cat: 'financeiro' },
-            { q: 'O que Ã© o Limpa Nome?', a: 'Ã‰ nosso serviÃ§o de regularizaÃ§Ã£o de CPF. Consultamos os principais Ã³rgÃ£os de proteÃ§Ã£o ao crÃ©dito (Serasa, SPC, Boa Vista) e abrimos processos de contestaÃ§Ã£o para limpar negativaÃ§Ãµes indevidas.', cat: 'servicos' },
-            { q: 'O que Ã© a Consulta Bacen (SVR)?', a: 'O <strong>Sistema de Valores a Receber</strong> do Banco Central permite consultar se vocÃª tem dinheiro esquecido em bancos, seguradoras ou consÃ³rcios. NÃ³s fazemos a consulta e ajudamos no resgate.', cat: 'servicos' },
-            { q: 'Como ganhar mais pontos?', a: 'Indicando novos membros, adquirindo pacotes, e com as atividades da sua rede. Cada aÃ§Ã£o gera pontos que contam para sua graduaÃ§Ã£o.', cat: 'rede' },
-            { q: 'Posso ter mais de um plano?', a: 'NÃ£o, cada usuÃ¡rio pode ter apenas um plano ativo. Mas vocÃª pode fazer <strong>upgrade</strong> a qualquer momento pela pÃ¡gina "Meu Plano".', cat: 'financeiro' },
-            { q: 'Como ativar o 2FA?', a: 'Acesse <strong>ConfiguraÃ§Ãµes > SeguranÃ§a 2FA</strong>. Instale o Google Authenticator ou Authy no celular, escaneie o QR Code e informe o cÃ³digo de 6 dÃ­gitos para ativar.', cat: 'conta' },
-            { q: 'Esqueci minha senha, e agora?', a: 'Na tela de login, clique em <strong>"Esqueceu sua senha?"</strong>. Informe seu e-mail cadastrado e um link de redefiniÃ§Ã£o serÃ¡ enviado. O link expira em 1 hora.', cat: 'conta' },
-            { q: 'Como alterar meus dados pessoais?', a: 'VÃ¡ em <strong>ConfiguraÃ§Ãµes > Dados Pessoais</strong>. VocÃª pode alterar nome, e-mail e telefone. O CPF e nome de usuÃ¡rio nÃ£o podem ser modificados.', cat: 'conta' },
-            { q: 'Quanto tempo leva o processo Limpa Nome?', a: 'O prazo mÃ©dio Ã© de <strong>30 a 90 dias</strong>, dependendo do tipo de negativaÃ§Ã£o e dos Ã³rgÃ£os envolvidos. VocÃª pode acompanhar o status em tempo real pelo painel.', cat: 'servicos' },
-            { q: 'Como funciona a comissÃ£o multinÃ­vel?', a: 'VocÃª recebe comissÃµes atÃ© <strong>3 nÃ­veis</strong> de profundidade: 10% do 1Âº nÃ­vel, 5% do 2Âº nÃ­vel e 3% do 3Âº nÃ­vel (valores podem variar conforme seu plano e graduaÃ§Ã£o).', cat: 'financeiro' }
+            { q: 'Como funciona o sistema de indicação?', a: 'Você recebe um link de indicação exclusivo. Cada pessoa que se cadastra através do seu link se torna seu indicado direto. Você ganha bônus e comissões pelas atividades da sua rede.', cat: 'rede' },
+            { q: 'Quais são os níveis do sistema?', a: 'Existem 3 níveis: <strong>Prata</strong> (0+ pontos, 5% bônus), <strong>Ouro</strong> (1000+ pontos, 10% bônus) e <strong>Diamante</strong> (2000+ pontos, 15% bônus). Quanto mais pontos, maior seu nível e benefícios.', cat: 'rede' },
+            { q: 'Como solicitar um saque?', a: 'Acesse a página <strong>Financeiro</strong>, informe o valor desejado (mínimo R$ 50,00) e sua chave PIX. O saque é processado em até 3 dias úteis.', cat: 'financeiro' },
+            { q: 'O que é o Limpa Nome?', a: 'É nosso serviço de regularização de CPF. Consultamos os principais órgãos de proteção ao crédito (Serasa, SPC, Boa Vista) e abrimos processos de contestação para limpar negativações indevidas.', cat: 'servicos' },
+            { q: 'O que é a Consulta Bacen (SVR)?', a: 'O <strong>Sistema de Valores a Receber</strong> do Banco Central permite consultar se você tem dinheiro esquecido em bancos, seguradoras ou consórcios. Nós fazemos a consulta e ajudamos no resgate.', cat: 'servicos' },
+            { q: 'Como ganhar mais pontos?', a: 'Indicando novos membros, adquirindo pacotes, e com as atividades da sua rede. Cada ação gera pontos que contam para sua graduação.', cat: 'rede' },
+            { q: 'Posso ter mais de um plano?', a: 'Não, cada usuário pode ter apenas um plano ativo. Mas você pode fazer <strong>upgrade</strong> a qualquer momento pela página "Meu Plano".', cat: 'financeiro' },
+            { q: 'Como ativar o 2FA?', a: 'Acesse <strong>Configurações > Segurança 2FA</strong>. Instale o Google Authenticator ou Authy no celular, escaneie o QR Code e informe o código de 6 dígitos para ativar.', cat: 'conta' },
+            { q: 'Esqueci minha senha, e agora?', a: 'Na tela de login, clique em <strong>"Esqueceu sua senha?"</strong>. Informe seu e-mail cadastrado e um link de redefinição será enviado. O link expira em 1 hora.', cat: 'conta' },
+            { q: 'Como alterar meus dados pessoais?', a: 'Vá em <strong>Configurações > Dados Pessoais</strong>. Você pode alterar nome, e-mail e telefone. O CPF e nome de usuário não podem ser modificados.', cat: 'conta' },
+            { q: 'Quanto tempo leva o processo Limpa Nome?', a: 'O prazo médio é de <strong>30 a 90 dias</strong>, dependendo do tipo de negativação e dos órgãos envolvidos. Você pode acompanhar o status em tempo real pelo painel.', cat: 'servicos' },
+            { q: 'Como funciona a comissão multinível?', a: 'Você recebe comissões até <strong>3 níveis</strong> de profundidade: 10% do 1º nível, 5% do 2º nível e 3% do 3º nível (valores podem variar conforme seu plano e graduação).', cat: 'financeiro' }
         ];
 
         let faqs = [];

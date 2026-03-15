@@ -1,15 +1,15 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness — Configurações</title>
+    <title>Credbusiness � Configura��es</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -18,8 +18,8 @@
 
 <template id="page-content">
     <div class="page-header">
-        <h2><i class="fas fa-cog" style="color:var(--text3);margin-right:8px"></i>Configurações</h2>
-        <p>Gerencie suas informações pessoais e preferências</p>
+        <h2><i class="fas fa-cog" style="color:var(--text3);margin-right:8px"></i>Configura��es</h2>
+        <p>Gerencie suas informa��es pessoais e prefer�ncias</p>
     </div>
 
     <!-- Tabs -->
@@ -27,15 +27,15 @@
         <div class="tab active" onclick="switchTab('perfil',this)">Dados Pessoais</div>
         <div class="tab" onclick="switchTab('senha',this)">Alterar Senha</div>
         <!-- 2FA temporariamente desabilitado -->
-        <!-- <div class="tab" onclick="switchTab('2fa',this)">Segurança 2FA</div> -->
-        <div class="tab" onclick="switchTab('notif',this)">Notificações</div>
+        <!-- <div class="tab" onclick="switchTab('2fa',this)">Seguran�a 2FA</div> -->
+        <div class="tab" onclick="switchTab('notif',this)">Notifica��es</div>
     </div>
 
     <!-- Tab: Perfil -->
     <div class="tab-content active" id="tab-perfil">
         <div class="card">
             <div class="card-header">
-                <h3><i class="fas fa-user-edit"></i> Informações Pessoais</h3>
+                <h3><i class="fas fa-user-edit"></i> Informa��es Pessoais</h3>
             </div>
             <div class="card-body">
                 <form id="profileForm" onsubmit="saveProfile(event)">
@@ -45,9 +45,9 @@
                             <input type="text" class="form-control" id="cfgName" required>
                         </div>
                         <div class="form-group">
-                            <label>Nome de Usuário</label>
+                            <label>Nome de Usu�rio</label>
                             <input type="text" class="form-control" id="cfgUsername" disabled style="opacity:.6">
-                            <div class="form-hint">O nome de usuário não pode ser alterado</div>
+                            <div class="form-hint">O nome de usu�rio n�o pode ser alterado</div>
                         </div>
                     </div>
                     <div class="form-row">
@@ -64,7 +64,7 @@
                         <div class="form-group">
                             <label>CPF</label>
                             <input type="text" class="form-control" id="cfgCpf" disabled style="opacity:.6">
-                            <div class="form-hint">O CPF não pode ser alterado</div>
+                            <div class="form-hint">O CPF n�o pode ser alterado</div>
                         </div>
                         <div class="form-group">
                             <label>Plano Atual</label>
@@ -72,7 +72,7 @@
                         </div>
                     </div>
                     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Alterações</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Altera��es</button>
                     </div>
                 </form>
             </div>
@@ -100,7 +100,7 @@
                             <input type="password" class="form-control" id="cfgNewPass" required minlength="6">
                             <button type="button" class="input-group-btn" onclick="tgl('cfgNewPass',this)"><i class="fas fa-eye"></i></button>
                         </div>
-                        <div class="form-hint">Mínimo 6 caracteres</div>
+                        <div class="form-hint">M�nimo 6 caracteres</div>
                     </div>
                     <div class="form-group">
                         <label>Confirmar Nova Senha</label>
@@ -119,7 +119,7 @@
     <div class="tab-content" id="tab-2fa">
         <div class="card" style="max-width:560px">
             <div class="card-header">
-                <h3><i class="fas fa-shield-halved"></i> Autenticação em Dois Fatores (2FA)</h3>
+                <h3><i class="fas fa-shield-halved"></i> Autentica��o em Dois Fatores (2FA)</h3>
             </div>
             <div class="card-body">
                 <!-- Status -->
@@ -145,7 +145,7 @@
                         Ou insira manualmente a chave: <code id="twofa-secret" style="background:var(--bg2);padding:2px 8px;border-radius:4px;font-size:.82rem;user-select:all"></code>
                     </p>
                     <p style="font-size:.85rem;color:var(--text2);margin-bottom:12px">
-                        <strong>3.</strong> Informe o código de 6 dígitos do app:
+                        <strong>3.</strong> Informe o c�digo de 6 d�gitos do app:
                     </p>
                     <form onsubmit="enable2FA(event)" style="display:flex;gap:8px;align-items:flex-end">
                         <div class="form-group" style="flex:1;margin:0">
@@ -181,18 +181,18 @@
         </div>
     </div>
 
-    <!-- Tab: Notificações -->
+    <!-- Tab: Notifica��es -->
     <div class="tab-content" id="tab-notif">
         <div class="card" style="max-width:500px">
             <div class="card-header">
-                <h3><i class="fas fa-bell"></i> Preferências de Notificação</h3>
+                <h3><i class="fas fa-bell"></i> Prefer�ncias de Notifica��o</h3>
             </div>
             <div class="card-body">
                 <div style="display:flex;flex-direction:column;gap:16px">
                     <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
                         <div>
-                            <div style="font-weight:550;font-size:.9rem">E-mail de novas transações</div>
-                            <div style="font-size:.78rem;color:var(--text3)">Receba um e-mail quando houver créditos ou saques</div>
+                            <div style="font-weight:550;font-size:.9rem">E-mail de novas transa��es</div>
+                            <div style="font-size:.78rem;color:var(--text3)">Receba um e-mail quando houver cr�ditos ou saques</div>
                         </div>
                         <input type="checkbox" id="notif_transactions" checked style="width:18px;height:18px;accent-color:var(--primary)">
                     </label>
@@ -205,15 +205,15 @@
                     </label>
                     <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
                         <div>
-                            <div style="font-weight:550;font-size:.9rem">Atualizações do sistema</div>
-                            <div style="font-size:.78rem;color:var(--text3)">Receba novidades e atualizações da plataforma</div>
+                            <div style="font-weight:550;font-size:.9rem">Atualiza��es do sistema</div>
+                            <div style="font-size:.78rem;color:var(--text3)">Receba novidades e atualiza��es da plataforma</div>
                         </div>
                         <input type="checkbox" id="notif_system" checked style="width:18px;height:18px;accent-color:var(--primary)">
                     </label>
                     <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);cursor:pointer">
                         <div>
                             <div style="font-weight:550;font-size:.9rem">Processos Limpa Nome</div>
-                            <div style="font-size:.78rem;color:var(--text3)">Notificações sobre status dos seus processos</div>
+                            <div style="font-size:.78rem;color:var(--text3)">Notifica��es sobre status dos seus processos</div>
                         </div>
                         <input type="checkbox" id="notif_processes" checked style="width:18px;height:18px;accent-color:var(--primary)">
                     </label>
@@ -226,7 +226,7 @@
                     </label>
                 </div>
                 <div style="margin-top:20px">
-                    <button class="btn btn-primary" id="saveNotifBtn" onclick="saveNotifPrefs()"><i class="fas fa-save"></i> Salvar Preferências</button>
+                    <button class="btn btn-primary" id="saveNotifBtn" onclick="saveNotifPrefs()"><i class="fas fa-save"></i> Salvar Prefer�ncias</button>
                 </div>
             </div>
         </div>
@@ -236,7 +236,7 @@
 <script src="../js/data.js"></script>
 <script src="../js/components.js"></script>
 <script>
-    Layout.init({ basePath: '../', page: 'configuracoes', title: 'Configurações' });
+    Layout.init({ basePath: '../', page: 'configuracoes', title: 'Configura��es' });
 
     const user = DB.getCurrentUser();
     if (user) {
@@ -247,7 +247,7 @@
         document.getElementById('cfgCpf').value = user.cpf || '';
         const plans = DB.get('plans') || [];
         const plan = plans.find(p => p.id === user.plan);
-        document.getElementById('cfgPlan').value = plan ? plan.name + ' — R$ ' + fmt(plan.price) + '/mês' : user.plan;
+        document.getElementById('cfgPlan').value = plan ? plan.name + ' � R$ ' + fmt(plan.price) + '/m�s' : user.plan;
     }
 
     function switchTab(tab, el) {
@@ -273,7 +273,7 @@
         const nw = document.getElementById('cfgNewPass').value;
         const nw2 = document.getElementById('cfgNewPass2').value;
 
-        if (nw !== nw2) { Layout.toast('As senhas não conferem.', 'error'); return; }
+        if (nw !== nw2) { Layout.toast('As senhas n�o conferem.', 'error'); return; }
 
         const result = DB.updatePassword(user.id, cur, nw);
         if (result.success) {
@@ -291,9 +291,9 @@
         btn.querySelector('i').className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
     }
 
-    // ══════════════════════════════
+    // ------------------------------
     //  2FA Functions
-    // ══════════════════════════════
+    // ------------------------------
     let twofaEnabled = false;
 
     async function load2FAStatus() {
@@ -319,14 +319,14 @@
             icon.style.color = '#10b981';
             label.textContent = '2FA Ativado';
             label.style.color = '#10b981';
-            desc.textContent = 'Sua conta possui uma camada extra de segurança.';
+            desc.textContent = 'Sua conta possui uma camada extra de seguran�a.';
             actions.innerHTML = '<button class="btn" style="background:rgba(239,68,68,0.1);color:#ef4444" onclick="show2FADisable()"><i class="fas fa-times"></i> Desativar 2FA</button>';
         } else {
             status.style.background = 'rgba(245,158,11,0.08)';
             icon.style.color = '#f59e0b';
             label.textContent = '2FA Desativado';
             label.style.color = '#f59e0b';
-            desc.textContent = 'Recomendamos ativar para maior segurança da sua conta.';
+            desc.textContent = 'Recomendamos ativar para maior seguran�a da sua conta.';
             actions.innerHTML = '<button class="btn btn-primary" onclick="setup2FA()"><i class="fas fa-shield-halved"></i> Configurar 2FA</button>';
         }
     }
@@ -356,11 +356,11 @@
                 render2FA();
                 document.getElementById('twofa-actions').style.display = 'block';
             } else {
-                Layout.toast(result.error || 'Código inválido', 'error');
+                Layout.toast(result.error || 'C�digo inv�lido', 'error');
                 document.getElementById('twofa-code').value = '';
                 document.getElementById('twofa-code').focus();
             }
-        } catch { Layout.toast('Erro de conexão', 'error'); }
+        } catch { Layout.toast('Erro de conex�o', 'error'); }
     }
 
     function show2FADisable() {
@@ -382,15 +382,15 @@
             } else {
                 Layout.toast(result.error || 'Erro ao desativar', 'error');
             }
-        } catch { Layout.toast('Erro de conexão', 'error'); }
+        } catch { Layout.toast('Erro de conex�o', 'error'); }
     }
 
     // Load 2FA status on page load
     load2FAStatus();
 
-    // ══════════════════════════════
+    // ------------------------------
     //  Notification Preferences
-    // ══════════════════════════════
+    // ------------------------------
     const notifKeys = ['notif_transactions', 'notif_referrals', 'notif_system', 'notif_processes', 'notif_newsletter'];
 
     async function loadNotifPrefs() {
@@ -424,9 +424,9 @@
 
         try {
             await DB.api('PUT', '/api/users/preferences', { notifications: prefs });
-            Layout.toast('Preferências salvas com sucesso!', 'success');
+            Layout.toast('Prefer�ncias salvas com sucesso!', 'success');
         } catch {
-            Layout.toast('Preferências salvas localmente!', 'success');
+            Layout.toast('Prefer�ncias salvas localmente!', 'success');
         }
     }
 

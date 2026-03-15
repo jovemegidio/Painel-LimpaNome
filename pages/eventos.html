@@ -1,24 +1,24 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness ‚Äî Eventos</title>
+    <title>Credbusiness ó Eventos</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Eventos</h2><p>Pr√≥ximos eventos e encontros</p></div>
+        <div class="page-header"><h2>Eventos</h2><p>PrÛximos eventos e encontros</p></div>
         <div class="tabs" id="eventTabs">
-            <div class="tab active" onclick="showTab('proximos')">Pr√≥ximos</div>
+            <div class="tab active" onclick="showTab('proximos')">PrÛximos</div>
             <div class="tab" onclick="showTab('passados')">Passados</div>
         </div>
         <div id="proximosTab"></div>
@@ -36,7 +36,7 @@
             return `<div style="display:grid;gap:12px">${list.map(e => {
                 const parts = e.date.split('-');
                 const isFuture = e.date >= new Date().toISOString().split('T')[0];
-                const priceTag = e.price > 0 ? `<span class="badge badge-orange">R$ ${fmt(e.price)}</span>` : '<span class="badge badge-green">Gr√°tis</span>';
+                const priceTag = e.price > 0 ? `<span class="badge badge-orange">R$ ${fmt(e.price)}</span>` : '<span class="badge badge-green">Gr·tis</span>';
                 return `<div class="event-card">
                     <div class="event-date"><div class="day">${parseInt(parts[2])}</div><div class="month">${months[parseInt(parts[1])]}</div></div>
                     <div class="event-info" style="flex:1">
@@ -63,7 +63,7 @@
             if (!confirm(`Adquirir ingresso para "${title}"?`)) return;
             Layout.toast('Processando...', 'info');
             const result = await DB.api('POST', `/api/wallet/events/${eventId}/buy`, { quantity: 1 });
-            if (!result) { Layout.toast('Erro de conex√£o', 'error'); return; }
+            if (!result) { Layout.toast('Erro de conex„o', 'error'); return; }
             if (result.error) { Layout.toast(result.error, 'error'); return; }
             Layout.toast(result.message || 'Ingresso adquirido!', 'success');
         }

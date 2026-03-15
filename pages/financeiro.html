@@ -1,28 +1,28 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” Financeiro</title>
+    <title>Credbusiness — Financeiro</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Financeiro</h2><p>GestÃ£o financeira da sua conta</p></div>
+        <div class="page-header"><h2>Financeiro</h2><p>Gestão financeira da sua conta</p></div>
 
         <!-- Summary -->
         <div class="grid-3 mb-24">
             <div class="fin-card"><div class="fin-icon stat-icon green"><i class="fas fa-arrow-down"></i></div><div><h4>Total Recebido</h4><div class="amount text-success" id="totalIn"></div></div></div>
             <div class="fin-card"><div class="fin-icon stat-icon red"><i class="fas fa-arrow-up"></i></div><div><h4>Total Sacado</h4><div class="amount text-danger" id="totalOut"></div></div></div>
-            <div class="fin-card"><div class="fin-icon stat-icon blue"><i class="fas fa-wallet"></i></div><div><h4>Saldo DisponÃ­vel</h4><div class="amount text-accent" id="balance"></div></div></div>
+            <div class="fin-card"><div class="fin-icon stat-icon blue"><i class="fas fa-wallet"></i></div><div><h4>Saldo Disponível</h4><div class="amount text-accent" id="balance"></div></div></div>
         </div>
 
         <!-- Withdraw -->
@@ -31,17 +31,17 @@
                 <div class="card-header"><h3><i class="fas fa-money-bill-wave"></i> Solicitar Saque</h3></div>
                 <div class="card-body">
                     <div class="form-group"><label>Valor (R$)</label><input type="number" class="form-control" id="withdrawAmount" placeholder="0.00"></div>
-                    <div class="form-group"><label>Chave PIX</label><input class="form-control" id="withdrawPix" placeholder="CPF, email, telefone ou chave aleatÃ³ria"></div>
+                    <div class="form-group"><label>Chave PIX</label><input class="form-control" id="withdrawPix" placeholder="CPF, email, telefone ou chave aleatória"></div>
                     <button class="btn btn-success w-full" onclick="requestWithdraw()"><i class="fas fa-paper-plane"></i> Solicitar Saque</button>
-                    <p class="form-hint">Saque mÃ­nimo: R$ 50,00 â€¢ Prazo: atÃ© 3 dias Ãºteis</p>
+                    <p class="form-hint">Saque mínimo: R$ 50,00 • Prazo: até 3 dias úteis</p>
                 </div>
             </div>
             <div class="card">
-                <div class="card-header"><h3><i class="fas fa-info-circle"></i> InformaÃ§Ãµes</h3></div>
+                <div class="card-header"><h3><i class="fas fa-info-circle"></i> Informações</h3></div>
                 <div class="card-body">
                     <ul class="activity-list">
-                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-clock"></i></div><div class="activity-info"><div class="title">Prazo de processamento</div><div class="desc">Saques sÃ£o processados em atÃ© 3 dias Ãºteis</div></div></li>
-                        <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-shield-alt"></i></div><div class="activity-info"><div class="title">SeguranÃ§a</div><div class="desc">Todas as transaÃ§Ãµes sÃ£o protegidas</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon blue"><i class="fas fa-clock"></i></div><div class="activity-info"><div class="title">Prazo de processamento</div><div class="desc">Saques são processados em até 3 dias úteis</div></div></li>
+                        <li class="activity-item"><div class="activity-icon stat-icon green"><i class="fas fa-shield-alt"></i></div><div class="activity-info"><div class="title">Segurança</div><div class="desc">Todas as transações são protegidas</div></div></li>
                         <li class="activity-item"><div class="activity-icon stat-icon orange"><i class="fas fa-percent"></i></div><div class="activity-info"><div class="title">Taxa</div><div class="desc">Sem taxas para saques acima de R$ 100,00</div></div></li>
                     </ul>
                 </div>
@@ -68,7 +68,7 @@
         document.getElementById('balance').textContent = 'R$ ' + fmt(user.balance);
 
         document.getElementById('txTable').innerHTML = tx.length ? `<table>
-            <thead><tr><th>Tipo</th><th>DescriÃ§Ã£o</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
+            <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>
             <tbody>${tx.map(t => `<tr>
                 <td><span class="badge badge-${t.type==='bonus'?'green':t.type==='comissao'?'blue':t.type==='saque'?'orange':t.type==='pagamento'?'purple':'gray'}">${t.type}</span></td>
                 <td>${t.description}</td>
@@ -76,12 +76,12 @@
                 <td><span class="badge badge-${t.status==='concluido'||t.status==='creditado'?'green':t.status==='pendente'||t.status==='processando'?'orange':t.status==='falhou'?'red':'gray'}">${t.status}</span></td>
                 <td>${t.date}</td>
             </tr>`).join('')}</tbody>
-        </table>` : '<div class="table-empty"><i class="fas fa-receipt"></i><p>Nenhuma transaÃ§Ã£o</p></div>';
+        </table>` : '<div class="table-empty"><i class="fas fa-receipt"></i><p>Nenhuma transação</p></div>';
 
         async function requestWithdraw() {
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
             const pix = document.getElementById('withdrawPix').value.trim();
-            if (!amount || amount < 50) { Layout.toast('Saque mÃ­nimo: R$ 50,00', 'error'); return; }
+            if (!amount || amount < 50) { Layout.toast('Saque mínimo: R$ 50,00', 'error'); return; }
             if (!pix) { Layout.toast('Informe a chave PIX', 'error'); return; }
             if (amount > user.balance) { Layout.toast('Saldo insuficiente', 'error'); return; }
 
@@ -95,7 +95,7 @@
                 pixKey: pix
             });
 
-            if (!result) { Layout.toast('Erro de conexÃ£o com o servidor', 'error'); return; }
+            if (!result) { Layout.toast('Erro de conexão com o servidor', 'error'); return; }
             if (result.error || !result.success) {
                 Layout.toast(result.error || 'Erro ao solicitar saque', 'error');
                 return;
@@ -107,9 +107,9 @@
         }
 
         function exportExtratoPDF() {
-            if (!tx.length) { Layout.toast('Nenhuma transaÃ§Ã£o para exportar', 'error'); return; }
+            if (!tx.length) { Layout.toast('Nenhuma transação para exportar', 'error'); return; }
             ExportPDF.download('extrato-financeiro', 'Extrato Financeiro',
-                ['Tipo', 'DescriÃ§Ã£o', 'Valor', 'Status', 'Data'],
+                ['Tipo', 'Descrição', 'Valor', 'Status', 'Data'],
                 tx.map(t => [t.type, t.description, (t.amount >= 0 ? '+' : '') + 'R$ ' + fmt(Math.abs(t.amount)), t.status, t.date]),
                 { summary: [{ label: 'Total Recebido', value: 'R$ ' + fmt(totalIn), color: '#28a745' }, { label: 'Total Sacado', value: 'R$ ' + fmt(totalOut), color: '#dc3545' }, { label: 'Saldo', value: 'R$ ' + fmt(user.balance), color: '#007bff' }] }
             );

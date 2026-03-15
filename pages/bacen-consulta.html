@@ -1,22 +1,22 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” Consulta Bacen</title>
+    <title>Credbusiness — Consulta Bacen</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Bacen â€” Consulta de Valores</h2><p>Consulte valores a receber no Banco Central</p></div>
+        <div class="page-header"><h2>Bacen — Consulta de Valores</h2><p>Consulte valores a receber no Banco Central</p></div>
         <div class="grid-2">
             <div class="card">
                 <div class="card-header"><h3><i class="fas fa-university"></i> Consultar Bacen</h3></div>
@@ -27,10 +27,10 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-header"><h3><i class="fas fa-question-circle"></i> O que Ã©?</h3></div>
+                <div class="card-header"><h3><i class="fas fa-question-circle"></i> O que é?</h3></div>
                 <div class="card-body">
-                    <p style="font-size:.85rem;color:var(--text2);margin-bottom:12px">O Sistema de Valores a Receber (SVR) do Banco Central permite consultar se existem valores esquecidos em bancos e instituiÃ§Ãµes financeiras.</p>
-                    <p style="font-size:.85rem;color:var(--text2)">Podem ser consultados: contas correntes/poupanÃ§a encerradas com saldo, cotas de capital, tarifas cobradas indevidamente, entre outros.</p>
+                    <p style="font-size:.85rem;color:var(--text2);margin-bottom:12px">O Sistema de Valores a Receber (SVR) do Banco Central permite consultar se existem valores esquecidos em bancos e instituições financeiras.</p>
+                    <p style="font-size:.85rem;color:var(--text2)">Podem ser consultados: contas correntes/poupança encerradas com saldo, cotas de capital, tarifas cobradas indevidamente, entre outros.</p>
                 </div>
             </div>
         </div>
@@ -39,9 +39,9 @@
             <div class="card-body" id="bacenBody"></div>
         </div>
 
-        <!-- HistÃ³rico de consultas Bacen -->
+        <!-- Histórico de consultas Bacen -->
         <div class="card" style="margin-top:24px">
-            <div class="card-header"><h3><i class="fas fa-history"></i> HistÃ³rico de Consultas Bacen</h3></div>
+            <div class="card-header"><h3><i class="fas fa-history"></i> Histórico de Consultas Bacen</h3></div>
             <div class="card-body"><div class="table-wrap" id="bacenHistory"></div></div>
         </div>
     </template>
@@ -84,7 +84,7 @@
                         <div style="text-align:center;padding:24px">
                             <div style="font-size:3rem;margin-bottom:8px"><i class="fas fa-exclamation-circle" style="color:var(--danger)"></i></div>
                             <h3 style="font-size:1.1rem;margin-bottom:4px">Erro na Consulta</h3>
-                            <p style="font-size:.85rem;color:var(--text3)">${result?.error || result?.mensagem || 'ServiÃ§o indisponÃ­vel. Tente novamente.'}</p>
+                            <p style="font-size:.85rem;color:var(--text3)">${result?.error || result?.mensagem || 'Serviço indisponível. Tente novamente.'}</p>
                         </div>`;
                 } else if (result.dados && parseFloat(result.dados.valores_a_receber) > 0) {
                     const val = parseFloat(result.dados.valores_a_receber).toFixed(2);
@@ -93,8 +93,8 @@
                             <div style="font-size:3rem;margin-bottom:8px"><i class="fas fa-coins" style="color:var(--warning)"></i></div>
                             <h3 style="font-size:1.3rem;margin-bottom:4px">Valores Encontrados!</h3>
                             <p style="font-size:2rem;font-weight:700;color:var(--success);margin:12px 0">R$ ${val}</p>
-                            <p style="font-size:.85rem;color:var(--text3)">Valores a receber de ${result.dados.instituicoes || 0} instituiÃ§Ã£o(Ãµes)</p>
-                            <p style="font-size:.78rem;color:var(--text3);margin-top:4px">Ãšltima atualizaÃ§Ã£o: ${result.dados.ultima_atualizacao || 'â€”'}</p>
+                            <p style="font-size:.85rem;color:var(--text3)">Valores a receber de ${result.dados.instituicoes || 0} instituição(ões)</p>
+                            <p style="font-size:.78rem;color:var(--text3);margin-top:4px">Última atualização: ${result.dados.ultima_atualizacao || '—'}</p>
                             <button class="btn btn-success" style="margin-top:16px" onclick="solicitarResgate('${doc}', '${val}')"><i class="fas fa-download"></i> Solicitar Resgate</button>
                         </div>`;
                 } else {
@@ -102,7 +102,7 @@
                         <div style="text-align:center;padding:24px">
                             <div style="font-size:3rem;margin-bottom:8px"><i class="fas fa-check-circle" style="color:var(--success)"></i></div>
                             <h3 style="font-size:1.1rem;margin-bottom:4px">Nenhum Valor Encontrado</h3>
-                            <p style="font-size:.85rem;color:var(--text3)">NÃ£o existem valores a receber para o documento informado</p>
+                            <p style="font-size:.85rem;color:var(--text3)">Não existem valores a receber para o documento informado</p>
                         </div>`;
                 }
                 resultDiv.scrollIntoView({ behavior: 'smooth' });
@@ -134,7 +134,7 @@
                 const data = await DB.api('GET', '/api/services/consultations');
                 const bacenList = (data || []).filter(c => c.type === 'bacen');
                 document.getElementById('bacenHistory').innerHTML = bacenList.length ? `<table>
-                    <thead><tr><th>CPF/CNPJ</th><th>Valor Encontrado</th><th>InstituiÃ§Ãµes</th><th>Data</th></tr></thead>
+                    <thead><tr><th>CPF/CNPJ</th><th>Valor Encontrado</th><th>Instituições</th><th>Data</th></tr></thead>
                     <tbody>${bacenList.map(c => {
                         const r = c.result || {};
                         const dados = r.dados || {};

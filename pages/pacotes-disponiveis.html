@@ -1,15 +1,15 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness â€” Pacotes DisponÃ­veis</title>
+    <title>Credbusiness — Pacotes Disponíveis</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -57,7 +57,7 @@
             if (Array.isArray(res)) { pkgs = res; } else { pkgs = res.packages || []; pricePerName = res.pricePerName || 250; }
 
             if (!pkgs.length) {
-                document.getElementById('pkgCards').innerHTML = '<div class="empty-state"><i class="fas fa-box-open" style="font-size:2rem;opacity:.5;margin-bottom:8px"></i><p>Nenhum pacote disponÃ­vel para seu nÃ­vel</p></div>';
+                document.getElementById('pkgCards').innerHTML = '<div class="empty-state"><i class="fas fa-box-open" style="font-size:2rem;opacity:.5;margin-bottom:8px"></i><p>Nenhum pacote disponível para seu nível</p></div>';
                 return;
             }
 
@@ -91,7 +91,7 @@
                     <div class="pkg-names" style="font-size:1.3rem">Personalizado</div>
                     <div class="pkg-label">escolha a quantidade</div>
                     <div class="custom-input-row">
-                        <button class="btn btn-outline btn-sm" onclick="adjustCustom(-1)" style="width:36px;height:36px;padding:0">âˆ’</button>
+                        <button class="btn btn-outline btn-sm" onclick="adjustCustom(-1)" style="width:36px;height:36px;padding:0">-</button>
                         <input type="number" class="form-control" id="customCount" value="7" min="1" max="100" oninput="calcCustom()">
                         <button class="btn btn-outline btn-sm" onclick="adjustCustom(1)" style="width:36px;height:36px;padding:0">+</button>
                     </div>
@@ -121,12 +121,12 @@
 
         function checkCpfBeforePayment() {
             if (!user.cpf || user.cpf.replace(/\D/g, '').length < 11) {
-                Layout.openModal('CPF NecessÃ¡rio', `
+                Layout.openModal('CPF Necessário', `
                     <div style="text-align:center;padding:20px">
                         <div style="font-size:3rem;margin-bottom:16px"><i class="fas fa-id-card" style="color:var(--warning)"></i></div>
                         <h3 style="margin-bottom:8px">Cadastre seu CPF</h3>
-                        <p style="color:var(--text3);font-size:.9rem;margin-bottom:20px">Para realizar pagamentos, Ã© necessÃ¡rio ter o CPF cadastrado nas configuraÃ§Ãµes da sua conta.</p>
-                        <a href="configuracoes.html" class="btn btn-primary w-full" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-cog"></i> Ir para ConfiguraÃ§Ãµes</a>
+                        <p style="color:var(--text3);font-size:.9rem;margin-bottom:20px">Para realizar pagamentos, é necessário ter o CPF cadastrado nas configurações da sua conta.</p>
+                        <a href="configuracoes.html" class="btn btn-primary w-full" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-cog"></i> Ir para Configurações</a>
                     </div>
                 `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
                 return false;
@@ -164,7 +164,7 @@
                         ${canPayBalance && !isCustom ? `<button class="btn w-full" onclick="payWithBalance(${ref})" style="display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none"><i class="fas fa-wallet"></i> Pagar com Saldo (R$ ${fmt(bal)})</button>` : ''}
                         <button class="btn btn-success w-full" onclick="processPayment(${ref}, 'pix', ${isCustom})" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-qrcode"></i> Pagar com PIX</button>
                         <button class="btn btn-primary w-full" onclick="processPayment(${ref}, 'boleto', ${isCustom})" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-barcode"></i> Pagar com Boleto</button>
-                        <button class="btn btn-outline w-full" onclick="showCreditCardForm(${ref}, ${isCustom})" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-credit-card"></i> CartÃ£o de CrÃ©dito</button>
+                        <button class="btn btn-outline w-full" onclick="showCreditCardForm(${ref}, ${isCustom})" style="display:flex;align-items:center;justify-content:center;gap:8px"><i class="fas fa-credit-card"></i> Cartão de Crédito</button>
                     </div>
                 </div>
             `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button>`);
@@ -174,7 +174,7 @@
             Layout.closeModal();
             Layout.toast('Processando compra...', 'info');
             const result = await DB.api('POST', `/api/content/packages/${packageId}/buy`);
-            if (!result) { Layout.toast('Erro de conexÃ£o', 'error'); return; }
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
             if (result.error) { Layout.toast(result.error, 'error'); return; }
             Layout.toast(result.message || 'Pacote ativado com sucesso!', 'success');
             await DB.syncData();
@@ -200,7 +200,7 @@
 
             const result = await DB.api('POST', url, body);
 
-            if (!result) { Layout.toast('Erro de conexÃ£o', 'error'); return; }
+            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
             if (result.error) { Layout.toast(result.error, 'error'); return; }
 
             if (result.approved) {
@@ -224,7 +224,7 @@
                         <label style="font-size:.8rem;color:var(--text3);display:block;margin-bottom:6px">Copia e Cola (clique para copiar)</label>
                         <div onclick="copyPixCode(this)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.75rem;word-break:break-all;cursor:pointer;max-height:80px;overflow:auto">${result.pix.copyPaste || ''}</div>
                     </div>
-                    <p style="font-size:.8rem;color:var(--text3);margin-top:12px"><i class="fas fa-clock"></i> O pagamento Ã© confirmado automaticamente</p>
+                    <p style="font-size:.8rem;color:var(--text3);margin-top:12px"><i class="fas fa-clock"></i> O pagamento é confirmado automaticamente</p>
                     <div style="margin-top:16px"><button class="btn btn-outline btn-sm" onclick="checkPaymentStatus('${result.paymentId}')"><i class="fas fa-sync-alt"></i> Verificar Pagamento</button></div>
                 </div>
             `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
@@ -234,27 +234,27 @@
             const boleto = result.boleto || {};
             Layout.openModal('Pagar com Boleto', `
                 <div style="text-align:center;padding:16px">
-                    <h3 style="margin-bottom:12px;color:var(--primary)"><i class="fas fa-barcode"></i> Boleto BancÃ¡rio</h3>
+                    <h3 style="margin-bottom:12px;color:var(--primary)"><i class="fas fa-barcode"></i> Boleto Bancário</h3>
                     <p style="font-size:1.5rem;font-weight:700;color:var(--accent);margin-bottom:16px">R$ ${fmt(result.value)}</p>
                     <p style="font-size:.85rem;color:var(--text3);margin-bottom:12px">Vencimento: ${result.dueDate || 'Em 3 dias'}</p>
                     ${boleto.identificationField ? `
                         <div style="margin-top:12px">
-                            <label style="font-size:.8rem;color:var(--text3);display:block;margin-bottom:6px">Linha DigitÃ¡vel (clique para copiar)</label>
+                            <label style="font-size:.8rem;color:var(--text3);display:block;margin-bottom:6px">Linha Digitável (clique para copiar)</label>
                             <div onclick="copyBoletoCode(this)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:.8rem;word-break:break-all;cursor:pointer">${boleto.identificationField}</div>
                         </div>
                     ` : ''}
                     ${result.invoiceUrl ? `<div style="margin-top:16px"><a href="${result.invoiceUrl}" target="_blank" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Abrir Boleto</a></div>` : ''}
-                    <p style="font-size:.8rem;color:var(--text3);margin-top:12px"><i class="fas fa-info-circle"></i> Boletos sÃ£o compensados em atÃ© 3 dias Ãºteis</p>
+                    <p style="font-size:.8rem;color:var(--text3);margin-top:12px"><i class="fas fa-info-circle"></i> Boletos são compensados em até 3 dias úteis</p>
                 </div>
             `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Fechar</button>`);
         }
 
         function showCreditCardForm(ref, isCustom) {
             Layout.closeModal();
-            Layout.openModal('CartÃ£o de CrÃ©dito', `
+            Layout.openModal('Cartão de Crédito', `
                 <div style="padding:8px">
-                    <div class="form-group"><label>Nome no CartÃ£o</label><input class="form-control" id="ccName" placeholder="Como aparece no cartÃ£o"></div>
-                    <div class="form-group"><label>NÃºmero do CartÃ£o</label><input class="form-control" id="ccNumber" placeholder="0000 0000 0000 0000" maxlength="19" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()"></div>
+                    <div class="form-group"><label>Nome no Cartão</label><input class="form-control" id="ccName" placeholder="Como aparece no cartão"></div>
+                    <div class="form-group"><label>Número do Cartão</label><input class="form-control" id="ccNumber" placeholder="0000 0000 0000 0000" maxlength="19" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()"></div>
                     <div class="form-row">
                         <div class="form-group"><label>Validade</label><input class="form-control" id="ccExpiry" placeholder="MM/AA" maxlength="5" oninput="if(this.value.length===2&&!this.value.includes('/'))this.value+='/'"></div>
                         <div class="form-group"><label>CVV</label><input class="form-control" id="ccCvv" placeholder="123" maxlength="4"></div>
@@ -266,7 +266,7 @@
                     <div class="form-group"><label>Telefone</label><input class="form-control" id="ccPhone" value="${user.phone || ''}"></div>
                     <div class="form-row">
                         <div class="form-group"><label>CEP</label><input class="form-control" id="ccPostalCode" placeholder="00000-000"></div>
-                        <div class="form-group"><label>NÃºmero</label><input class="form-control" id="ccAddressNumber" placeholder="123"></div>
+                        <div class="form-group"><label>Número</label><input class="form-control" id="ccAddressNumber" placeholder="123"></div>
                     </div>
                 </div>
             `, `<button class="btn btn-outline" onclick="Layout.closeModal()">Cancelar</button><button class="btn btn-success" onclick="submitCreditCard(${ref}, ${isCustom})"><i class="fas fa-lock"></i> Pagar</button>`);
@@ -279,10 +279,10 @@
             const ccName = document.getElementById('ccName').value || '';
             const [expMonth, expYear] = ccExpiry.split('/');
 
-            if (!ccNumber || ccNumber.length < 13) { Layout.toast('NÃºmero do cartÃ£o invÃ¡lido', 'error'); return; }
-            if (!expMonth || !expYear) { Layout.toast('Validade invÃ¡lida', 'error'); return; }
-            if (!ccCvv || ccCvv.length < 3) { Layout.toast('CVV invÃ¡lido', 'error'); return; }
-            if (!ccName) { Layout.toast('Nome no cartÃ£o Ã© obrigatÃ³rio', 'error'); return; }
+            if (!ccNumber || ccNumber.length < 13) { Layout.toast('Número do cartão inválido', 'error'); return; }
+            if (!expMonth || !expYear) { Layout.toast('Validade inválida', 'error'); return; }
+            if (!ccCvv || ccCvv.length < 3) { Layout.toast('CVV inválido', 'error'); return; }
+            if (!ccName) { Layout.toast('Nome no cartão é obrigatório', 'error'); return; }
 
             const cardData = {
                 creditCard: {
@@ -306,11 +306,11 @@
         }
 
         function copyPixCode(el) {
-            navigator.clipboard.writeText(el.textContent).then(() => Layout.toast('CÃ³digo PIX copiado!', 'success')).catch(() => {});
+            navigator.clipboard.writeText(el.textContent).then(() => Layout.toast('Código PIX copiado!', 'success')).catch(() => {});
         }
 
         function copyBoletoCode(el) {
-            navigator.clipboard.writeText(el.textContent).then(() => Layout.toast('Linha digitÃ¡vel copiada!', 'success')).catch(() => {});
+            navigator.clipboard.writeText(el.textContent).then(() => Layout.toast('Linha digitável copiada!', 'success')).catch(() => {});
         }
 
         async function checkPaymentStatus(paymentId) {
@@ -322,7 +322,7 @@
                 Layout.closeModal();
                 setTimeout(() => location.reload(), 1500);
             } else {
-                Layout.toast(`Status: ${result.status}. Aguarde a confirmaÃ§Ã£o.`, 'info');
+                Layout.toast(`Status: ${result.status}. Aguarde a confirmação.`, 'info');
             }
         }
     </script>

@@ -1,50 +1,50 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness ‚Äî Comiss√µes</title>
+    <title>Credbusiness ó Comissıes</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="app"></div>
     <template id="page-content">
-        <div class="page-header"><h2>Relat√≥rio de Comiss√µes</h2><p>Hist√≥rico de comiss√µes recebidas da sua rede</p></div>
+        <div class="page-header"><h2>RelatÛrio de Comissıes</h2><p>HistÛrico de comissıes recebidas da sua rede</p></div>
 
         <!-- Date range filter -->
         <div class="card" style="margin-bottom:16px">
             <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
                 <div class="form-group" style="margin:0"><label>De</label><input type="date" class="form-control" id="dateFrom" onchange="renderComm()"></div>
-                <div class="form-group" style="margin:0"><label>At√©</label><input type="date" class="form-control" id="dateTo" onchange="renderComm()"></div>
+                <div class="form-group" style="margin:0"><label>AtÈ</label><input type="date" class="form-control" id="dateTo" onchange="renderComm()"></div>
                 <select class="form-control" id="filterType" style="max-width:160px" onchange="renderComm()">
                     <option value="">Todos os Tipos</option>
-                    <option value="comissao">Comiss√£o</option>
-                    <option value="bonus">B√¥nus</option>
+                    <option value="comissao">Comiss„o</option>
+                    <option value="bonus">BÙnus</option>
                 </select>
                 <button class="btn btn-outline btn-sm" onclick="clearFilters()"><i class="fas fa-times"></i> Limpar</button>
             </div>
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card"><div class="stat-icon green"><i class="fas fa-hand-holding-usd"></i></div><div class="stat-info"><h3 id="totalComm"></h3><p>Total Comiss√µes</p></div></div>
-            <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar"></i></div><div class="stat-info"><h3 id="monthComm"></h3><p>Comiss√£o do M√™s</p></div></div>
+            <div class="stat-card"><div class="stat-icon green"><i class="fas fa-hand-holding-usd"></i></div><div class="stat-info"><h3 id="totalComm"></h3><p>Total Comissıes</p></div></div>
+            <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-calendar"></i></div><div class="stat-info"><h3 id="monthComm"></h3><p>Comiss„o do MÍs</p></div></div>
         </div>
         <div class="card">
-            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-list"></i> Comiss√µes</h3><button class="btn btn-sm btn-outline" onclick="exportCommPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button></div>
-            <div class="card-body"><table class="table" id="commTable"><thead><tr><th>Tipo</th><th>Descri√ß√£o</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div>
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-list"></i> Comissıes</h3><button class="btn btn-sm btn-outline" onclick="exportCommPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button></div>
+            <div class="card-body"><table class="table" id="commTable"><thead><tr><th>Tipo</th><th>DescriÁ„o</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div>
         </div>
     </template>
     <script src="../js/data.js"></script>
     <script src="../js/components.js"></script>
     <script>
-        Layout.init({ basePath: '../', page: 'relatorios-comissoes', title: 'Comiss√µes' });
+        Layout.init({ basePath: '../', page: 'relatorios-comissoes', title: 'Comissıes' });
         const user = Layout.user;
         const allTx = DB.getTransactions(user.id).filter(t => t.type === 'comissao' || t.type === 'bonus');
         const currentMonth = new Date().toISOString().slice(0, 7);
@@ -76,7 +76,7 @@
                     <td style="font-weight:700;color:var(--success)">+R$ ${fmt(Math.abs(t.amount))}</td>
                     <td><span class="badge badge-green">${t.status}</span></td>
                     <td>${t.date}</td>
-                </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#64748b">Nenhuma comiss√£o encontrada</td></tr>';
+                </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#64748b">Nenhuma comiss„o encontrada</td></tr>';
             });
         }
         renderComm();
@@ -91,10 +91,10 @@
             if (type) tx = tx.filter(t => t.type === type);
             const total = tx.reduce((s, t) => s + Math.abs(t.amount), 0);
             const monthTotal = tx.filter(t => t.date.startsWith(currentMonth)).reduce((s, t) => s + Math.abs(t.amount), 0);
-            ExportPDF.download('comissoes', 'Relat√≥rio de Comiss√µes',
-                ['Tipo', 'Descri√ß√£o', 'Valor', 'Status', 'Data'],
+            ExportPDF.download('comissoes', 'RelatÛrio de Comissıes',
+                ['Tipo', 'DescriÁ„o', 'Valor', 'Status', 'Data'],
                 tx.map(t => [t.type, t.description, 'R$ ' + fmt(Math.abs(t.amount)), t.status, t.date]),
-                { summary: [{ label: 'Total', value: 'R$ ' + fmt(total), color: '#28a745' }, { label: 'M√™s Atual', value: 'R$ ' + fmt(monthTotal), color: '#007bff' }] }
+                { summary: [{ label: 'Total', value: 'R$ ' + fmt(total), color: '#28a745' }, { label: 'MÍs Atual', value: 'R$ ' + fmt(monthTotal), color: '#007bff' }] }
             );
         }
     </script>
