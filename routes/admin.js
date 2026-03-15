@@ -4,6 +4,9 @@
 
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { getDB } = require('../database/init');
 const { auth, adminOnly } = require('../middleware/auth');
 const { logAudit, getClientIP } = require('../utils/audit');
@@ -1265,7 +1268,7 @@ router.post('/payments/:id/activate', (req, res) => {
 router.get('/profile', (req, res) => {
     try {
         const db = getDB();
-        const admin = db.prepare('SELECT id, username, name, email, phone, role FROM admins WHERE id = ?').get(req.user.id);
+        const admin = db.prepare('SELECT id, username, name, email, phone, avatar, role FROM admins WHERE id = ?').get(req.user.id);
         if (!admin) return res.status(404).json({ error: 'Admin não encontrado' });
         res.json({ success: true, admin });
     } catch (err) {
@@ -1299,11 +1302,46 @@ router.put('/profile', (req, res) => {
 
         logAudit(db, { user_id: req.user.id, user_role: 'admin', action: 'admin_profile_update', details: `Admin ${admin.username} atualizou perfil`, ip: getClientIP(req) });
 
-        const updated = db.prepare('SELECT id, username, name, email, phone, role FROM admins WHERE id = ?').get(req.user.id);
+        const updated = db.prepare('SELECT id, username, name, email, phone, avatar, role FROM admins WHERE id = ?').get(req.user.id);
         res.json({ success: true, admin: updated });
     } catch (err) {
         console.error('Erro update admin profile:', err.message);
         res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// ── Upload avatar admin ──
+const adminAvatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '..', 'uploads', 'avatars');
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `admin-${req.user.id}-${Date.now()}${ext}`);
+    }
+});
+const uploadAdminAvatar = multer({
+    storage: adminAvatarStorage,
+    limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+        cb(null, allowed.includes(path.extname(file.originalname).toLowerCase()));
+    }
+});
+
+router.post('/profile/avatar', uploadAdminAvatar.single('avatar'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Envie uma imagem válida (JPG, PNG ou WebP, até 2MB)' });
+    try {
+        const db = getDB();
+        const avatarPath = `uploads/avatars/${req.file.filename}`;
+        db.prepare('UPDATE admins SET avatar = ? WHERE id = ?').run(avatarPath, req.user.id);
+        logAudit(db, { user_id: req.user.id, user_role: 'admin', action: 'admin_avatar_update', details: 'Admin atualizou foto de perfil', ip: getClientIP(req) });
+        res.json({ success: true, avatar: avatarPath });
+    } catch (err) {
+        console.error('Erro upload avatar admin:', err.message);
+        res.status(500).json({ error: 'Erro ao salvar avatar' });
     }
 });
 

@@ -397,6 +397,7 @@ function initDatabase() {
     // v8 — Admin profile fields
     addCol('admins', 'email', "TEXT DEFAULT ''");
     addCol('admins', 'phone', "TEXT DEFAULT ''");
+    addCol('admins', 'avatar', "TEXT DEFAULT ''");
 
     // ── Novas tabelas (v2 — features AgilCred) ──
     d.exec(`

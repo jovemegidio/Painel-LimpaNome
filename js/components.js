@@ -100,6 +100,20 @@ const Layout = {
                         <button onclick="Layout.closeAdminProfile()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">&times;</button>
                     </div>
                     <form id="adminProfileForm" onsubmit="Layout.saveAdminProfile(event)">
+                        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #e5e7eb">
+                            <div style="position:relative">
+                                <img id="apAvatarPreview" src="https://ui-avatars.com/api/?name=Admin&background=dc2626&color=fff&size=80&rounded=true&bold=true" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #e5e7eb">
+                                <label for="apAvatarFile" style="position:absolute;bottom:-2px;right:-2px;width:28px;height:28px;background:#6366f1;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.15)">
+                                    <i class="fas fa-camera" style="color:#fff;font-size:11px"></i>
+                                </label>
+                                <input type="file" id="apAvatarFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="Layout.previewAdminAvatar(this)">
+                            </div>
+                            <div>
+                                <div id="apAvatarName" style="font-weight:600;color:#1e1b4b;font-size:1rem">Admin</div>
+                                <div style="font-size:.8rem;color:#9ca3af">Clique no ícone para alterar a foto</div>
+                                <div style="font-size:.75rem;color:#cbd5e1">JPG, PNG ou WebP — máx. 2MB</div>
+                            </div>
+                        </div>
                         <div class="modal-form-grid">
                             <div class="form-group"><label>Username</label><input type="text" id="apUsername" class="form-control" disabled></div>
                             <div class="form-group"><label>Nome completo</label><input type="text" id="apName" class="form-control" required></div>
@@ -295,6 +309,7 @@ const Layout = {
 
         if (this.isAdmin) {
             const adminName = u.name || 'Admin';
+            const adminAvatarSrc = u.avatar ? (u.avatar.startsWith('http') ? u.avatar : `${bp}${u.avatar}`) : `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=dc2626&color=fff&size=34&rounded=true&bold=true`;
             return `
                 <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu lateral" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
                 <div class="header-breadcrumb" aria-label="Navegação estrutural">Admin &rsaquo; <span>${this.title}</span></div>
@@ -303,7 +318,7 @@ const Layout = {
                     <a href="${bp}pages/dashboard.html" class="btn btn-sm btn-outline"><i class="fas fa-external-link-alt" aria-hidden="true"></i> Painel</a>
                 </div>
                 <div class="user-menu" id="userMenuBtn" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-label="Menu do usuário">
-                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=dc2626&color=fff&size=34&rounded=true&bold=true" alt="Avatar Admin">
+                    <img src="${adminAvatarSrc}" alt="Avatar Admin">
                     <div><div class="name">${adminName}</div></div>
                 </div>
                 <div class="dropdown" id="userDropdown" role="menu">
@@ -584,11 +599,14 @@ const Layout = {
     logout() { DB.logout(); window.location.href = this.basePath + 'login.html'; },
 
     // ── Admin Profile Modal ──
+    _adminAvatar: null,
+
     async openAdminProfile() {
         const modal = document.getElementById('adminProfileModal');
         if (!modal) return;
         modal.style.display = 'flex';
         document.getElementById('adminProfileForm').reset();
+        this._adminAvatar = null;
         try {
             const res = await DB.api('GET', '/api/admin/profile');
             if (res && res.success && res.admin) {
@@ -596,6 +614,13 @@ const Layout = {
                 document.getElementById('apName').value = res.admin.name || '';
                 document.getElementById('apEmail').value = res.admin.email || '';
                 document.getElementById('apPhone').value = res.admin.phone || '';
+                document.getElementById('apAvatarName').textContent = res.admin.name || 'Admin';
+                const avatarImg = document.getElementById('apAvatarPreview');
+                if (res.admin.avatar) {
+                    avatarImg.src = (res.admin.avatar.startsWith('http') ? res.admin.avatar : '/' + res.admin.avatar) + '?t=' + Date.now();
+                } else {
+                    avatarImg.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(res.admin.name || 'Admin') + '&background=dc2626&color=fff&size=80&rounded=true&bold=true';
+                }
             }
         } catch {}
     },
@@ -603,6 +628,17 @@ const Layout = {
     closeAdminProfile() {
         const modal = document.getElementById('adminProfileModal');
         if (modal) modal.style.display = 'none';
+    },
+
+    previewAdminAvatar(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            if (file.size > 2 * 1024 * 1024) { Layout.toast('Imagem deve ter no máximo 2MB', 'error'); input.value = ''; return; }
+            this._adminAvatar = file;
+            const reader = new FileReader();
+            reader.onload = (e) => { document.getElementById('apAvatarPreview').src = e.target.result; };
+            reader.readAsDataURL(file);
+        }
     },
 
     async saveAdminProfile(e) {
@@ -620,13 +656,45 @@ const Layout = {
             data.current_password = curPass;
             data.new_password = newPass;
         }
+
+        // Upload avatar se selecionado
+        let newAvatarPath = null;
+        if (this._adminAvatar) {
+            const formData = new FormData();
+            formData.append('avatar', this._adminAvatar);
+            try {
+                const token = localStorage.getItem('token');
+                const avatarRes = await fetch((DB.BASE || '') + '/api/admin/profile/avatar', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const avatarResult = await avatarRes.json();
+                if (avatarResult.success) { newAvatarPath = avatarResult.avatar; } else { Layout.toast(avatarResult.error || 'Erro ao enviar foto', 'error'); }
+            } catch (err) { console.error('Avatar upload error', err); }
+        }
+
         const res = await DB.api('PUT', '/api/admin/profile', data);
         if (res && res.success) {
             Layout.toast('Perfil atualizado com sucesso!', 'success');
             this.closeAdminProfile();
-            // Atualizar nome no header
+
+            // Atualizar dados no localStorage para reflexo em tempo real
+            const admins = DB.get('admins') || [];
+            const idx = admins.findIndex(a => a.id === res.admin.id);
+            if (idx >= 0) {
+                admins[idx] = { ...admins[idx], ...res.admin };
+                if (newAvatarPath) admins[idx].avatar = newAvatarPath;
+                DB.set('admins', admins);
+            }
+
+            // Atualizar header: nome e avatar
             const nameEl = document.querySelector('.user-menu .name');
-            if (nameEl && res.admin) nameEl.textContent = res.admin.name;
+            if (nameEl) nameEl.textContent = res.admin.name;
+            const avatarEl = document.querySelector('.user-menu img');
+            if (avatarEl) {
+                if (newAvatarPath) {
+                    avatarEl.src = '/' + newAvatarPath + '?t=' + Date.now();
+                } else {
+                    avatarEl.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(res.admin.name) + '&background=dc2626&color=fff&size=34&rounded=true&bold=true';
+                }
+            }
         } else {
             Layout.toast(res?.error || 'Erro ao atualizar perfil', 'error');
         }
