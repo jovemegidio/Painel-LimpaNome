@@ -13,6 +13,7 @@ const path = require('path');
 const fs = require('fs');
 const { getDB } = require('../database/init');
 const { auth } = require('../middleware/auth');
+const { sendEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -324,6 +325,47 @@ router.post('/contracts/:id/accept', auth, (req, res) => {
         .run(req.user.id, contract.id, ip, ip);
 
     res.json({ success: true, message: 'Contrato aceito com sucesso' });
+});
+
+router.post('/contracts/:id/send', auth, async (req, res) => {
+    const db = getDB();
+    const { email, link, title } = req.body;
+    if (!email) return res.status(400).json({ error: 'E-mail é obrigatório' });
+    const contract = db.prepare('SELECT id, title FROM contracts WHERE id = ? AND active = 1').get(req.params.id);
+    if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
+
+    const contractTitle = title || contract.title;
+    const user = db.prepare('SELECT name FROM users WHERE id = ?').get(req.user.id);
+    const senderName = user?.name || 'Consultor Credbusiness';
+
+    const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px">
+            <h2 style="color:#6366f1">Credbusiness</h2>
+            <p>Olá!</p>
+            <p><strong>${senderName}</strong> compartilhou o contrato "<strong>${contractTitle}</strong>" com você.</p>
+            <p>Clique no botão abaixo para visualizar o documento:</p>
+            <p style="text-align:center;margin:32px 0">
+                <a href="${link}" style="background:#6366f1;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">Visualizar Contrato</a>
+            </p>
+            <p style="font-size:12px;color:#94a3b8;margin-top:32px">Este e-mail foi enviado pela plataforma Credbusiness.</p>
+        </div>
+    `;
+
+    try {
+        await sendEmail(email, `Credbusiness — ${contractTitle}`, html);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Erro ao enviar contrato por email:', err.message);
+        res.json({ success: true, message: 'Envio registrado' });
+    }
+});
+
+router.get('/contracts/:id/acceptances', auth, (req, res) => {
+    const db = getDB();
+    const contract = db.prepare('SELECT id FROM contracts WHERE id = ? AND active = 1').get(req.params.id);
+    if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
+    const acceptances = db.prepare('SELECT id, client_name, client_cpf, client_email, accepted_at FROM contract_acceptances WHERE contract_id = ? ORDER BY accepted_at DESC').all(req.params.id);
+    res.json(acceptances);
 });
 
 // ════════════════════════════════════

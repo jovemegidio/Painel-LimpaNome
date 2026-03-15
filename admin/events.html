@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Credbusiness">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <title>Credbusiness Admin — Eventos</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -103,9 +109,8 @@
             document.getElementById('evMaxTickets').value = e.max_tickets || 0;
         }
 
-        function saveEv(ev) {
+        async function saveEv(ev) {
             ev.preventDefault();
-            const evs = DB.get('events') || [];
             const id = document.getElementById('evEditId').value;
             const obj = {
                 title: document.getElementById('evTitle').value.trim(),
@@ -117,28 +122,34 @@
                 price: parseFloat(document.getElementById('evPrice').value) || 0,
                 max_tickets: parseInt(document.getElementById('evMaxTickets').value) || 0
             };
+            let res;
             if (id) {
-                const idx = evs.findIndex(x => x.id === parseInt(id));
-                if (idx !== -1) evs[idx] = { ...evs[idx], ...obj };
+                res = await DB.api('PUT', `/api/admin/events/${id}`, obj);
             } else {
-                obj.id = Date.now();
-                evs.push(obj);
+                res = await DB.api('POST', '/api/admin/events', obj);
             }
-            DB.set('events', evs);
-            DB.apiBackground('PUT', '/api/admin/content/events', evs);
-            closeEvModal();
-            renderTable();
-            Layout.toast('Evento salvo!', 'success');
+            if (res && (res.success || res.id)) {
+                await DB.syncData();
+                closeEvModal();
+                renderTable();
+                Layout.toast('Evento salvo!', 'success');
+            } else {
+                Layout.toast(res?.error || 'Erro ao salvar evento', 'error');
+            }
         }
 
-        function deleteEv(id) {
+        async function deleteEv(id) {
             if (!confirm('Excluir este evento?')) return;
-            const evs = (DB.get('events')||[]).filter(x => x.id !== id);
-            DB.set('events', evs);
-            DB.apiBackground('PUT', '/api/admin/content/events', evs);
-            renderTable();
-            Layout.toast('Evento excluído', 'success');
+            const res = await DB.api('DELETE', `/api/admin/events/${id}`);
+            if (res && res.success) {
+                await DB.syncData();
+                renderTable();
+                Layout.toast('Evento excluído', 'success');
+            } else {
+                Layout.toast(res?.error || 'Erro ao excluir evento', 'error');
+            }
         }
     </script>
+    <script src="/js/pwa.js"></script>
 </body>
 </html>

@@ -99,7 +99,9 @@ app.use(helmet({
             imgSrc: ["'self'", "data:", "blob:", "https:"],
             connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
             frameSrc: ["'none'"],
-            objectSrc: ["'none'"]
+            objectSrc: ["'none'"],
+            manifestSrc: ["'self'"],
+            workerSrc: ["'self'"]
         }
     },
     crossOriginEmbedderPolicy: false,
@@ -142,7 +144,8 @@ app.use(csrfProtection({ skipPaths: [
     '/api/auth/admin-login',
     '/api/auth/register',
     '/api/auth/forgot-password',
-    '/api/auth/reset-password'
+    '/api/auth/reset-password',
+    '/api/contracts/public'
 ] }));
 
 // ── Rate Limiting ──
@@ -195,6 +198,35 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
+// ── API pública: contrato para clientes (sem auth) ──
+app.get('/api/contracts/public/:id', (req, res) => {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    const db = require('./database/init').getDB();
+    const contract = db.prepare('SELECT id, title, description, content, version, created_at FROM contracts WHERE id = ? AND active = 1').get(id);
+    if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
+    res.json(contract);
+});
+
+// ── API pública: aceite de contrato por cliente externo ──
+app.post('/api/contracts/public/:id/accept', (req, res) => {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+    const { name, cpf, email } = req.body;
+    if (!name || !cpf) return res.status(400).json({ error: 'Nome e CPF são obrigatórios' });
+    const cpfClean = cpf.replace(/\D/g, '');
+    if (cpfClean.length !== 11) return res.status(400).json({ error: 'CPF inválido' });
+    const db = require('./database/init').getDB();
+    const contract = db.prepare('SELECT id FROM contracts WHERE id = ? AND active = 1').get(id);
+    if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
+    const already = db.prepare('SELECT id FROM contract_acceptances WHERE contract_id = ? AND client_cpf = ?').get(id, cpfClean);
+    if (already) return res.json({ success: true, message: 'Contrato já aceito anteriormente', alreadyAccepted: true });
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    db.prepare('INSERT INTO contract_acceptances (contract_id, client_name, client_cpf, client_email, ip) VALUES (?, ?, ?, ?, ?)')
+        .run(id, name.trim(), cpfClean, (email || '').trim(), clientIp);
+    res.json({ success: true, message: 'Contrato aceito com sucesso!' });
+});
+
 // ── API Routes ──
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
@@ -210,6 +242,36 @@ app.use('/api/documents', require('./routes/documents'));
 app.use('/api/lgpd', require('./routes/lgpd'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/wallet', require('./routes/wallet'));
+
+// ── Trabalhe Conosco (rota pública, sem auth) ──
+app.post('/api/careers/apply', (req, res) => {
+    try {
+        const { nome, email, whatsapp, cidade, area, sobre } = req.body;
+        if (!nome || !email) return res.status(400).json({ error: 'Nome e e-mail são obrigatórios' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'E-mail inválido' });
+
+        const db = require('./database/init').getDB();
+        db.exec(`CREATE TABLE IF NOT EXISTS career_applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            email TEXT NOT NULL,
+            whatsapp TEXT,
+            cidade TEXT,
+            area TEXT,
+            sobre TEXT,
+            status TEXT DEFAULT 'pendente',
+            created_at TEXT DEFAULT (datetime('now'))
+        )`);
+
+        db.prepare('INSERT INTO career_applications (nome, email, whatsapp, cidade, area, sobre) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(nome, email, whatsapp || null, cidade || null, area || null, sobre || null);
+
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('Erro careers:', err.message);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
 
 // ── SSE (Server-Sent Events) — Real-time updates ──
 app.get('/api/sse', (req, res) => {
@@ -243,7 +305,7 @@ app.get('/api/sse', (req, res) => {
 });
 
 // ── Servir SOMENTE arquivos do frontend (whitelist) ──
-const publicDirs = ['css', 'js', 'pages', 'admin'];
+const publicDirs = ['css', 'js', 'pages', 'admin', 'icons'];
 publicDirs.forEach(dir => {
     const dirPath = path.join(__dirname, dir);
     if (fs.existsSync(dirPath)) {
@@ -257,12 +319,21 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
 // Arquivos HTML na raiz (whitelist explícita)
-const publicFiles = ['index.html', 'login.html', 'register.html', 'password-forgot.html', 'password-reset.html', 'termos-de-uso.html', 'politica-de-privacidade.html'];
+const publicFiles = ['index.html', 'login.html', 'register.html', 'password-forgot.html', 'password-reset.html', 'termos-de-uso.html', 'politica-de-privacidade.html', 'contrato.html', 'offline.html', 'manifest.json'];
 publicFiles.forEach(file => {
     app.get(`/${file}`, (req, res) => {
         res.sendFile(path.join(__dirname, file));
     });
 });
+
+// Service Worker precisa de Service-Worker-Allowed header e sem cache
+app.get('/sw.js', (req, res) => {
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile(path.join(__dirname, 'sw.js'));
+});
+
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ── Custom pages: /pages/custom-{slug}.html → serve template ──

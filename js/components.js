@@ -3,6 +3,11 @@
    Sidebar, Header, Footer, Modal, Toast
    ═══════════════════════════════════════════ */
 
+// Suppress redirect errors thrown by Layout.init to halt page scripts silently
+window.addEventListener('error', function(e) {
+    if (e.error && e.error.message === 'redirect') e.preventDefault();
+});
+
 const Layout = {
     basePath: '',
 
@@ -13,11 +18,11 @@ const Layout = {
         this.isAdmin = options.admin || false;
         this.settings = DB.getSettings();
 
-        // Auth check
+        // Auth check — throw to halt all script execution while redirect is pending
         const cur = DB.getCurrentUser();
-        if (!cur) { window.location.href = this.basePath + 'login.html'; return; }
-        if (this.isAdmin && cur.role !== 'admin') { window.location.href = this.basePath + 'login.html'; return; }
-        if (!this.isAdmin && cur.role === 'admin') { window.location.href = this.basePath + 'admin/index.html'; return; }
+        if (!cur) { window.location.href = this.basePath + 'login.html'; throw new Error('redirect'); }
+        if (this.isAdmin && cur.role !== 'admin') { window.location.href = this.basePath + 'login.html'; throw new Error('redirect'); }
+        if (!this.isAdmin && cur.role === 'admin') { window.location.href = this.basePath + 'admin/index.html'; throw new Error('redirect'); }
 
         this.user = cur;
 
@@ -26,14 +31,7 @@ const Layout = {
         this.hasPackage = !!(cur.has_package);
         if (!this.isAdmin && !this.hasPackage && this.page && !freePages.includes(this.page)) {
             window.location.href = this.basePath + 'pages/pacotes-disponiveis.html';
-            return;
-        }
-
-        // Verificar bloqueio por mensalidade vencida
-        const feeFreePagesArr = ['dashboard', 'meu-plano', 'configuracoes', 'suporte-tickets', 'suporte-faq'];
-        if (!this.isAdmin && cur.access_blocked && this.page && !feeFreePagesArr.includes(this.page)) {
-            window.location.href = this.basePath + 'pages/dashboard.html';
-            return;
+            throw new Error('redirect');
         }
 
         this.buildLayout();
@@ -238,6 +236,7 @@ const Layout = {
             { id: 'admin-processes', icon: 'fas fa-file-alt', label: 'Processos', href: bp + 'admin/processes.html' },
             { id: 'admin-transactions', icon: 'fas fa-exchange-alt', label: 'Transações', href: bp + 'admin/transactions.html' },
             { id: 'admin-packages', icon: 'fas fa-cube', label: 'Pacotes', href: bp + 'admin/packages.html' },
+            { id: 'admin-careers', icon: 'fas fa-briefcase', label: 'Candidaturas', href: bp + 'admin/careers.html' },
             { id: 'admin-tickets', icon: 'fas fa-headset', label: 'Tickets', href: bp + 'admin/tickets.html' },
             { id: 'admin-network', icon: 'fas fa-sitemap', label: 'Rede', href: bp + 'admin/network.html' },
             { id: 'admin-news', icon: 'fas fa-newspaper', label: 'Informativos', href: bp + 'admin/news.html' },
@@ -247,6 +246,7 @@ const Layout = {
             { id: 'admin-university', icon: 'fas fa-graduation-cap', label: 'Universidade', href: bp + 'admin/university.html' },
             { id: 'admin-faq', icon: 'fas fa-question-circle', label: 'FAQ', href: bp + 'admin/faq.html' },
             { id: 'admin-downloads', icon: 'fas fa-download', label: 'Downloads', href: bp + 'admin/downloads.html' },
+            { id: 'admin-contracts', icon: 'fas fa-file-signature', label: 'Aceites', href: bp + 'admin/contracts.html' },
             { id: 'admin-audit', icon: 'fas fa-history', label: 'Auditoria', href: bp + 'admin/audit.html' },
             { id: 'admin-custom-pages', icon: 'fas fa-file-alt', label: 'Páginas', href: bp + 'admin/custom-pages.html' },
         ];
@@ -337,6 +337,22 @@ const Layout = {
             overlay.classList.remove('show');
             toggle?.setAttribute('aria-expanded', 'false');
             toggle?.setAttribute('aria-label', 'Abrir menu lateral');
+        });
+
+        // Mobile: toggle submenus by click instead of hover
+        sidebar?.querySelectorAll('.nav-item.has-submenu > .nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (window.innerWidth <= 992) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const parent = link.closest('.nav-item.has-submenu');
+                    // Close other open submenus
+                    sidebar.querySelectorAll('.nav-item.has-submenu.submenu-open').forEach(el => {
+                        if (el !== parent) el.classList.remove('submenu-open');
+                    });
+                    parent.classList.toggle('submenu-open');
+                }
+            });
         });
 
         // Keyboard: Enter/Space to toggle submenus
@@ -683,25 +699,48 @@ const ExportPDF = {
         const date = new Date().toLocaleDateString('pt-BR');
         const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+        const pc = settings.primaryColor || '#6366f1';
+        const siteName = settings.siteName || 'Credbusiness';
+        const logoUrl = window.location.origin + '/css/logo.png';
+        const docNum = String(Date.now()).slice(-6);
+
         const html = `
-        <div style="font-family:Arial,Helvetica,sans-serif;padding:20px;color:#1a1a2e">
-            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid ${settings.primaryColor || '#6366f1'};padding-bottom:16px;margin-bottom:20px">
-                <div>
-                    <h1 style="margin:0;font-size:20px;color:${settings.primaryColor || '#6366f1'}">${settings.siteName || 'Credbusiness'}</h1>
-                    <p style="margin:4px 0 0;font-size:11px;color:#666">Escritório Virtual — Relatório</p>
-                </div>
-                <div style="text-align:right;font-size:11px;color:#666">
-                    <div>${date} às ${time}</div>
+        <div style="font-family:'Segoe UI',Arial,Helvetica,sans-serif;padding:0;color:#1a1a2e;min-height:100%">
+            <!-- Cabeçalho Institucional -->
+            <div style="padding:28px 32px 20px;margin:-10px -10px 0;border-bottom:3px solid ${pc}">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="display:flex;align-items:center;gap:16px">
+                        <img src="${logoUrl}" style="height:32px;object-fit:contain" crossorigin="anonymous">
+                    </div>
+                    <div style="text-align:right;font-size:10px;color:#64748b;line-height:1.6">
+                        <div style="font-weight:700;color:#1a1a2e">RELATÓRIO OFICIAL</div>
+                        <div>${date} às ${time}</div>
+                        <div>Documento Nº ${docNum}</div>
+                    </div>
                 </div>
             </div>
-            <h2 style="font-size:16px;margin:0 0 16px;color:#1a1a2e">${title}</h2>
-            ${options.summary ? `<div style="display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap">${options.summary.map(s => `<div style="background:#f8f9fa;border-radius:8px;padding:10px 16px;flex:1;min-width:120px"><div style="font-size:11px;color:#666">${s.label}</div><div style="font-size:16px;font-weight:700;color:${s.color || '#1a1a2e'}">${s.value}</div></div>`).join('')}</div>` : ''}
-            <table style="width:100%;border-collapse:collapse;font-size:11px">
-                <thead><tr>${headers.map(h => `<th style="background:${settings.primaryColor || '#6366f1'};color:#fff;padding:8px 10px;text-align:left;font-size:11px">${h}</th>`).join('')}</tr></thead>
-                <tbody>${rows.map((r, i) => `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8f9fa'}">${r.map(c => `<td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:11px">${c || ''}</td>`).join('')}</tr>`).join('')}</tbody>
+            <!-- Título -->
+            <div style="padding:20px 32px 0;margin:0 -10px">
+                <h2 style="font-size:15px;margin:0 0 4px;color:#1a1a2e;font-weight:700">${title}</h2>
+                <div style="width:40px;height:3px;background:${pc};border-radius:2px;margin-bottom:16px"></div>
+            </div>
+            <!-- Tabela -->
+            <div style="padding:0 32px;margin:0 -10px">
+            <table style="width:100%;border-collapse:collapse;font-size:10px">
+                <thead><tr>${headers.map(h => `<th style="background:#1a1a2e;color:#fff;padding:10px 12px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">${h}</th>`).join('')}</tr></thead>
+                <tbody>${rows.map((r, i) => `<tr style="background:${i % 2 === 0 ? '#fff' : '#f8fafc'}">${r.map(c => `<td style="padding:8px 12px;border-bottom:1px solid #eef1f5;font-size:10px;color:#334155">${c || ''}</td>`).join('')}</tr>`).join('')}</tbody>
             </table>
-            <div style="margin-top:24px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:10px;color:#999">
-                ${settings.footerText || '© 2026 Credbusiness'} — Documento gerado automaticamente em ${date}
+            </div>
+            <!-- Rodapé -->
+            <div style="margin:28px -10px 0;padding:16px 32px;border-top:2px solid #e9ecef;display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:9px;color:#94a3b8">
+                    <strong style="color:#64748b">${siteName}</strong> — ${settings.footerText || 'Consultoria e Assessoria Jurídica'}<br>
+                    Documento gerado eletronicamente em ${date} às ${time}
+                </div>
+                <div style="font-size:8px;color:#94a3b8;text-align:right">
+                    Este documento é de uso interno e confidencial.<br>
+                    Reprodução não autorizada é proibida.
+                </div>
             </div>
         </div>`;
 
@@ -711,7 +750,7 @@ const ExportPDF = {
 
         const opt = {
             margin: [10, 10, 10, 10],
-            filename: `${filename}_${new Date().toISOString().slice(0, 10)}.pdf`,
+            filename: `${filename}_${docNum}_${siteName.replace(/\s+/g,'_')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: rows[0] && rows[0].length > 6 ? 'landscape' : 'portrait' }

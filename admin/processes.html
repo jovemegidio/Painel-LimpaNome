@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Credbusiness">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <title>Credbusiness Admin — Processos</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -38,7 +44,7 @@
                 <h3>Todos os Processos</h3>
                 <div style="display:flex;gap:8px">
                     <button class="btn btn-outline btn-sm" onclick="exportProcPDF()"><i class="fas fa-file-pdf"></i> Relatório PDF</button>
-                    <button class="btn btn-outline btn-sm" onclick="exportProc()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+                    <button class="btn btn-outline btn-sm" onclick="exportProc()"><i class="fas fa-file-excel"></i> Exportar Excel</button>
                 </div>
             </div>
             <div class="card-header" style="border-top:none;padding-top:0;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
@@ -59,7 +65,7 @@
             </div>
             <div class="card-body" style="overflow-x:auto">
                 <table class="table" id="processTable"><thead><tr>
-                    <th>ID</th><th>Usuário</th><th>CPF/CNPJ</th><th>Tipo</th><th>Instituição</th><th>Valor</th><th>Data</th><th>Status</th><th style="width:140px">Ações</th>
+                    <th>ID</th><th>Nome</th><th>CPF/CNPJ</th><th>Tipo</th><th>Instituição</th><th>Saldo Nomes</th><th>Data</th><th>Status</th><th style="width:140px">Ações</th>
                 </tr></thead><tbody></tbody></table>
                 <div id="procPagination" style="display:flex;justify-content:center;gap:4px;padding:16px"></div>
             </div>
@@ -223,11 +229,11 @@
             const tbody = document.querySelector('#processTable tbody');
             tbody.innerHTML = procData.length ? procData.map(p => `<tr style="cursor:pointer" ondblclick="viewProcess(${p.id})">
                 <td><strong>#${p.id}</strong></td>
-                <td>${esc(p.user_name||'—')}<br><span style="font-size:.75rem;color:var(--text3)">ID: ${p.user_id}</span></td>
+                <td>${esc(p.name||'—')}</td>
                 <td>${esc(p.cpf || '—')}</td>
                 <td><span class="badge badge-secondary">${typeLabels[p.type]||p.type}</span></td>
                 <td>${esc(p.institution || '—')}</td>
-                <td style="font-weight:600">R$ ${fmt(p.value||0)}</td>
+                <td style="font-weight:600;color:${(p.user_names_available||0) > 0 ? '#10b981' : '#ef4444'}">${p.user_names_available || 0}</td>
                 <td>${new Date(p.created_at).toLocaleDateString('pt-BR')}</td>
                 <td><span class="badge badge-${stMap[p.status]||'secondary'}">${(p.status||'').replace('_',' ')}</span></td>
                 <td style="display:flex;gap:4px">
@@ -408,9 +414,73 @@
         }
 
         function exportProc() {
-            const headers = ['ID', 'Usuário', 'CPF', 'Tipo', 'Instituição', 'Valor', 'Status', 'Data'];
-            const rows = procData.map(p => [p.id, p.user_name||'', p.cpf||'', p.type, p.institution||'', p.value||0, p.status, p.created_at]);
-            ExportCSV.download('processos', headers, rows);
+            const typeLabels = { limpa_nome: 'Limpa Nome', bacen: 'Bacen', cnpj: 'CNPJ' };
+            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+            const statusColors = { pendente: '#f59e0b', em_andamento: '#3b82f6', concluido: '#10b981', cancelado: '#ef4444' };
+            const settings = DB.getSettings();
+            const pc = settings.primaryColor || '#6366f1';
+            const companyName = (settings.companyName || 'CREDBUSINESS').toUpperCase();
+            const date = new Date().toLocaleDateString('pt-BR');
+            const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            // Contagens
+            const counts = { total: procData.length, pendente: 0, em_andamento: 0, concluido: 0, cancelado: 0 };
+            procData.forEach(p => { if (counts[p.status] !== undefined) counts[p.status]++; });
+
+            const tableRows = procData.map(p => {
+                const sc = statusColors[p.status] || '#666';
+                return `<tr>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#374151">${p.id}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#111827;font-weight:600">${p.name||'—'}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151;font-family:monospace">${p.cpf||'—'}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#374151">${typeLabels[p.type]||p.type}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151">${p.institution||'—'}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;font-weight:700;color:${(p.user_names_available||0)>0?'#10b981':'#ef4444'}">${p.user_names_available||0}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center"><span style="background:${sc}22;color:${sc};padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600">${statusLabels[p.status]||p.status}</span></td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#374151">${new Date(p.created_at).toLocaleDateString('pt-BR')}</td>
+                </tr>`;
+            }).join('');
+
+            const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8">
+            <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Processos</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+            </head><body>
+            <table style="border-collapse:collapse;width:100%">
+                <tr><td colspan="8" style="padding:20px 16px 4px;font-size:22px;font-weight:800;color:${pc};letter-spacing:1px;font-family:Arial,sans-serif">${companyName}</td></tr>
+                <tr><td colspan="8" style="padding:2px 16px 4px;font-size:11px;color:#6b7280;font-family:Arial,sans-serif">Escritório Virtual — Painel Administrativo</td></tr>
+                <tr><td colspan="8" style="padding:12px 16px 4px;font-size:15px;font-weight:700;color:#1e1b4b;font-family:Arial,sans-serif">Relatório de Processos</td></tr>
+                <tr><td colspan="8" style="padding:2px 16px 16px;font-size:11px;color:#6b7280;font-family:Arial,sans-serif">Gerado em ${date} às ${time} · Nº ${String(Date.now()).slice(-6)}</td></tr>
+                <tr>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">ID</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">Nome</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">CPF</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Tipo</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">Instituição</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Saldo Nomes</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Status</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Data</td>
+                </tr>
+                ${tableRows}
+                <tr><td colspan="8" style="padding:6px"></td></tr>
+                <tr>
+                    <td colspan="2" style="padding:8px 12px;font-size:12px;font-weight:700;color:#1e1b4b;border:1px solid #e5e7eb;background:#f8fafc;font-family:Arial,sans-serif">📊 Total: ${counts.total}</td>
+                    <td colspan="1" style="padding:8px 12px;font-size:11px;font-weight:600;color:#f59e0b;border:1px solid #e5e7eb;background:#fefce8;text-align:center;font-family:Arial,sans-serif">Pendentes: ${counts.pendente}</td>
+                    <td colspan="2" style="padding:8px 12px;font-size:11px;font-weight:600;color:#3b82f6;border:1px solid #e5e7eb;background:#eff6ff;text-align:center;font-family:Arial,sans-serif">Em Andamento: ${counts.em_andamento}</td>
+                    <td colspan="1" style="padding:8px 12px;font-size:11px;font-weight:600;color:#10b981;border:1px solid #e5e7eb;background:#ecfdf5;text-align:center;font-family:Arial,sans-serif">Concluídos: ${counts.concluido}</td>
+                    <td colspan="2" style="padding:8px 12px;font-size:11px;font-weight:600;color:#ef4444;border:1px solid #e5e7eb;background:#fef2f2;text-align:center;font-family:Arial,sans-serif">Cancelados: ${counts.cancelado}</td>
+                </tr>
+                <tr><td colspan="8" style="padding:16px 12px 4px;font-size:9px;color:#9ca3af;font-family:Arial,sans-serif">Documento gerado automaticamente pelo sistema ${companyName}. Informações confidenciais.</td></tr>
+            </table>
+                <script src="/js/pwa.js"></script>
+</body></html>`;
+
+            const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'relatorio_processos_' + new Date().toISOString().slice(0, 10) + '.xls';
+            link.click();
+            URL.revokeObjectURL(link.href);
+            Layout.toast('Relatório exportado com sucesso!', 'success');
         }
 
         async function exportProcPDF() {
@@ -425,13 +495,12 @@
 
             const typeLabels = { limpa_nome: 'Limpa Nome', bacen: 'Bacen', cnpj: 'CNPJ' };
             const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
-            const headers = ['#', 'Usuário', 'CPF/CNPJ', 'Tipo', 'Valor (R$)', 'Status', 'Data'];
+            const headers = ['#', 'Nome', 'CPF/CNPJ', 'Tipo', 'Status', 'Data'];
             const rows = res.processes.map(p => [
                 p.id,
-                (p.user_name || '—'),
+                (p.name || '—'),
                 (p.cpf || '—'),
                 typeLabels[p.type] || p.type,
-                'R$ ' + fmt(p.value || 0),
                 statusLabels[p.status] || p.status,
                 new Date(p.created_at).toLocaleDateString('pt-BR')
             ]);
@@ -439,32 +508,21 @@
             // Incluir consultas realizadas no relatório
             const consultations = res.consultations || [];
             if (consultations.length > 0) {
-                rows.push(['', '', '', '', '', '', '']);
-                rows.push(['', '— CONSULTAS REALIZADAS —', '', '', '', '', '']);
+                rows.push(['', '', '', '', '', '']);
+                rows.push(['', '— CONSULTAS REALIZADAS —', '', '', '', '']);
                 consultations.forEach((c, i) => {
                     rows.push([
                         'C' + (i + 1),
-                        (c.user_name || '—'),
+                        (c.name || c.cpf || '—'),
                         (c.cpf || '—'),
                         'Consulta CPF',
-                        '—',
                         c.result ? 'Concluída' : 'Realizada',
                         new Date(c.created_at).toLocaleDateString('pt-BR')
                     ]);
                 });
             }
 
-            const summary = [
-                { label: 'Total Processos', value: res.counts.total, color: '#6366f1' },
-                { label: 'Pendentes', value: res.counts.pendente, color: '#f59e0b' },
-                { label: 'Em Andamento', value: res.counts.em_andamento, color: '#3b82f6' },
-                { label: 'Concluídos', value: res.counts.concluido, color: '#10b981' },
-                { label: 'Cancelados', value: res.counts.cancelado, color: '#ef4444' },
-                { label: 'Valor Total', value: 'R$ ' + fmt(res.totalValue), color: '#1a1a2e' },
-                { label: 'Total Consultas', value: consultations.length, color: '#8b5cf6' }
-            ];
-
-            await ExportPDF.download('relatorio_processos_limpa_nome', 'Relatório de Processos — Limpa Nome', headers, rows, { summary });
+            await ExportPDF.download('Relatorio_de_Processos', 'Relatório de Processos — Limpa Nome', headers, rows);
         }
 
         function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

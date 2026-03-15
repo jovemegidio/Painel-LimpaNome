@@ -173,12 +173,31 @@ async function deploy() {
             } catch {}
             const jwtSecret = existingJwtSecret || `credbusiness_jwt_PROD_${require('crypto').randomBytes(32).toString('hex')}`;
 
+            // Preservar variáveis Asaas existentes para não perder a chave em redeploys
+            let existingAsaasKey = '', existingAsaasEnv = '', existingAsaasWebhook = '';
+            try {
+                const existingEnvFull = await new Promise((resolve, reject) => {
+                    sftp.readFile(`${APP_DIR}/.env`, 'utf8', (err, data) => {
+                        if (err) resolve(''); else resolve(data);
+                    });
+                });
+                const matchKey = existingEnvFull.match(/^ASAAS_API_KEY=(.+)$/m);
+                const matchEnv = existingEnvFull.match(/^ASAAS_ENV=(.+)$/m);
+                const matchWebhook = existingEnvFull.match(/^ASAAS_WEBHOOK_TOKEN=(.+)$/m);
+                if (matchKey && matchKey[1]) existingAsaasKey = matchKey[1];
+                if (matchEnv && matchEnv[1]) existingAsaasEnv = matchEnv[1];
+                if (matchWebhook && matchWebhook[1]) existingAsaasWebhook = matchWebhook[1];
+            } catch {}
+
             const envContent = `PORT=3001
 NODE_ENV=production
 JWT_SECRET=${jwtSecret}
 JWT_EXPIRES_IN=7d
 DB_PATH=./database/credbusiness.db
 DOMAIN=mkt-credbusiness.vps-kinghost.net
+ASAAS_API_KEY=${existingAsaasKey}
+ASAAS_ENV=${existingAsaasEnv || 'production'}
+ASAAS_WEBHOOK_TOKEN=${existingAsaasWebhook}
 API_CPF_URL=
 API_CPF_KEY=
 API_BACEN_URL=

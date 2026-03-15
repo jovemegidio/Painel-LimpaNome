@@ -109,7 +109,14 @@ const filesToUpload = [
     { local: 'pages/limpa-nome-dashboard.html', remote: `${APP_DIR}/pages/limpa-nome-dashboard.html` },
     { local: 'pages/custom-page.html', remote: `${APP_DIR}/pages/custom-page.html` },
     { local: 'admin/custom-pages.html', remote: `${APP_DIR}/admin/custom-pages.html` },
+    { local: 'admin/contracts.html', remote: `${APP_DIR}/admin/contracts.html` },
     { local: 'utils/sse.js', remote: `${APP_DIR}/utils/sse.js` },
+    { local: 'contrato.html', remote: `${APP_DIR}/contrato.html` },
+    { local: 'admin/careers.html', remote: `${APP_DIR}/admin/careers.html` },
+    { local: 'manifest.json', remote: `${APP_DIR}/manifest.json` },
+    { local: 'sw.js', remote: `${APP_DIR}/sw.js` },
+    { local: 'offline.html', remote: `${APP_DIR}/offline.html` },
+    { local: 'js/pwa.js', remote: `${APP_DIR}/js/pwa.js` },
 ];
 
 const c = new Client();

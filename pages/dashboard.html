@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Credbusiness">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <title>Credbusiness — Dashboard</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -84,17 +90,6 @@
     <div id="app"></div>
 
     <template id="page-content">
-        <!-- Monthly Fee Alert Banner -->
-        <div id="monthlyFeeAlert" style="display:none;background:linear-gradient(135deg,#dc2626,#b91c1c);border-radius:var(--radius);padding:20px 24px;color:#fff;margin-bottom:24px;align-items:center;gap:16px;flex-wrap:wrap">
-            <div style="flex:1;min-width:200px">
-                <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:4px;color:#fff"><i class="fas fa-exclamation-triangle"></i> Mensalidade Pendente</h3>
-                <p style="font-size:.88rem;opacity:.9" id="feeAlertText">Sua mensalidade de R$ 95,00 está vencida. Seu acesso foi bloqueado. Efetue o pagamento para reativar.</p>
-            </div>
-            <button class="btn" onclick="payMonthlyFee()" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);padding:10px 24px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap">
-                <i class="fas fa-credit-card"></i> Pagar Mensalidade
-            </button>
-        </div>
-
         <!-- Welcome Banner -->
         <div class="dash-welcome" id="welcomeBanner">
             <div>
@@ -322,54 +317,13 @@
         function copyLink() { navigator.clipboard.writeText(document.getElementById('refLink').value); Layout.toast('Link copiado!', 'success'); }
         function shareWpp() { window.open('https://wa.me/?text=' + encodeURIComponent('Conheça a Credbusiness! ' + document.getElementById('refLink').value)); }
 
-        // ── Verificar mensalidade ──
-        (async function checkMonthlyFee() {
-            try {
-                const feeStatus = await DB.getMonthlyFeeStatus();
-                if (!feeStatus) return;
-                const showAlert = feeStatus.accessBlocked || !feeStatus.isPaid || (feeStatus.daysUntilDue !== null && feeStatus.daysUntilDue <= 5);
-                if (showAlert) {
-                    const alertEl = document.getElementById('monthlyFeeAlert');
-                    alertEl.style.display = 'flex';
-                    let txt;
-                    if (feeStatus.accessBlocked) {
-                        txt = `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} está vencida. Seu acesso foi bloqueado. Efetue o pagamento para reativar.`;
-                    } else if (!feeStatus.isPaid) {
-                        txt = `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} está vencida. Efetue o pagamento para manter o acesso.`;
-                    } else {
-                        txt = `Sua mensalidade de R$ ${fmt(feeStatus.monthlyFeeValue || 95)} vence em ${feeStatus.daysUntilDue} dia${feeStatus.daysUntilDue !== 1 ? 's' : ''}. Efetue o pagamento para manter o acesso.`;
-                    }
-                    document.getElementById('feeAlertText').textContent = txt;
-                }
-            } catch {}
-        })();
 
-        async function payMonthlyFee() {
-            const method = prompt('Método de pagamento:\n1 - PIX\n2 - Boleto\n3 - Cartão de Crédito\n\nDigite 1, 2 ou 3:');
-            if (!method) return;
-            const methods = { '1': 'pix', '2': 'boleto', '3': 'credit_card' };
-            const m = methods[method.trim()];
-            if (!m) { Layout.toast('Método inválido', 'error'); return; }
-            Layout.toast('Processando pagamento...', 'info');
-            const result = await DB.payMonthlyFee(m);
-            if (!result) { Layout.toast('Erro de conexão', 'error'); return; }
-            if (result.error) { Layout.toast(result.error, 'error'); return; }
-            if (result.approved) {
-                Layout.toast(result.message || 'Mensalidade paga com sucesso!', 'success');
-                await DB.syncData();
-                setTimeout(() => location.reload(), 1500);
-            } else if (result.invoiceUrl) {
-                Layout.toast('Cobrança gerada! Redirecionando...', 'success');
-                setTimeout(() => window.open(result.invoiceUrl, '_blank'), 1000);
-            } else {
-                Layout.toast(result.message || 'Cobrança gerada com sucesso!', 'success');
-            }
-        }
 
         // Real-time: recarrega ao receber atualização relevante
         window.onRealtimeUpdate = function(detail) {
             if (['transactions','user_updated','processes','notifications'].includes(detail.entity)) location.reload();
         };
     </script>
+    <script src="/js/pwa.js"></script>
 </body>
 </html>

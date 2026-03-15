@@ -534,6 +534,43 @@ function initDatabase() {
         CREATE INDEX IF NOT EXISTS idx_custom_pages_visible ON custom_pages(visible);
     `);
 
+    d.exec(`
+        CREATE TABLE IF NOT EXISTS contract_acceptances (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            contract_id INTEGER NOT NULL,
+            client_name TEXT NOT NULL,
+            client_cpf TEXT NOT NULL,
+            client_email TEXT DEFAULT '',
+            ip TEXT DEFAULT '',
+            accepted_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_contract_acceptances_contract ON contract_acceptances(contract_id);
+        CREATE INDEX IF NOT EXISTS idx_contract_acceptances_cpf ON contract_acceptances(client_cpf);
+    `);
+
+    // ── Garantir que o usuário root credbusiness sempre exista ──
+    try {
+        const rootExists = d.prepare("SELECT id FROM users WHERE username = 'credbusiness'").get();
+        if (!rootExists) {
+            const bcryptInit = require('bcryptjs');
+            d.prepare(`
+                INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, email_verified, has_package, created_at)
+                VALUES (?, ?, ?, ?, '', '', NULL, 'premium', 'diamante', 0, 0, 0, 1, 'user', 1, datetime('now'), 1, 1, date('now'))
+            `).run('credbusiness', bcryptInit.hashSync('Cred@2026Biz', 10), 'Credbusiness', 'contato@credbusinessconsultoria.com.br');
+            console.log('✅ Usuário root credbusiness recriado');
+        }
+    } catch (e) { /* ignora se tabela não existe ainda */ }
+
+    // ── Migração: Indicados diretos do credbusiness devem ser Diamante ──
+    try {
+        const credbiz = d.prepare("SELECT id FROM users WHERE username = 'credbusiness'").get();
+        if (credbiz) {
+            const fixed = d.prepare("UPDATE users SET level = 'diamante' WHERE sponsor_id = ? AND level != 'diamante'").run(credbiz.id);
+            if (fixed.changes > 0) console.log(`✅ ${fixed.changes} indicado(s) do credbusiness corrigido(s) para Diamante`);
+        }
+    } catch (e) { /* ignora se tabela não existe ainda */ }
+
     // Seed if empty
     const count = d.prepare('SELECT COUNT(*) as c FROM users').get();
     if (count.c === 0) {
@@ -551,17 +588,34 @@ function initDatabase() {
 function seedData(d) {
     const h = (pw) => bcrypt.hashSync(pw, 10);
 
+
     // Admin
     d.prepare('INSERT OR IGNORE INTO admins (username, password, name, role) VALUES (?,?,?,?)')
         .run('ADM-CREDBUSINESS', h('credadmin'), 'Administrador', 'superadmin');
 
     // Root user (primeiro patrocinador da rede — necessário para registros)
-    const rootExists = d.prepare('SELECT id FROM users WHERE username = ?').get('credbusiness');
-    if (!rootExists) {
+    let credbusinessUser = d.prepare('SELECT id FROM users WHERE username = ?').get('credbusiness');
+    if (!credbusinessUser) {
         d.prepare(`
             INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, email_verified, has_package, created_at)
             VALUES (?, ?, ?, ?, '', '', NULL, 'premium', 'diamante', 0, 0, 0, 1, 'user', 1, datetime('now'), 1, 1, date('now'))
         `).run('credbusiness', h('Cred@2026Biz'), 'Credbusiness', 'contato@credbusinessconsultoria.com.br');
+        credbusinessUser = d.prepare('SELECT id FROM users WHERE username = ?').get('credbusiness');
+    }
+
+    // Usuário especial: flavio calixto, patrocinado por credbusiness
+    let flavioUser = d.prepare('SELECT id FROM users WHERE username = ?').get('flavio.calixto');
+    if (!flavioUser && credbusinessUser) {
+        d.prepare(`
+            INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, email_verified, has_package, created_at)
+            VALUES (?, ?, ?, ?, '', '', ?, 'premium', 'ouro', 0, 0, 0, 1, 'user', 1, datetime('now'), 1, 1, date('now'))
+        `).run(
+            'flavio.calixto',
+            h('Flavio@2026'),
+            'Flavio Calixto',
+            'flavio.calixto@exemplo.com',
+            credbusinessUser.id
+        );
     }
 
     // Levels (5 níveis — patrocínio em decadência: Diamante→Ouro→Prata→Bronze→Start)

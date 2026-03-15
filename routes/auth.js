@@ -36,8 +36,16 @@ router.get('/check-sponsor', (req, res) => {
         const username = sanitize(req.query.username);
         if (!username) return res.json({ valid: false });
         const db = getDB();
-        const user = db.prepare('SELECT id, name, level FROM users WHERE LOWER(username) = ? AND active = 1').get(username.toLowerCase());
+        const user = db.prepare('SELECT id, name, level, username FROM users WHERE LOWER(username) = ? AND active = 1').get(username.toLowerCase());
         if (user) {
+            // Exceção: indicados diretos do credbusiness entram como Diamante
+            if (user.username === 'credbusiness') {
+                return res.json({ valid: true, name: user.name, sponsorLevel: user.level, yourLevel: 'diamante' });
+            }
+            // Exceção: indicados diretos do flavio.calixto entram como Ouro
+            if (user.username === 'flavio.calixto') {
+                return res.json({ valid: true, name: user.name, sponsorLevel: user.level, yourLevel: 'ouro' });
+            }
             const LEVEL_HIERARCHY = { diamante: 'ouro', ouro: 'prata', prata: 'bronze', bronze: 'start', start: null };
             const childLevel = LEVEL_HIERARCHY[user.level];
             if (childLevel === null || childLevel === undefined) {
@@ -64,7 +72,9 @@ router.post('/login', (req, res) => {
         if (!user || !bcrypt.compareSync(password, user.password)) {
             return res.status(401).json({ success: false, error: 'Usuário ou senha inválidos' });
         }
-        if (!user.active) return res.status(403).json({ success: false, error: 'Conta desativada. Entre em contato com o suporte.' });
+        if (!user.active && user.has_package) {
+            return res.status(403).json({ success: false, error: 'Conta desativada. Entre em contato com o suporte.' });
+        }
 
         // 2FA temporariamente desabilitado
         // if (user.totp_enabled) {
@@ -219,18 +229,27 @@ router.post('/register', (req, res) => {
 
         let sponsorId = null;
         let assignedLevel = 'start';
+
         if (sponsor) {
-            const sp = db.prepare('SELECT id, level FROM users WHERE LOWER(username) = ? OR id = ?')
+            const sp = db.prepare('SELECT id, level, username FROM users WHERE LOWER(username) = ? OR id = ?')
                 .get(sponsor.toLowerCase(), isNaN(sponsor) ? -1 : Number(sponsor));
             if (!sp) return res.status(404).json({ success: false, error: 'Patrocinador não encontrado.' });
 
-            // Hierarquia de cadastro: Diamante→Ouro→Prata→Bronze→Start
-            const LEVEL_HIERARCHY = { diamante: 'ouro', ouro: 'prata', prata: 'bronze', bronze: 'start', start: null };
-            const childLevel = LEVEL_HIERARCHY[sp.level];
-            if (childLevel === null || childLevel === undefined) {
-                return res.status(400).json({ success: false, error: 'Este patrocinador (nível Start) não pode cadastrar novos membros.' });
+            // Exceção: indicados diretos do credbusiness entram como Diamante
+            if (sp.username === 'credbusiness') {
+                assignedLevel = 'diamante';
+            } else if (sp.username === 'flavio.calixto') {
+                // Exceção: indicados diretos do flavio.calixto entram como Ouro
+                assignedLevel = 'ouro';
+            } else {
+                // Hierarquia de cadastro: Diamante→Ouro→Prata→Bronze→Start
+                const LEVEL_HIERARCHY = { diamante: 'ouro', ouro: 'prata', prata: 'bronze', bronze: 'start', start: null };
+                const childLevel = LEVEL_HIERARCHY[sp.level];
+                if (childLevel === null || childLevel === undefined) {
+                    return res.status(400).json({ success: false, error: 'Este patrocinador (nível Start) não pode cadastrar novos membros.' });
+                }
+                assignedLevel = childLevel;
             }
-            assignedLevel = childLevel;
 
             // Limite de 12 patrocinados por patrocinador (só conta quem já comprou pacote)
             const sponsoredCount = db.prepare('SELECT COUNT(*) as c FROM users WHERE sponsor_id = ? AND has_package = 1').get(sp.id);
@@ -246,7 +265,7 @@ router.post('/register', (req, res) => {
 
         const result = db.prepare(`
             INSERT INTO users (username, password, name, email, phone, cpf, sponsor_id, plan, level, points, bonus, balance, active, role, lgpd_consent, lgpd_consent_date, email_verified, has_package, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'basico', ?, 0, 0, 0, 1, 'user', 1, datetime('now'), 0, 0, date('now'))
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'basico', ?, 0, 0, 0, 0, 'user', 1, datetime('now'), 0, 0, date('now'))
         `).run(username.toLowerCase(), hashedPassword, name, email.toLowerCase(), phone || '', cpf || '', sponsorId, assignedLevel);
 
         const userId = result.lastInsertRowid;
@@ -268,7 +287,7 @@ router.post('/register', (req, res) => {
 
         logAudit({ userType: 'user', userId, action: 'register', entity: 'user', entityId: userId, ip: getClientIP(req) });
 
-        res.status(201).json({ success: true, userId, message: 'Conta criada! Verifique seu email para ativar.' });
+        res.status(201).json({ success: true, userId, message: 'Conta criada! Adquira um pacote para ativar sua conta.' });
     } catch (err) {
         console.error('Erro registro:', err.message);
         res.status(500).json({ success: false, error: 'Erro interno do servidor' });

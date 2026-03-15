@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credbusiness — Sem Conexão</title>
+    <link rel="icon" href="/favicon.ico" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0c0a1d;color:#fff;
+            min-height:100vh;display:flex;align-items:center;justify-content:center;
+            -webkit-font-smoothing:antialiased}
+        .offline-container{text-align:center;padding:40px 24px;max-width:420px}
+        .offline-icon{width:120px;height:120px;margin:0 auto 32px;border-radius:50%;
+            background:rgba(99,102,241,.12);display:flex;align-items:center;justify-content:center;
+            animation:pulse 2s ease-in-out infinite}
+        .offline-icon svg{width:56px;height:56px;stroke:#6366f1;fill:none;stroke-width:1.5;
+            stroke-linecap:round;stroke-linejoin:round}
+        @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.8}}
+        h1{font-size:1.5rem;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+        p{color:#7c7c9a;font-size:.95rem;line-height:1.6;margin-bottom:32px}
+        .retry-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 32px;
+            background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;
+            border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;
+            transition:all .25s;font-family:inherit;
+            box-shadow:0 4px 14px rgba(99,102,241,.3)}
+        .retry-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,.4)}
+        .retry-btn:active{transform:translateY(0)}
+        .brand{margin-top:48px;opacity:.3;font-size:.8rem;font-weight:600;letter-spacing:1px;
+            text-transform:uppercase}
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            <svg viewBox="0 0 24 24">
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                <path d="M10.71 5.05A16 16 0 0 1 22.56 9"></path>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+        </div>
+        <h1>Sem conexão</h1>
+        <p>Você está sem internet no momento. Verifique sua conexão e tente novamente.</p>
+        <button class="retry-btn" onclick="location.reload()">
+            ↻ Tentar novamente
+        </button>
+        <div class="brand">Credbusiness</div>
+    </div>
+</body>
+</html>

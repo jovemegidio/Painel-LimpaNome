@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Credbusiness">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <title>Credbusiness Admin — Transações</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -190,20 +196,14 @@
             renderTable();
         }
 
-        function renderStats() {
-            // Stats from all loaded data + quick totals
-            DB.api('GET', '/api/admin/transactions?limit=1').then(r => {
-                if (!r) return;
-            });
-            const compras = txData.filter(t => t.type === 'compra').reduce((s, t) => s + Math.abs(t.amount), 0);
-            const saques = txData.filter(t => t.type === 'saque').reduce((s, t) => s + Math.abs(t.amount), 0);
-            const comissoes = txData.filter(t => t.type === 'comissao').reduce((s, t) => s + Math.abs(t.amount), 0);
-            const bonus = txData.filter(t => t.type === 'bonus').reduce((s, t) => s + Math.abs(t.amount), 0);
+        async function renderStats() {
+            const res = await DB.api('GET', '/api/admin/transactions/stats');
+            const s = res || {};
             const items = [
-                { icon: 'fa-shopping-cart', color: '#6366f1', label: 'Compras (página)', value: 'R$ ' + fmt(compras) },
-                { icon: 'fa-hand-holding-usd', color: '#ef4444', label: 'Saques (página)', value: 'R$ ' + fmt(saques) },
-                { icon: 'fa-percentage', color: '#10b981', label: 'Comissões (página)', value: 'R$ ' + fmt(comissoes) },
-                { icon: 'fa-gift', color: '#f59e0b', label: 'Bônus (página)', value: 'R$ ' + fmt(bonus) }
+                { icon: 'fa-shopping-cart', color: '#6366f1', label: 'Compras', value: 'R$ ' + fmt(s.compras || 0) },
+                { icon: 'fa-hand-holding-usd', color: '#ef4444', label: 'Saques', value: 'R$ ' + fmt(s.saques || 0) },
+                { icon: 'fa-percentage', color: '#10b981', label: 'Comissões', value: 'R$ ' + fmt(s.comissoes || 0) },
+                { icon: 'fa-gift', color: '#f59e0b', label: 'Bônus', value: 'R$ ' + fmt(s.bonus || 0) }
             ];
             document.getElementById('statsGrid').innerHTML = items.map(s => `
                 <div class="stat-card">
@@ -402,5 +402,6 @@
 
         loadTransactions();
     </script>
+    <script src="/js/pwa.js"></script>
 </body>
 </html>

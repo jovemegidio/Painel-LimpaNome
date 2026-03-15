@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Credbusiness Admin — Candidaturas</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/components.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="page-header">
+            <h2>Candidaturas Trabalhe Conosco</h2>
+            <p>Visualize e gerencie as candidaturas recebidas pelo formulário do site.</p>
+        </div>
+        <div id="candidaturas-list" class="admin-table-container">
+            <div class="loading">Carregando candidaturas...</div>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('candidaturas-list');
+        try {
+            const res = await fetch('/api/admin/careers');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || 'Erro ao carregar candidaturas');
+            if (!data.candidaturas || !data.candidaturas.length) {
+                container.innerHTML = '<div class="empty">Nenhuma candidatura recebida ainda.</div>';
+                return;
+            }
+            let html = `<table class="admin-table"><thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Cargo</th><th>Mensagem</th><th>Data</th><th>Ações</th></tr></thead><tbody>`;
+            for (const c of data.candidaturas) {
+                html += `<tr>
+                    <td>${c.nome}</td>
+                    <td>${c.email}</td>
+                    <td>${c.telefone}</td>
+                    <td>${c.cargo}</td>
+                    <td>${c.mensagem}</td>
+                    <td>${new Date(c.data).toLocaleString('pt-BR')}</td>
+                    <td><button onclick="chamarEntrevista('${c.email}','${c.nome}')">Chamar para entrevista</button></td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        } catch (e) {
+            container.innerHTML = '<div class="error">Erro ao carregar candidaturas</div>';
+        }
+    });
+    function chamarEntrevista(email, nome) {
+        if (!confirm(`Enviar convite de entrevista para ${nome}?`)) return;
+        fetch('/api/admin/careers/interview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, nome })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) alert('Convite enviado!');
+            else alert('Erro: ' + (data.error || 'Falha ao enviar convite.'));
+        })
+        .catch(() => alert('Erro ao enviar convite.'));
+    }
+    </script>
+</body>
+</html>

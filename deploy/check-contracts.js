@@ -3,16 +3,11 @@ const { Client } = require('ssh2');
 const c = new Client();
 c.on('ready', () => {
     const cmd = `cd /var/www/credbusiness && node -e "
-const D = require('better-sqlite3');
-const db = new D('database/credbusiness.db');
-// Check if asaas key was saved in settings table
-const settings = db.prepare('SELECT key, value FROM settings WHERE key LIKE ?').all('%asaas%');
-console.log('Settings with asaas:', JSON.stringify(settings));
-// Also check all settings keys
-const allKeys = db.prepare('SELECT key FROM settings').all().map(r => r.key);
-console.log('All settings keys:', allKeys.join(', '));
-// Check full .env
-" && echo '--- Full .env ---' && cat .env`;
+const db = require('./database/init').getDB();
+db.prepare('DELETE FROM contract_acceptances WHERE client_cpf = ?').run('11122233344');
+console.log('Teste removido');
+"`;
+
     c.exec(cmd, (err, stream) => {
         let out = '';
         stream.on('data', d => out += d);

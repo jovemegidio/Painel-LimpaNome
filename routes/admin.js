@@ -1,3 +1,40 @@
+// ════════════════════════════════════
+//   CANDIDATURAS (TRABALHE CONOSCO)
+// ════════════════════════════════════
+// Listar candidaturas
+router.get('/careers', (req, res) => {
+    const db = getDB();
+    db.exec(`CREATE TABLE IF NOT EXISTS career_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        email TEXT NOT NULL,
+        whatsapp TEXT,
+        cidade TEXT,
+        area TEXT,
+        sobre TEXT,
+        status TEXT DEFAULT 'pendente',
+        created_at TEXT DEFAULT (datetime('now'))
+    )`);
+    const candidaturas = db.prepare('SELECT id, nome, email, whatsapp as telefone, cidade, area as cargo, sobre as mensagem, status, created_at as data FROM career_applications ORDER BY created_at DESC').all();
+    res.json({ success: true, candidaturas });
+});
+
+// Chamar para entrevista (envia email)
+router.post('/careers/interview', async (req, res) => {
+    const { email, nome } = req.body;
+    if (!email || !nome) return res.status(400).json({ success: false, error: 'Nome e email obrigatórios' });
+    try {
+        // Enviar email de convite (usa utilitário já existente se houver)
+        const { sendNotificationEmail } = require('../utils/email');
+        await sendNotificationEmail(email, nome,
+            'Convite para Entrevista — Credbusiness',
+            `<p>Olá ${nome},</p><p>Recebemos sua candidatura no Trabalhe Conosco e gostaríamos de convidá-lo(a) para uma entrevista. Responda este e-mail para agendar um horário.</p><p>Atenciosamente,<br>Equipe Credbusiness</p>`
+        );
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: 'Erro ao enviar convite.' });
+    }
+});
 /* ═══════════════════════════════════════════
    Credbusiness — Admin Routes (CRUD completo)
    ═══════════════════════════════════════════ */
@@ -176,6 +213,11 @@ router.put('/users/:id', (req, res) => {
 
 router.delete('/users/:id', (req, res) => {
     const db = getDB();
+    // Proteger o usuário root (credbusiness) contra exclusão
+    const target = db.prepare('SELECT username FROM users WHERE id = ?').get(req.params.id);
+    if (target && target.username === 'credbusiness') {
+        return res.status(403).json({ success: false, error: 'O usuário root credbusiness não pode ser excluído.' });
+    }
     logAudit({ userType: 'admin', userId: req.user.id, action: 'admin_delete_user', entity: 'user', entityId: Number(req.params.id), ip: getClientIP(req) });
     db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
     broadcast('users', { action: 'deleted', id: Number(req.params.id) });
@@ -213,7 +255,7 @@ router.get('/processes', (req, res) => {
     if (type) { where += ' AND p.type = ?'; params.push(type); }
 
     const total = db.prepare(`SELECT COUNT(*) as c FROM processes p LEFT JOIN users u ON p.user_id = u.id ${where}`).get(...params).c;
-    const processes = db.prepare(`SELECT p.*, u.name as user_name, u.email as user_email, u.cpf as user_cpf FROM processes p LEFT JOIN users u ON p.user_id = u.id ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+    const processes = db.prepare(`SELECT p.*, u.name as user_name, u.email as user_email, u.cpf as user_cpf, u.names_available as user_names_available FROM processes p LEFT JOIN users u ON p.user_id = u.id ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
 
     res.json({ processes, total, page, totalPages: Math.ceil(total / limit) });
 });
@@ -229,7 +271,7 @@ router.get('/processes/report', (req, res) => {
     if (status) { where += ' AND p.status = ?'; params.push(status); }
     if (type) { where += ' AND p.type = ?'; params.push(type); }
 
-    const processes = db.prepare(`SELECT p.*, u.name as user_name, u.email as user_email, u.cpf as user_cpf, u.phone as user_phone, u.plan as user_plan FROM processes p LEFT JOIN users u ON p.user_id = u.id ${where} ORDER BY p.created_at DESC`).all(...params);
+    const processes = db.prepare(`SELECT p.*, u.name as user_name, u.email as user_email, u.cpf as user_cpf, u.phone as user_phone, u.plan as user_plan, u.names_available as user_names_available FROM processes p LEFT JOIN users u ON p.user_id = u.id ${where} ORDER BY p.created_at DESC`).all(...params);
     const counts = { total: processes.length, pendente: 0, em_andamento: 0, concluido: 0, cancelado: 0 };
     let totalValue = 0;
     processes.forEach(p => { counts[p.status] = (counts[p.status] || 0) + 1; totalValue += (p.value || 0); });
@@ -309,6 +351,17 @@ router.delete('/processes/:id', (req, res) => {
 // ════════════════════════════════════
 //   TRANSACTIONS
 // ════════════════════════════════════
+router.get('/transactions/stats', (req, res) => {
+    const db = getDB();
+    const row = (type) => db.prepare("SELECT COALESCE(SUM(ABS(amount)),0) as total FROM transactions WHERE type = ?").get(type).total;
+    res.json({
+        compras: row('compra') + row('pagamento'),
+        saques: row('saque'),
+        comissoes: row('comissao'),
+        bonus: row('bonus')
+    });
+});
+
 router.get('/transactions', (req, res) => {
     const db = getDB();
     const search = req.query.search || '';
@@ -494,6 +547,11 @@ router.get('/packages', (req, res) => {
 router.post('/packages', (req, res) => {
     const { name, price, points, description, level_key, names_count } = req.body;
     const db = getDB();
+    // Verificar duplicidade (mesmo nome e mesma quantidade de nomes)
+    const exists = db.prepare('SELECT id FROM packages WHERE LOWER(name) = ? AND names_count = ?').get(String(name).toLowerCase(), Number(names_count));
+    if (exists) {
+        return res.status(409).json({ success: false, error: 'Já existe um pacote com este nome e quantidade de nomes.' });
+    }
     const result = db.prepare('INSERT INTO packages (name,price,points,description,level_key,names_count) VALUES (?,?,?,?,?,?)')
         .run(name, price, points || 0, description || '', level_key || '', names_count || 0);
     broadcast('packages', { action: 'created', id: result.lastInsertRowid });
@@ -503,6 +561,11 @@ router.post('/packages', (req, res) => {
 router.put('/packages/:id', (req, res) => {
     const { name, price, points, description, active, level_key, names_count } = req.body;
     const db = getDB();
+    // Verificar duplicidade (exceto o próprio pacote)
+    const exists = db.prepare('SELECT id FROM packages WHERE LOWER(name) = ? AND names_count = ? AND id != ?').get(String(name).toLowerCase(), Number(names_count), req.params.id);
+    if (exists) {
+        return res.status(409).json({ success: false, error: 'Já existe um pacote com este nome e quantidade de nomes.' });
+    }
     db.prepare(`UPDATE packages SET name=COALESCE(?,name), price=COALESCE(?,price),
         points=COALESCE(?,points), description=COALESCE(?,description), active=COALESCE(?,active),
         level_key=COALESCE(?,level_key), names_count=COALESCE(?,names_count) WHERE id=?`)
@@ -987,6 +1050,28 @@ router.get('/export/users', (req, res) => {
         console.error('Erro export users:', err.message);
         res.status(500).json({ error: 'Erro ao exportar cadastros' });
     }
+});
+
+// ── Contratos (listar para select) ──
+router.get('/contracts', auth, adminOnly, (req, res) => {
+    const db = getDB();
+    const contracts = db.prepare('SELECT id, title, active, created_at FROM contracts ORDER BY created_at DESC').all();
+    res.json(contracts);
+});
+
+// ── Aceites de Contratos ──
+router.get('/contract-acceptances', auth, adminOnly, (req, res) => {
+    const db = getDB();
+    const { contract_id, search } = req.query;
+    let where = '1=1';
+    const params = [];
+    if (contract_id) { where += ' AND ca.contract_id = ?'; params.push(contract_id); }
+    if (search) { where += ' AND (ca.client_name LIKE ? OR ca.client_cpf LIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
+    const acceptances = db.prepare(`SELECT ca.*, c.title as contract_title FROM contract_acceptances ca LEFT JOIN contracts c ON c.id = ca.contract_id WHERE ${where} ORDER BY ca.accepted_at DESC`).all(...params);
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCount = acceptances.filter(a => (a.accepted_at || '').startsWith(today)).length;
+    const uniqueCpfs = new Set(acceptances.map(a => a.client_cpf)).size;
+    res.json({ acceptances, total: acceptances.length, today: todayCount, uniqueClients: uniqueCpfs });
 });
 
 module.exports = router;

@@ -62,7 +62,10 @@ router.post('/package/custom', auth, async (req, res) => {
         }
         let customer;
         try { customer = await asaas.getOrCreateCustomer(user); }
-        catch (e) { return res.status(400).json({ error: 'Erro ao processar CPF. Verifique seus dados em Configurações.' }); }
+        catch (e) {
+            if (e.code === 'ASAAS_AUTH') return res.status(503).json({ error: 'Sistema de pagamento temporariamente indisponível. Tente novamente mais tarde.' });
+            return res.status(400).json({ error: 'Erro ao processar dados de pagamento. Tente novamente.' });
+        }
         if (!customer) return res.status(400).json({ error: 'CPF/CNPJ inválido. Atualize em Configurações.' });
 
         if (!user.asaas_customer_id || user.asaas_customer_id !== customer.id) {
@@ -167,7 +170,8 @@ router.post('/package/:packageId', auth, async (req, res) => {
             customer = await asaas.getOrCreateCustomer(user);
         } catch (custErr) {
             console.error('Erro Asaas customer:', custErr.message);
-            return res.status(400).json({ error: 'Erro ao processar CPF. Verifique seus dados em Configurações.' });
+            if (custErr.code === 'ASAAS_AUTH') return res.status(503).json({ error: 'Sistema de pagamento temporariamente indisponível. Tente novamente mais tarde.' });
+            return res.status(400).json({ error: 'Erro ao processar dados de pagamento. Tente novamente.' });
         }
         if (!customer) {
             return res.status(400).json({ error: 'CPF/CNPJ inválido. Atualize seus dados em Configurações.' });
@@ -460,8 +464,13 @@ router.get('/my', auth, (req, res) => {
 router.get('/monthly-fee/status', auth, (req, res) => {
     try {
         const db = getDB();
-        const user = db.prepare('SELECT monthly_fee_paid_until, access_blocked FROM users WHERE id = ?').get(req.user.id);
+        const user = db.prepare('SELECT monthly_fee_paid_until, access_blocked, has_package FROM users WHERE id = ?').get(req.user.id);
         if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+        // Sem pacote ativo = sem mensalidade (não exibir alerta)
+        if (!user.has_package) {
+            return res.json({ success: true, isPaid: true, paidUntil: null, daysUntilDue: null, accessBlocked: false, monthlyFeeValue: 0, noPackage: true });
+        }
 
         const settings = {};
         db.prepare('SELECT * FROM settings').all().forEach(s => { settings[s.key] = s.value; });
@@ -545,7 +554,10 @@ router.post('/monthly-fee/pay', auth, async (req, res) => {
 
         let customer;
         try { customer = await asaas.getOrCreateCustomer(user); }
-        catch (e) { return res.status(400).json({ error: 'Erro ao processar CPF.' }); }
+        catch (e) {
+            if (e.code === 'ASAAS_AUTH') return res.status(503).json({ error: 'Sistema de pagamento temporariamente indisponível. Tente novamente mais tarde.' });
+            return res.status(400).json({ error: 'Erro ao processar dados de pagamento. Tente novamente.' });
+        }
         if (!customer) return res.status(400).json({ error: 'CPF/CNPJ inválido.' });
 
         if (!user.asaas_customer_id || user.asaas_customer_id !== customer.id) {

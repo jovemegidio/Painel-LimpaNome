@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Credbusiness">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <title>Credbusiness — Contratos</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -119,6 +125,7 @@ async function loadContracts() {
                 <button class="btn btn-sm btn-primary" onclick="viewContractPDF(${c.id})"><i class="fas fa-eye"></i> Visualizar Documento</button>
                 ${!c.accepted ? `<button class="btn btn-sm btn-success" onclick="acceptContract(${c.id})"><i class="fas fa-check"></i> Aceitar</button>` : ''}
                 <button class="btn btn-sm btn-outline" onclick="sendToClient(${c.id})"><i class="fas fa-paper-plane"></i> Enviar ao Cliente</button>
+                <button class="btn btn-sm btn-outline" onclick="viewAcceptances(${c.id})"><i class="fas fa-users"></i> Aceites</button>
                 <button class="btn btn-sm btn-outline" onclick="downloadContractById(${c.id})"><i class="fas fa-download"></i> Download</button>
             </div>
         </div>
@@ -165,7 +172,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePdfView
 function printContract() {
     const content = document.getElementById('pdfContent').innerHTML;
     const w = window.open('', '_blank');
-    w.document.write(`<html><head><title>Contrato</title><style>body{font-family:Arial,sans-serif;padding:40px;line-height:1.8;color:#333}h3{margin-top:20px;margin-bottom:8px}p{margin-bottom:10px}</style></head><body>${content}</body></html>`);
+    w.document.write(`<html><head><title>Contrato</title><style>body{font-family:Arial,sans-serif;padding:40px;line-height:1.8;color:#333}h3{margin-top:20px;margin-bottom:8px}p{margin-bottom:10px}</style></head><body>${content}    <script src="/js/pwa.js"></script>
+</body></html>`);
     w.document.close();
     w.focus();
     w.print();
@@ -205,7 +213,10 @@ function sendToClient(id) {
 async function doSendEmail(id) {
     const email = document.getElementById('sendEmail').value;
     if (!email) { Layout.toast('Informe o e-mail', 'error'); return; }
-    const result = await DB.api('POST', '/api/users/contracts/' + id + '/send', { email });
+    const baseUrl = window.location.origin;
+    const link = `${baseUrl}/contrato.html?id=${id}`;
+    const c = allContracts.find(c => c.id === id);
+    const result = await DB.api('POST', '/api/users/contracts/' + id + '/send', { email, link, title: c?.title });
     Layout.closeModal();
     Layout.toast(result?.success ? 'Contrato enviado por e-mail!' : 'Envio registrado. O cliente receberá o contrato.', 'success');
 }
@@ -214,7 +225,7 @@ function doSendWhatsapp(id) {
     const c = allContracts.find(c => c.id === id);
     const phone = (document.getElementById('sendWhatsapp').value || '').replace(/\D/g, '');
     const baseUrl = window.location.origin;
-    const msg = `Olá! Segue o contrato "${c?.title || 'Contrato'}" da Credbusiness para sua análise e aceite. Acesse: ${baseUrl}/pages/contratos.html`;
+    const msg = `Olá! Segue o contrato "${c?.title || 'Contrato'}" da Credbusiness para sua análise. Acesse: ${baseUrl}/contrato.html?id=${id}`;
     window.open(`https://wa.me/${phone ? '55' + phone : ''}?text=${encodeURIComponent(msg)}`);
     Layout.closeModal();
 }
@@ -228,6 +239,39 @@ async function acceptContract(id) {
     } else {
         Layout.toast(result?.error || 'Erro ao aceitar contrato', 'error');
     }
+}
+
+async function viewAcceptances(id) {
+    const c = allContracts.find(c => c.id === id);
+    const acceptances = await DB.api('GET', '/api/users/contracts/' + id + '/acceptances') || [];
+    let content = '';
+    if (acceptances.length === 0) {
+        content = '<p style="text-align:center;color:var(--text3);padding:24px 0"><i class="fas fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:8px;opacity:.5"></i>Nenhum cliente aceitou este contrato ainda.</p>';
+    } else {
+        content = `<p style="font-size:.85rem;color:var(--text2);margin-bottom:12px">${acceptances.length} aceite(s) registrado(s)</p>
+        <div style="max-height:400px;overflow-y:auto">
+            <table style="width:100%;font-size:.82rem;border-collapse:collapse">
+                <thead><tr style="background:var(--bg);text-align:left">
+                    <th style="padding:8px 12px;border-bottom:1px solid var(--border)">Nome</th>
+                    <th style="padding:8px 12px;border-bottom:1px solid var(--border)">CPF</th>
+                    <th style="padding:8px 12px;border-bottom:1px solid var(--border)">E-mail</th>
+                    <th style="padding:8px 12px;border-bottom:1px solid var(--border)">Data</th>
+                </tr></thead>
+                <tbody>${acceptances.map(a => `<tr>
+                    <td style="padding:8px 12px;border-bottom:1px solid var(--border-light)">${a.client_name}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid var(--border-light)">${formatCpf(a.client_cpf)}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid var(--border-light)">${a.client_email || '—'}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid var(--border-light)">${new Date(a.accepted_at).toLocaleString('pt-BR')}</td>
+                </tr>`).join('')}</tbody>
+            </table>
+        </div>`;
+    }
+    Layout.openModal(`Aceites — ${c?.title || 'Contrato'}`, `<div style="padding:8px">${content}</div>`);
+}
+
+function formatCpf(cpf) {
+    if (!cpf || cpf.length !== 11) return cpf || '';
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 }
 
 loadContracts();

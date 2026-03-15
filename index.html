@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Credbusiness">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <title>Credbusiness - Recuperacao de Credito e Consultoria Financeira</title>
     <link rel="icon" href="/favicon.ico" type="image/svg+xml">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -145,6 +151,35 @@
         .faq-answer{max-height:0;overflow:hidden;transition:max-height .3s ease}
         .faq-answer-inner{padding:0 24px 18px;font-size:.875rem;color:var(--gray);line-height:1.7}
 
+        /* ── TRABALHE CONOSCO ── */
+        .careers{position:relative;overflow:hidden}
+        .careers::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgba(37,99,235,.03) 0%,rgba(5,150,105,.03) 100%)}
+        .careers-container{max-width:1200px;margin:0 auto;position:relative;z-index:1}
+        .careers-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+        .careers-content h2{font-size:2rem;font-weight:800;letter-spacing:-.8px;margin-bottom:14px;color:var(--navy)}
+        .careers-content>p{font-size:1rem;color:var(--gray);line-height:1.7;margin-bottom:32px}
+        .careers-perks{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px}
+        .careers-perk{display:flex;align-items:flex-start;gap:12px;padding:16px;background:var(--white);border:1px solid var(--border);border-radius:12px;transition:all .2s}
+        .careers-perk:hover{box-shadow:var(--shadow);border-color:var(--lighter)}
+        .careers-perk-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+        .careers-perk h4{font-size:.88rem;font-weight:600;color:var(--navy);margin-bottom:2px}
+        .careers-perk p{font-size:.8rem;color:var(--gray);line-height:1.5}
+        .careers-cta-box{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:36px;box-shadow:var(--shadow-lg)}
+        .careers-cta-box h3{font-size:1.15rem;font-weight:700;color:var(--navy);margin-bottom:8px}
+        .careers-cta-box>p{font-size:.9rem;color:var(--gray);line-height:1.6;margin-bottom:24px}
+        .careers-form{display:flex;flex-direction:column;gap:14px}
+        .careers-form input,.careers-form textarea{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;font-family:inherit;color:var(--navy);background:var(--offwhite);outline:none;transition:all .2s}
+        .careers-form input:focus,.careers-form textarea:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+        .careers-form input::placeholder,.careers-form textarea::placeholder{color:var(--light)}
+        .careers-form textarea{resize:vertical;min-height:80px}
+        .careers-form .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .careers-form button{padding:13px 28px;border-radius:10px;font-size:.95rem;font-weight:600;border:none;cursor:pointer;font-family:inherit;transition:all .25s}
+        @media(max-width:768px){
+            .careers-grid{grid-template-columns:1fr;gap:40px}
+            .careers-perks{grid-template-columns:1fr}
+            .careers-form .form-row{grid-template-columns:1fr}
+        }
+
         /* ── CTA ── */
         .cta{padding:100px 48px;background:var(--navy);text-align:center;position:relative;overflow:hidden}
         .cta::before{content:'';position:absolute;top:-50%;right:-10%;width:500px;height:500px;border-radius:50%;background:rgba(37,99,235,.08)}
@@ -205,6 +240,19 @@
             .trust{padding:32px 24px}
             .trust-inner{gap:24px}
         }
+        @media(max-width:480px){
+            .hero-title{font-size:1.75rem}
+            .hero-stat-num{font-size:1.2rem}
+            .section{padding:48px 16px}
+            .section-title{font-size:1.5rem}
+            .steps-container{grid-template-columns:1fr;gap:20px}
+            .step-item{padding:20px 16px}
+            .service-card{padding:20px 16px}
+            .plan-card{padding:28px 20px}
+            .cta{padding:48px 16px}
+            .cta h2{font-size:1.4rem}
+            .faq-question{font-size:.88rem;padding:14px 16px}
+        }
     </style>
 </head>
 <body>
@@ -214,14 +262,15 @@
     <a href="/" class="nav-brand">
         <img src="css/logo.png" alt="Credbusiness" class="nav-brand-logo">
     </a>
-    <button class="nav-mobile-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+    <button class="nav-mobile-btn" id="navMobileBtn" onclick="const nl=document.querySelector('.nav-links');const open=nl.classList.toggle('open');this.querySelector('i').className=open?'fas fa-times':'fas fa-bars'">
         <i class="fas fa-bars"></i>
     </button>
     <div class="nav-links">
         <a href="#servicos" class="nav-link">Servicos</a>
         <a href="#como-funciona" class="nav-link">Como Funciona</a>
-        <a href="#planos" class="nav-link">Planos</a>
+
         <a href="#faq" class="nav-link">FAQ</a>
+        <a href="#trabalhe-conosco" class="nav-link">Trabalhe Conosco</a>
         <a href="login.html" class="nav-cta nav-cta-outline">Entrar</a>
         <a href="register.html" class="nav-cta nav-cta-solid">Criar Conta</a>
     </div>
@@ -450,54 +499,7 @@
 </section>
 
 <!-- Plans -->
-<section class="section section-alt" id="planos">
-    <div class="section-header">
-        <div class="section-tag">Planos</div>
-        <h2 class="section-title">Escolha o plano ideal para voce</h2>
-        <p class="section-desc">Opcoes flexiveis para cada necessidade, do basico ao completo.</p>
-    </div>
-    <div class="plans-grid">
-        <div class="plan-card">
-            <div class="plan-name">Basico</div>
-            <div class="plan-price">R$ 49<span>,90/mes</span></div>
-            <div class="plan-desc">Para quem esta comecando</div>
-            <ul class="plan-features">
-                <li><i class="fas fa-check"></i> Limpa Nome basico</li>
-                <li><i class="fas fa-check"></i> 1 consulta CPF por mes</li>
-                <li><i class="fas fa-check"></i> Suporte por email</li>
-                <li><i class="fas fa-check"></i> Programa de indicacao</li>
-                <li><i class="fas fa-check"></i> Painel de acompanhamento</li>
-            </ul>
-            <a href="register.html" class="plan-btn plan-btn-outline">Comecar</a>
-        </div>
-        <div class="plan-card featured">
-            <div class="plan-name">Plus</div>
-            <div class="plan-price">R$ 99<span>,90/mes</span></div>
-            <div class="plan-desc">O mais escolhido pelos clientes</div>
-            <ul class="plan-features">
-                <li><i class="fas fa-check"></i> Limpa Nome completo</li>
-                <li><i class="fas fa-check"></i> 5 consultas CPF por mes</li>
-                <li><i class="fas fa-check"></i> Suporte prioritario</li>
-                <li><i class="fas fa-check"></i> Relatorios detalhados</li>
-                <li><i class="fas fa-check"></i> Consulta Bacen (SVR)</li>
-            </ul>
-            <a href="register.html" class="plan-btn plan-btn-solid">Comecar</a>
-        </div>
-        <div class="plan-card">
-            <div class="plan-name">Premium</div>
-            <div class="plan-price">R$ 199<span>,90/mes</span></div>
-            <div class="plan-desc">Para quem busca o maximo</div>
-            <ul class="plan-features">
-                <li><i class="fas fa-check"></i> Limpa Nome VIP</li>
-                <li><i class="fas fa-check"></i> Consultas ilimitadas</li>
-                <li><i class="fas fa-check"></i> Suporte 24h dedicado</li>
-                <li><i class="fas fa-check"></i> Relatorios avancados</li>
-                <li><i class="fas fa-check"></i> Bacen completo + CNPJ</li>
-            </ul>
-            <a href="register.html" class="plan-btn plan-btn-outline">Comecar</a>
-        </div>
-    </div>
-</section>
+
 
 <!-- FAQ -->
 <section class="section" id="faq">
@@ -546,6 +548,70 @@
     </div>
 </section>
 
+<!-- Trabalhe Conosco -->
+<section class="section section-alt careers" id="trabalhe-conosco">
+    <div class="careers-container">
+        <div class="section-header">
+            <div class="section-tag"><i class="fas fa-briefcase"></i> Oportunidades</div>
+            <h2 class="section-title">Trabalhe Conosco</h2>
+            <p class="section-desc">Faca parte da nossa equipe e ajude milhares de pessoas a reconquistar sua liberdade financeira.</p>
+        </div>
+        <div class="careers-grid">
+            <div class="careers-content">
+                <h2>Por que fazer parte da Credbusiness?</h2>
+                <p>Estamos crescendo e buscamos profissionais comprometidos e apaixonados pelo que fazem. Oferecemos um ambiente dinamico, com flexibilidade e possibilidade real de crescimento.</p>
+                <div class="careers-perks">
+                    <div class="careers-perk">
+                        <div class="careers-perk-icon" style="background:rgba(37,99,235,.07);color:var(--blue)"><i class="fas fa-laptop-house"></i></div>
+                        <div>
+                            <h4>Trabalho remoto</h4>
+                            <p>Flexibilidade para trabalhar de qualquer lugar</p>
+                        </div>
+                    </div>
+                    <div class="careers-perk">
+                        <div class="careers-perk-icon" style="background:rgba(5,150,105,.07);color:var(--green)"><i class="fas fa-chart-line"></i></div>
+                        <div>
+                            <h4>Crescimento real</h4>
+                            <p>Plano de carreira e bonificacoes por desempenho</p>
+                        </div>
+                    </div>
+                    <div class="careers-perk">
+                        <div class="careers-perk-icon" style="background:rgba(124,58,237,.07);color:#7c3aed"><i class="fas fa-users"></i></div>
+                        <div>
+                            <h4>Equipe engajada</h4>
+                            <p>Ambiente colaborativo e cultura de inovacao</p>
+                        </div>
+                    </div>
+                    <div class="careers-perk">
+                        <div class="careers-perk-icon" style="background:rgba(245,158,11,.07);color:#f59e0b"><i class="fas fa-graduation-cap"></i></div>
+                        <div>
+                            <h4>Capacitacao continua</h4>
+                            <p>Treinamentos e cursos para seu desenvolvimento</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="careers-cta-box">
+                <h3><i class="fas fa-paper-plane" style="color:var(--blue);margin-right:8px"></i>Envie seu curriculo</h3>
+                <p>Preencha o formulario abaixo e entraremos em contato caso seu perfil seja compativel com nossas vagas.</p>
+                <form class="careers-form" id="careersForm">
+                    <div class="form-row">
+                        <input type="text" placeholder="Seu nome completo" required>
+                        <input type="email" placeholder="Seu melhor e-mail" required>
+                    </div>
+                    <div class="form-row">
+                        <input type="tel" placeholder="WhatsApp (com DDD)">
+                        <input type="text" placeholder="Cidade / Estado">
+                    </div>
+                    <input type="text" placeholder="Area de interesse (ex: Comercial, Suporte, Juridico)">
+                    <textarea placeholder="Conte um pouco sobre voce e sua experiencia..." rows="3"></textarea>
+                    <button type="submit" class="btn btn-primary" style="width:100%">Enviar Candidatura <i class="fas fa-arrow-right"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- CTA -->
 <section class="cta">
     <div class="cta-inner">
@@ -573,7 +639,7 @@
                 <li><a href="login.html">Entrar</a></li>
                 <li><a href="register.html">Criar Conta</a></li>
                 <li><a href="#servicos">Servicos</a></li>
-                <li><a href="#planos">Planos</a></li>
+
             </ul>
         </div>
         <div>
@@ -581,6 +647,7 @@
             <ul class="footer-links">
                 <li><a href="#como-funciona">Como Funciona</a></li>
                 <li><a href="#faq">Duvidas Frequentes</a></li>
+                <li><a href="#trabalhe-conosco">Trabalhe Conosco</a></li>
                 <li><a href="termos-de-uso.html">Termos de Uso</a></li>
                 <li><a href="politica-de-privacidade.html">Politica de Privacidade</a></li>
             </ul>
@@ -632,6 +699,8 @@
             if (target) {
                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 document.querySelector('.nav-links').classList.remove('open');
+                const btn = document.getElementById('navMobileBtn');
+                if (btn) btn.querySelector('i').className = 'fas fa-bars';
             }
         });
     });
@@ -728,6 +797,41 @@
             localStorage.removeItem('credbusiness_currentUser');
         }
     }
+
+    // ── Trabalhe Conosco form ──
+    const careersForm = document.getElementById('careersForm');
+    if (careersForm) {
+        careersForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = careersForm.querySelector('button[type="submit"]');
+            const inputs = careersForm.querySelectorAll('input, textarea');
+            const [nome, email, whatsapp, cidade, area, sobre] = [...inputs].map(i => i.value.trim());
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+            try {
+                const res = await fetch('/api/careers/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email, whatsapp, cidade, area, sobre })
+                });
+                if (res.ok) {
+                    careersForm.innerHTML = '<div style="text-align:center;padding:32px 0"><div style="width:56px;height:56px;border-radius:50%;background:rgba(5,150,105,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.5rem;color:#059669"><i class="fas fa-check"></i></div><h4 style="color:#0f172a;margin-bottom:6px">Candidatura enviada!</h4><p style="color:#64748b;font-size:.9rem">Entraremos em contato caso seu perfil seja compativel.</p></div>';
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    alert(data.error || 'Erro ao enviar. Tente novamente.');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Enviar Candidatura <i class="fas fa-arrow-right"></i>';
+                }
+            } catch {
+                alert('Erro de conexao. Verifique sua internet e tente novamente.');
+                btn.disabled = false;
+                btn.innerHTML = 'Enviar Candidatura <i class="fas fa-arrow-right"></i>';
+            }
+        });
+    }
 </script>
+    <script src="/js/pwa.js"></script>
 </body>
 </html>

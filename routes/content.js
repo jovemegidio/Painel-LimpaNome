@@ -150,7 +150,7 @@ router.post('/packages/:id/buy', auth, (req, res) => {
                     db.prepare('UPDATE users SET level = ? WHERE id = ?').run(pkg.level_key, req.user.id);
                 }
             }
-            db.prepare('UPDATE users SET has_package = 1 WHERE id = ?').run(req.user.id);
+            db.prepare('UPDATE users SET has_package = 1, active = 1 WHERE id = ?').run(req.user.id);
 
             return true;
         });

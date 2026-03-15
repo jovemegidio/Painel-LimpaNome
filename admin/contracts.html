@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Credbusiness">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <title>Credbusiness Admin — Aceites de Contratos</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app"></div>
+    <template id="page-content">
+        <div class="page-header">
+            <h2><i class="fas fa-file-signature" style="margin-right:8px;color:var(--primary)"></i> Aceites de Contratos</h2>
+            <p>Visualize quem assinou as fichas associativas e contratos enviados</p>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card" style="margin-bottom:20px">
+            <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                <div class="form-group" style="flex:1;min-width:200px;margin:0">
+                    <label>Buscar</label>
+                    <input type="text" id="filterSearch" class="form-control" placeholder="Buscar por nome, CPF..." oninput="debounceLoad()">
+                </div>
+                <div class="form-group" style="min-width:200px;margin:0">
+                    <label>Contrato</label>
+                    <select id="filterContract" class="form-control" onchange="loadAcceptances()">
+                        <option value="">Todos os Contratos</option>
+                    </select>
+                </div>
+                <button class="btn btn-outline" onclick="clearFilters()" style="height:42px"><i class="fas fa-times"></i> Limpar</button>
+                <button class="btn btn-outline btn-sm" onclick="exportAcceptances()" style="height:42px"><i class="fas fa-file-excel"></i> Exportar Excel</button>
+            </div>
+        </div>
+
+        <!-- Cards resumo -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px">
+            <div class="card" style="text-align:center;padding:20px">
+                <div style="font-size:2rem;font-weight:800;color:var(--primary)" id="totalAcceptances">0</div>
+                <div style="font-size:.85rem;color:var(--text3);margin-top:4px">Total de Aceites</div>
+            </div>
+            <div class="card" style="text-align:center;padding:20px">
+                <div style="font-size:2rem;font-weight:800;color:#10b981" id="totalContracts">0</div>
+                <div style="font-size:.85rem;color:var(--text3);margin-top:4px">Contratos Ativos</div>
+            </div>
+            <div class="card" style="text-align:center;padding:20px">
+                <div style="font-size:2rem;font-weight:800;color:#3b82f6" id="todayAcceptances">0</div>
+                <div style="font-size:.85rem;color:var(--text3);margin-top:4px">Aceites Hoje</div>
+            </div>
+            <div class="card" style="text-align:center;padding:20px">
+                <div style="font-size:2rem;font-weight:800;color:#8b5cf6" id="uniqueClients">0</div>
+                <div style="font-size:.85rem;color:var(--text3);margin-top:4px">Clientes Únicos</div>
+            </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="card">
+            <div class="card-body" style="overflow-x:auto">
+                <table class="table" id="acceptancesTable">
+                    <thead>
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th>Cliente</th>
+                            <th>CPF</th>
+                            <th>Contrato</th>
+                            <th style="text-align:center">Data do Aceite</th>
+                            <th style="text-align:center">IP</th>
+                            <th style="text-align:center;width:80px">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="acceptancesBody">
+                        <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal detalhes -->
+        <div class="modal-overlay" id="detailModal" style="display:none">
+            <div class="modal" style="max-width:520px">
+                <div class="modal-header">
+                    <h3><i class="fas fa-file-signature" style="margin-right:8px"></i> Detalhes do Aceite</h3>
+                    <button class="modal-close" onclick="closeDetail()">&times;</button>
+                </div>
+                <div class="modal-body" id="detailBody"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeDetail()">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/components.js"></script>
+    <script>
+        Layout.init({ basePath: '../', page: 'admin-contracts', title: 'Aceites de Contratos', admin: true });
+        let allAcceptances = [];
+        let allContracts = [];
+        let debounceTimer;
+
+        function debounceLoad() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(loadAcceptances, 300);
+        }
+
+        async function init() {
+            // Carregar contratos para o select
+            const contracts = await DB.api('GET', '/api/admin/contracts');
+            if (contracts && Array.isArray(contracts)) {
+                allContracts = contracts;
+                const sel = document.getElementById('filterContract');
+                contracts.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.title;
+                    sel.appendChild(opt);
+                });
+                document.getElementById('totalContracts').textContent = contracts.filter(c => c.active).length;
+            }
+            loadAcceptances();
+        }
+
+        async function loadAcceptances() {
+            const contractId = document.getElementById('filterContract').value;
+            const search = document.getElementById('filterSearch').value.trim();
+
+            const params = new URLSearchParams();
+            if (contractId) params.set('contract_id', contractId);
+            if (search) params.set('search', search);
+
+            const res = await DB.api('GET', '/api/admin/contract-acceptances?' + params);
+            if (!res || !Array.isArray(res.acceptances)) {
+                document.getElementById('acceptancesBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)">Erro ao carregar aceites</td></tr>';
+                return;
+            }
+
+            allAcceptances = res.acceptances;
+            document.getElementById('totalAcceptances').textContent = res.total || allAcceptances.length;
+            document.getElementById('todayAcceptances').textContent = res.today || 0;
+            document.getElementById('uniqueClients').textContent = res.uniqueClients || 0;
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('acceptancesBody');
+            if (allAcceptances.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)"><i class="fas fa-inbox" style="font-size:2rem;margin-bottom:12px;display:block;opacity:.4"></i>Nenhum aceite encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allAcceptances.map(a => {
+                const date = new Date(a.accepted_at).toLocaleDateString('pt-BR');
+                const time = new Date(a.accepted_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const cpfFormatted = formatCPF(a.client_cpf);
+                return `<tr>
+                    <td style="color:var(--text3);font-size:.85rem">${a.id}</td>
+                    <td>
+                        <div style="font-weight:600">${esc(a.client_name)}</div>
+                        ${a.client_email ? `<div style="font-size:.8rem;color:var(--text3)">${esc(a.client_email)}</div>` : ''}
+                    </td>
+                    <td style="font-family:monospace;font-size:.9rem">${cpfFormatted}</td>
+                    <td>
+                        <span style="background:var(--primary-soft,#6366f120);color:var(--primary);padding:3px 10px;border-radius:12px;font-size:.8rem;font-weight:600">${esc(a.contract_title || 'Contrato #' + a.contract_id)}</span>
+                    </td>
+                    <td style="text-align:center">
+                        <div style="font-weight:600;font-size:.9rem">${date}</div>
+                        <div style="font-size:.78rem;color:var(--text3)">${time}</div>
+                    </td>
+                    <td style="text-align:center;font-family:monospace;font-size:.82rem;color:var(--text3)">${a.ip || '—'}</td>
+                    <td style="text-align:center">
+                        <button class="btn btn-outline btn-sm" onclick="showDetail(${a.id})" title="Ver detalhes"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function showDetail(id) {
+            const a = allAcceptances.find(x => x.id === id);
+            if (!a) return;
+            const date = new Date(a.accepted_at).toLocaleDateString('pt-BR');
+            const time = new Date(a.accepted_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            document.getElementById('detailBody').innerHTML = `
+                <div style="display:flex;flex-direction:column;gap:16px">
+                    <div style="background:var(--surface);border-radius:var(--radius);padding:16px;border-left:4px solid var(--primary)">
+                        <div style="font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Cliente</div>
+                        <div style="font-size:1.1rem;font-weight:700">${esc(a.client_name)}</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div style="background:var(--surface);border-radius:var(--radius);padding:14px">
+                            <div style="font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">CPF</div>
+                            <div style="font-weight:600;font-family:monospace">${formatCPF(a.client_cpf)}</div>
+                        </div>
+                        <div style="background:var(--surface);border-radius:var(--radius);padding:14px">
+                            <div style="font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">E-mail</div>
+                            <div style="font-weight:600">${a.client_email || '—'}</div>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div style="background:var(--surface);border-radius:var(--radius);padding:14px">
+                            <div style="font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Contrato</div>
+                            <div style="font-weight:600">${esc(a.contract_title || 'Contrato #' + a.contract_id)}</div>
+                        </div>
+                        <div style="background:var(--surface);border-radius:var(--radius);padding:14px">
+                            <div style="font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">IP de Acesso</div>
+                            <div style="font-weight:600;font-family:monospace;font-size:.9rem">${a.ip || '—'}</div>
+                        </div>
+                    </div>
+                    <div style="background:#10b98115;border-radius:var(--radius);padding:16px;border-left:4px solid #10b981">
+                        <div style="font-size:.78rem;color:#10b981;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Data e Hora do Aceite</div>
+                        <div style="font-size:1.1rem;font-weight:700;color:#10b981"><i class="fas fa-check-circle" style="margin-right:6px"></i>${date} às ${time}</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function closeDetail() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        function clearFilters() {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterContract').value = '';
+            loadAcceptances();
+        }
+
+        function formatCPF(cpf) {
+            if (!cpf) return '—';
+            cpf = cpf.replace(/\D/g, '');
+            if (cpf.length === 11) return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            return cpf;
+        }
+
+        function exportAcceptances() {
+            if (allAcceptances.length === 0) { Layout.toast('Nenhum dado para exportar', 'warning'); return; }
+            const settings = DB.getSettings();
+            const pc = settings.primaryColor || '#6366f1';
+            const companyName = (settings.companyName || 'CREDBUSINESS').toUpperCase();
+            const date = new Date().toLocaleDateString('pt-BR');
+            const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const tableRows = allAcceptances.map(a => {
+                const dt = new Date(a.accepted_at).toLocaleDateString('pt-BR');
+                const tm = new Date(a.accepted_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                return `<tr>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#374151">${a.id}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#111827;font-weight:600">${a.client_name}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151;font-family:monospace">${formatCPF(a.client_cpf)}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151">${a.client_email||'—'}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151">${a.contract_title||'Contrato #'+a.contract_id}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#374151">${dt} ${tm}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#6b7280;font-family:monospace">${a.ip||'—'}</td>
+                </tr>`;
+            }).join('');
+
+            const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8">
+            <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Aceites</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+            </head><body>
+            <table style="border-collapse:collapse;width:100%">
+                <tr><td colspan="7" style="padding:20px 16px 4px;font-size:22px;font-weight:800;color:${pc};letter-spacing:1px;font-family:Arial,sans-serif">${companyName}</td></tr>
+                <tr><td colspan="7" style="padding:2px 16px 4px;font-size:11px;color:#6b7280;font-family:Arial,sans-serif">Escritório Virtual — Painel Administrativo</td></tr>
+                <tr><td colspan="7" style="padding:12px 16px 4px;font-size:15px;font-weight:700;color:#1e1b4b;font-family:Arial,sans-serif">Relatório de Aceites de Contratos</td></tr>
+                <tr><td colspan="7" style="padding:2px 16px 16px;font-size:11px;color:#6b7280;font-family:Arial,sans-serif">Gerado em ${date} às ${time} · Total: ${allAcceptances.length} aceite(s)</td></tr>
+                <tr>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">ID</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">Cliente</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">CPF</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">E-mail</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">Contrato</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Data do Aceite</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">IP</td>
+                </tr>
+                ${tableRows}
+                <tr><td colspan="7" style="padding:16px 12px 4px;font-size:9px;color:#9ca3af;font-family:Arial,sans-serif">Documento gerado automaticamente pelo sistema ${companyName}. Informações confidenciais.</td></tr>
+            </table>
+                <script src="/js/pwa.js"></script>
+</body></html>`;
+
+            const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'aceites_contratos_' + new Date().toISOString().slice(0, 10) + '.xls';
+            link.click();
+            URL.revokeObjectURL(link.href);
+            Layout.toast('Relatório exportado com sucesso!', 'success');
+        }
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        document.getElementById('detailModal').addEventListener('click', function(e) { if (e.target === this) closeDetail(); });
+
+        init();
+    </script>
+</body>
+</html>

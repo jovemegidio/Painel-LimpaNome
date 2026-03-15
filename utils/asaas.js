@@ -49,6 +49,11 @@ async function findCustomer(cpfCnpj) {
         return data.data && data.data.length > 0 ? data.data[0] : null;
     } catch (err) {
         console.error('[Asaas] findCustomer erro:', err.message);
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+            const e = new Error('Asaas API key inválida');
+            e.code = 'ASAAS_AUTH';
+            throw e;
+        }
         return null;
     }
 }
@@ -70,6 +75,11 @@ async function createCustomer(user) {
         return data;
     } catch (err) {
         console.error('[Asaas] createCustomer erro:', err.message);
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+            const e = new Error('Asaas API key inválida');
+            e.code = 'ASAAS_AUTH';
+            throw e;
+        }
         return null;
     }
 }
