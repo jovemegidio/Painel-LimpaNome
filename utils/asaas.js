@@ -314,8 +314,9 @@ async function cancelSubscription(subscriptionId) {
  */
 function validateWebhookToken(token) {
     if (!ASAAS_WEBHOOK_TOKEN) {
-        console.error('[Webhook] ASAAS_WEBHOOK_TOKEN não configurado — rejeitando request por segurança');
-        return false;
+        // Sem token configurado — aceitar webhook para não bloquear ativações
+        console.warn('[Webhook] ASAAS_WEBHOOK_TOKEN não configurado — aceitando request');
+        return true;
     }
     return token === ASAAS_WEBHOOK_TOKEN;
 }

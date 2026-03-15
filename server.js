@@ -81,6 +81,117 @@ function checkMonthlyFees() {
 setTimeout(checkMonthlyFees, 10000); // 10s após iniciar
 setInterval(checkMonthlyFees, 60 * 60 * 1000);
 
+// ── Auto-verificação de pagamentos PIX/Boleto pendentes ──
+async function checkPendingPayments() {
+    try {
+        const asaas = require('./utils/asaas');
+        if (!asaas.isConfigured()) return;
+
+        const { getDB } = require('./database/init');
+        const db = getDB();
+
+        // Buscar pagamentos pendentes criados nas últimas 48h
+        const pending = db.prepare(
+            "SELECT * FROM payments WHERE status = 'pendente' AND asaas_payment_id IS NOT NULL AND created_at >= datetime('now', '-48 hours')"
+        ).all();
+
+        if (pending.length === 0) return;
+        console.log(`[AutoCheck] Verificando ${pending.length} pagamento(s) pendente(s)...`);
+
+        const { createNotification } = require('./utils/notifications');
+
+        for (const p of pending) {
+            try {
+                const asaasPayment = await asaas.getPaymentStatus(p.asaas_payment_id);
+                if (!asaasPayment) continue;
+
+                const newStatus = asaas.mapPaymentStatus(asaasPayment.status);
+                if (newStatus === 'pago' && p.status !== 'pago') {
+                    console.log(`[AutoCheck] Pagamento ${p.asaas_payment_id} CONFIRMADO — ativando...`);
+                    db.prepare("UPDATE payments SET status = 'pago', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ? AND status != 'pago'")
+                        .run(p.id);
+
+                    // Ativar pacote/plano
+                    if (p.type === 'package' && p.reference_id) {
+                        const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(p.reference_id);
+                        if (pkg) {
+                            // Verificar se é o primeiro pacote
+                            const userBefore = db.prepare('SELECT has_package FROM users WHERE id = ?').get(p.user_id);
+                            const isFirstPackage = !userBefore || userBefore.has_package === 0;
+                            const namesCredit = pkg.names_count || 0;
+                            db.prepare('UPDATE users SET points = points + ?, names_available = names_available + ? WHERE id = ?').run(pkg.points, namesCredit, p.user_id);
+                            db.prepare('UPDATE users SET has_package = 1 WHERE id = ?').run(p.user_id);
+                            if (isFirstPackage) {
+                                const now = new Date();
+                                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                                const freeUntilStr = endOfMonth.toISOString().split('T')[0];
+                                db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0, active = 1 WHERE id = ?')
+                                    .run(freeUntilStr, p.user_id);
+                            } else {
+                                db.prepare('UPDATE users SET active = 1 WHERE id = ? AND active = 0 AND has_package = 0').run(p.user_id);
+                            }
+                            if (pkg.level_key) {
+                                const LEVEL_ORDER = { start: 1, bronze: 2, prata: 3, ouro: 4, diamante: 5 };
+                                const user = db.prepare('SELECT level FROM users WHERE id = ?').get(p.user_id);
+                                const newRank = LEVEL_ORDER[pkg.level_key] || 0;
+                                const currentRank = LEVEL_ORDER[user?.level] || 0;
+                                if (newRank > currentRank) {
+                                    db.prepare('UPDATE users SET level = ? WHERE id = ?').run(pkg.level_key, p.user_id);
+                                }
+                            }
+                            db.prepare(`UPDATE user_packages SET status = 'ativo', payment_status = 'pago'
+                                WHERE user_id = ? AND package_id = ? AND payment_status = 'pendente'
+                                ORDER BY id DESC LIMIT 1`)
+                                .run(p.user_id, pkg.id);
+                            createNotification(p.user_id, 'purchase', 'Pacote ativado!',
+                                `Seu pacote "${pkg.name}" foi ativado. +${pkg.points} pontos e ${namesCredit} nome(s) adicionados!`);
+                        }
+                    }
+                    if (p.type === 'plan') {
+                        const ref = p.external_reference || '';
+                        const match = ref.match(/^plan_(.+?)_user_/);
+                        if (match) {
+                            db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(match[1], p.user_id);
+                            createNotification(p.user_id, 'plan', 'Plano ativado!', 'Seu plano foi ativado com sucesso.');
+                        }
+                    }
+                    if (p.type === 'deposit') {
+                        db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(p.amount, p.user_id);
+                        createNotification(p.user_id, 'success', 'Depósito confirmado!',
+                            `R$ ${p.amount.toFixed(2)} foram creditados na sua carteira.`);
+                        db.prepare(`INSERT INTO transactions (user_id, type, amount, description, reference_type, reference_id, date, status)
+                            VALUES (?, 'deposito', ?, 'Depósito confirmado', 'payment', ?, date('now'), 'concluido')`)
+                            .run(p.user_id, p.amount, p.id);
+                    }
+                    if (p.type === 'monthly_fee') {
+                        const now = new Date();
+                        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+                        const paidUntilStr = nextMonth.toISOString().slice(0, 10);
+                        db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0 WHERE id = ?')
+                            .run(paidUntilStr, p.user_id);
+                        createNotification(p.user_id, 'success', 'Mensalidade paga!',
+                            `Sua mensalidade foi confirmada. Acesso liberado até ${paidUntilStr}.`);
+                    }
+                    // Registrar transação
+                    if (p.type !== 'deposit' && p.type !== 'monthly_fee') {
+                        db.prepare(`INSERT OR IGNORE INTO transactions (user_id, type, amount, description, reference_type, reference_id, date, status)
+                            VALUES (?, 'pagamento', ?, ?, 'payment', ?, date('now'), 'concluido')`)
+                            .run(p.user_id, p.amount, `Pagamento ${p.type} via ${p.method}`, p.id);
+                    }
+                }
+            } catch (e) {
+                console.error(`[AutoCheck] Erro verificando ${p.asaas_payment_id}:`, e.message);
+            }
+        }
+    } catch (err) {
+        console.error('[AutoCheck] Erro geral:', err.message);
+    }
+}
+
+// Verificar pagamentos pendentes a cada 2 minutos
+setTimeout(checkPendingPayments, 30000); // 30s após iniciar
+setInterval(checkPendingPayments, 2 * 60 * 1000);
+
 // ── App Express ──
 const app = express();
 
