@@ -3,7 +3,7 @@
    Cache-first para assets, Network-first para API
    ═══════════════════════════════════════════ */
 
-const CACHE_NAME = 'credbusiness-v1';
+const CACHE_NAME = 'credbusiness-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Assets essenciais para cache inicial
@@ -23,13 +23,17 @@ const PRECACHE_ASSETS = [
   '/icons/icon-512x512.png'
 ];
 
-// ── Install: pré-cachear assets essenciais ──
+// ── Install: pré-cachear assets essenciais (individual para não falhar tudo) ──
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-        console.warn('[SW] Falha no precache de alguns assets:', err);
-      });
+      return Promise.all(
+        PRECACHE_ASSETS.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn('[SW] Falha ao cachear:', url, err);
+          })
+        )
+      );
     })
   );
   self.skipWaiting();
