@@ -61,8 +61,8 @@
 
         <!-- Tabela -->
         <div class="card">
-            <div class="card-body" style="overflow-x:auto">
-                <table class="table" id="acceptancesTable">
+            <div class="card-body"><div class="table-wrap">
+                <table class="table wide-table" id="acceptancesTable">
                     <thead>
                         <tr>
                             <th style="width:50px">#</th>
@@ -78,10 +78,9 @@
                         <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
                     </tbody>
                 </table>
-            </div>
+            </div></div>
         </div>
 
-        <!-- Modal detalhes -->
         <div class="modal-overlay" id="detailModal" style="display:none">
             <div class="modal" style="max-width:520px">
                 <div class="modal-header">
@@ -193,7 +192,7 @@
                         <div style="font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Cliente</div>
                         <div style="font-size:1.1rem;font-weight:700">${esc(a.client_name)}</div>
                     </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="modal-form-grid">
                         <div style="background:var(--surface);border-radius:var(--radius);padding:14px">
                             <div style="font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">CPF</div>
                             <div style="font-weight:600;font-family:monospace">${formatCPF(a.client_cpf)}</div>
@@ -203,7 +202,7 @@
                             <div style="font-weight:600">${a.client_email || '—'}</div>
                         </div>
                     </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="modal-form-grid">
                         <div style="background:var(--surface);border-radius:var(--radius);padding:14px">
                             <div style="font-size:.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Contrato</div>
                             <div style="font-weight:600">${esc(a.contract_title || 'Contrato #' + a.contract_id)}</div>

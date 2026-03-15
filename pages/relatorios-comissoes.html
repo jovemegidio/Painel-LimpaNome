@@ -20,10 +20,10 @@
 
         <!-- Date range filter -->
         <div class="card" style="margin-bottom:16px">
-            <div class="card-body" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div class="card-body responsive-filters" style="align-items:flex-end">
                 <div class="form-group" style="margin:0"><label>De</label><input type="date" class="form-control" id="dateFrom" onchange="renderComm()"></div>
                 <div class="form-group" style="margin:0"><label>Até</label><input type="date" class="form-control" id="dateTo" onchange="renderComm()"></div>
-                <select class="form-control" id="filterType" style="max-width:160px" onchange="renderComm()">
+                <select class="form-control" id="filterType" style="flex:1 1 140px" onchange="renderComm()">
                     <option value="">Todos os Tipos</option>
                     <option value="comissao">Comissão</option>
                     <option value="bonus">Bônus</option>
@@ -38,7 +38,7 @@
         </div>
         <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><h3><i class="fas fa-list"></i> Comissões</h3><button class="btn btn-sm btn-outline" onclick="exportCommPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button></div>
-            <div class="card-body"><table class="table" id="commTable"><thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div>
+            <div class="card-body"><div class="table-wrap"><table class="table" id="commTable"><thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div></div>
         </div>
     </template>
     <script src="../js/data.js"></script>

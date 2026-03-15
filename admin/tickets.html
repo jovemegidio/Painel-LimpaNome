@@ -28,18 +28,18 @@
         <div class="card" style="margin-top:24px">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
                 <h3>Todos os Tickets</h3>
-                <select id="filterStatus" class="form-control" style="max-width:180px" onchange="loadTickets()">
+                <select id="filterStatus" class="form-control" style="flex:1 1 150px;max-width:180px" onchange="loadTickets()">
                     <option value="">Todos</option>
                     <option value="aberto">Aberto</option>
                     <option value="respondido">Respondido</option>
                     <option value="fechado">Fechado</option>
                 </select>
             </div>
-            <div class="card-body" style="overflow-x:auto">
-                <table class="table" id="ticketTable"><thead><tr>
+            <div class="card-body"><div class="table-wrap">
+                <table class="table wide-table" id="ticketTable"><thead><tr>
                     <th>ID</th><th>Assunto</th><th>Usuário</th><th>Data</th><th>Prioridade</th><th>Status</th><th style="width:160px">Ações</th>
                 </tr></thead><tbody id="ticketBody"></tbody></table>
-            </div>
+            </div></div>
         </div>
     </template>
     <script src="../js/data.js"></script>

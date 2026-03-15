@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -9,11 +9,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Credbusiness">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <title>Credbusiness Admin — Processos</title>
+    <title>Credbusiness Admin � Processos</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         .proc-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media(max-width:768px){.proc-detail-grid{grid-template-columns:1fr}}
         .proc-detail-item{padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
         .proc-detail-item label{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px}
         .proc-detail-item span{font-size:.9rem;font-weight:600;color:var(--text1)}
@@ -43,32 +44,32 @@
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
                 <h3>Todos os Processos</h3>
                 <div style="display:flex;gap:8px">
-                    <button class="btn btn-outline btn-sm" onclick="exportProcPDF()"><i class="fas fa-file-pdf"></i> Relatório PDF</button>
+                    <button class="btn btn-outline btn-sm" onclick="exportProcPDF()"><i class="fas fa-file-pdf"></i> Relat�rio PDF</button>
                     <button class="btn btn-outline btn-sm" onclick="exportProc()"><i class="fas fa-file-excel"></i> Exportar Excel</button>
                 </div>
             </div>
-            <div class="card-header" style="border-top:none;padding-top:0;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                <input type="text" id="searchInput" class="form-control" placeholder="Buscar nome, CPF ou instituição..." style="max-width:240px" oninput="searchDebounce()">
-                <select id="filterStatus" class="form-control" style="max-width:180px" onchange="loadProcesses()">
+            <div class="card-header responsive-filters" style="border-top:none;padding-top:0;align-items:flex-end">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar nome, CPF ou instituição..." style="flex:2 1 200px" oninput="searchDebounce()">
+                <select id="filterStatus" class="form-control" style="flex:1 1 150px" onchange="loadProcesses()">
                     <option value="">Todos os Status</option>
                     <option value="pendente">Pendente</option>
                     <option value="em_andamento">Em Andamento</option>
-                    <option value="concluido">Concluído</option>
+                    <option value="concluido">Conclu�do</option>
                     <option value="cancelado">Cancelado</option>
                 </select>
-                <select id="filterType" class="form-control" style="max-width:160px" onchange="loadProcesses()">
+                <select id="filterType" class="form-control" style="flex:1 1 140px" onchange="loadProcesses()">
                     <option value="">Todos os Tipos</option>
                     <option value="limpa_nome">Limpa Nome</option>
                     <option value="bacen">Bacen</option>
                     <option value="cnpj">CNPJ</option>
                 </select>
             </div>
-            <div class="card-body" style="overflow-x:auto">
-                <table class="table" id="processTable"><thead><tr>
-                    <th>ID</th><th>Nome</th><th>CPF/CNPJ</th><th>Tipo</th><th>Instituição</th><th>Saldo Nomes</th><th>Data</th><th>Status</th><th style="width:140px">Ações</th>
+            <div class="card-body"><div class="table-wrap">
+                <table class="table wide-table" id="processTable"><thead><tr>
+                    <th>ID</th><th>Nome</th><th>CPF/CNPJ</th><th>Tipo</th><th>Institui��o</th><th>Saldo Nomes</th><th>Data</th><th>Status</th><th style="width:140px">A��es</th>
                 </tr></thead><tbody></tbody></table>
-                <div id="procPagination" style="display:flex;justify-content:center;gap:4px;padding:16px"></div>
-            </div>
+                <div id="procPagination" style="display:flex;justify-content:center;gap:4px;padding:16px;flex-wrap:wrap"></div>
+            </div></div>
         </div>
 
         <!-- Modal Criar/Editar -->
@@ -82,7 +83,7 @@
                     <input type="hidden" id="procEditId">
 
                     <div class="form-group user-lookup" id="procUserLookup">
-                        <label><i class="fas fa-user" style="margin-right:4px;opacity:.4"></i>Usuário</label>
+                        <label><i class="fas fa-user" style="margin-right:4px;opacity:.4"></i>Usu�rio</label>
                         <input type="text" id="procUserSearch" class="form-control" placeholder="Digite o nome, email ou ID..." oninput="searchUserProc(this.value)" autocomplete="off">
                         <input type="hidden" id="procUserId" required>
                         <div id="procUserResults" class="user-lookup-results"></div>
@@ -93,7 +94,7 @@
                         </div>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                    <div class="modal-form-grid" style="gap:16px">
                         <div class="form-group">
                             <label><i class="fas fa-id-card" style="margin-right:4px;opacity:.4"></i>CPF/CNPJ</label>
                             <input type="text" id="procCpf" class="form-control" placeholder="000.000.000-00">
@@ -104,7 +105,7 @@
                         </div>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                    <div class="modal-form-grid" style="gap:16px">
                         <div class="form-group">
                             <label><i class="fas fa-tag" style="margin-right:4px;opacity:.4"></i>Tipo</label>
                             <select id="procType" class="form-control" required>
@@ -116,15 +117,15 @@
                         <div class="form-group">
                             <label><i class="fas fa-users" style="margin-right:4px;opacity:.4"></i>Tipo Pessoa</label>
                             <select id="procPersonType" class="form-control">
-                                <option value="pf">Pessoa Física</option>
-                                <option value="pj">Pessoa Jurídica</option>
+                                <option value="pf">Pessoa F�sica</option>
+                                <option value="pj">Pessoa Jur�dica</option>
                             </select>
                         </div>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                    <div class="modal-form-grid" style="gap:16px">
                         <div class="form-group">
-                            <label><i class="fas fa-building" style="margin-right:4px;opacity:.4"></i>Instituição</label>
+                            <label><i class="fas fa-building" style="margin-right:4px;opacity:.4"></i>Institui��o</label>
                             <input type="text" id="procInstitution" class="form-control" placeholder="Banco, financeira, etc.">
                         </div>
                         <div class="form-group">
@@ -138,14 +139,14 @@
                         <select id="procStatus" class="form-control">
                             <option value="pendente">Pendente</option>
                             <option value="em_andamento">Em Andamento</option>
-                            <option value="concluido">Concluído</option>
+                            <option value="concluido">Conclu�do</option>
                             <option value="cancelado">Cancelado</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fas fa-sticky-note" style="margin-right:4px;opacity:.4"></i>Observações internas</label>
-                        <textarea id="procNotes" class="form-control" rows="3" placeholder="Notas visíveis apenas para admin..."></textarea>
+                        <label><i class="fas fa-sticky-note" style="margin-right:4px;opacity:.4"></i>Observa��es internas</label>
+                        <textarea id="procNotes" class="form-control" rows="3" placeholder="Notas vis�veis apenas para admin..."></textarea>
                     </div>
 
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
@@ -213,7 +214,7 @@
             const items = [
                 { icon: 'fa-clock', color: '#f59e0b', label: 'Pendentes', value: counts.pendente },
                 { icon: 'fa-spinner', color: '#6366f1', label: 'Em Andamento', value: counts.em_andamento },
-                { icon: 'fa-check-circle', color: '#10b981', label: 'Concluídos', value: counts.concluido },
+                { icon: 'fa-check-circle', color: '#10b981', label: 'Conclu�dos', value: counts.concluido },
                 { icon: 'fa-ban', color: '#ef4444', label: 'Cancelados', value: counts.cancelado }
             ];
             document.getElementById('statsGrid').innerHTML = items.map(s => `
@@ -229,10 +230,10 @@
             const tbody = document.querySelector('#processTable tbody');
             tbody.innerHTML = procData.length ? procData.map(p => `<tr style="cursor:pointer" ondblclick="viewProcess(${p.id})">
                 <td><strong>#${p.id}</strong></td>
-                <td>${esc(p.name|| '-')}</td>
-                <td>${esc(p.cpf || '-')}</td>
+                <td>${esc(p.name||'�')}</td>
+                <td>${esc(p.cpf || '�')}</td>
                 <td><span class="badge badge-secondary">${typeLabels[p.type]||p.type}</span></td>
-                <td>${esc(p.institution || '-')}</td>
+                <td>${esc(p.institution || '�')}</td>
                 <td style="font-weight:600;color:${(p.user_names_available||0) > 0 ? '#10b981' : '#ef4444'}">${p.user_names_available || 0}</td>
                 <td>${new Date(p.created_at).toLocaleDateString('pt-BR')}</td>
                 <td><span class="badge badge-${stMap[p.status]||'secondary'}">${(p.status||'').replace('_',' ')}</span></td>
@@ -270,7 +271,7 @@
                         <div class="ulk-avatar">${(u.name||'?')[0].toUpperCase()}</div>
                         <div class="ulk-info">
                             <div class="ulk-name">${esc(u.name)}</div>
-                            <div class="ulk-meta">${esc(u.email)} — CPF: ${esc(u.cpf|| '-')} — ID: ${u.id}</div>
+                            <div class="ulk-meta">${esc(u.email)} � CPF: ${esc(u.cpf||'�')} � ID: ${u.id}</div>
                         </div>
                     </div>`).join('');
                 div.classList.add('show');
@@ -300,7 +301,7 @@
                 ? '<i class="fas fa-edit" style="margin-right:8px;opacity:.4"></i>Editar Processo #' + proc.id
                 : '<i class="fas fa-plus-circle" style="margin-right:8px;opacity:.4"></i>Novo Processo';
             document.getElementById('procSaveBtn').innerHTML = isEdit
-                ? '<i class="fas fa-save" style="margin-right:6px"></i>Salvar Alterações'
+                ? '<i class="fas fa-save" style="margin-right:6px"></i>Salvar Altera��es'
                 : '<i class="fas fa-plus" style="margin-right:6px"></i>Criar Processo';
             document.getElementById('procStatusGroup').style.display = isEdit ? '' : 'none';
 
@@ -356,8 +357,8 @@
                 res = await DB.api('PUT', '/api/admin/processes/' + editId, data);
             } else {
                 data.user_id = parseInt(document.getElementById('procUserId').value);
-                if (!data.user_id) { Layout.toast('Selecione um usuário', 'error'); return; }
-                if (!data.cpf && !data.name) { Layout.toast('CPF/CNPJ ou nome são obrigatórios', 'error'); return; }
+                if (!data.user_id) { Layout.toast('Selecione um usu�rio', 'error'); return; }
+                if (!data.cpf && !data.name) { Layout.toast('CPF/CNPJ ou nome s�o obrigat�rios', 'error'); return; }
                 res = await DB.api('POST', '/api/admin/processes', data);
             }
             if (res && res.success) {
@@ -376,24 +377,24 @@
             currentDetailProc = p;
             const stMap = { pendente: 'warning', em_andamento: 'info', concluido: 'success', cancelado: 'danger' };
             const typeLabels = { limpa_nome: 'Limpa Nome', bacen: 'Bacen', cnpj: 'CNPJ' };
-            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Conclu�do', cancelado: 'Cancelado' };
             document.getElementById('procDetailContent').innerHTML = `
                 <div style="text-align:center;margin-bottom:20px">
                     <span class="badge badge-${stMap[p.status]||'secondary'}" style="font-size:.95rem;padding:8px 20px">${statusLabels[p.status]||p.status}</span>
                     <div style="font-size:.85rem;color:var(--text3);margin-top:8px">Processo #${p.id}</div>
                 </div>
                 <div class="proc-detail-grid">
-                    <div class="proc-detail-item"><label>Usuário</label><span>${esc(p.user_name|| '-')} (ID: ${p.user_id})</span></div>
-                    <div class="proc-detail-item"><label>Email</label><span>${esc(p.user_email|| '-')}</span></div>
-                    <div class="proc-detail-item"><label>CPF/CNPJ</label><span>${esc(p.cpf|| '-')}</span></div>
-                    <div class="proc-detail-item"><label>Nome no processo</label><span>${esc(p.name|| '-')}</span></div>
+                    <div class="proc-detail-item"><label>Usu�rio</label><span>${esc(p.user_name||'�')} (ID: ${p.user_id})</span></div>
+                    <div class="proc-detail-item"><label>Email</label><span>${esc(p.user_email||'�')}</span></div>
+                    <div class="proc-detail-item"><label>CPF/CNPJ</label><span>${esc(p.cpf||'�')}</span></div>
+                    <div class="proc-detail-item"><label>Nome no processo</label><span>${esc(p.name||'�')}</span></div>
                     <div class="proc-detail-item"><label>Tipo</label><span>${typeLabels[p.type]||p.type}</span></div>
-                    <div class="proc-detail-item"><label>Tipo Pessoa</label><span>${p.person_type==='pj'?'Jurídica':'Física'}</span></div>
-                    <div class="proc-detail-item"><label>Instituição</label><span>${esc(p.institution|| '-')}</span></div>
+                    <div class="proc-detail-item"><label>Tipo Pessoa</label><span>${p.person_type==='pj'?'Jur�dica':'F�sica'}</span></div>
+                    <div class="proc-detail-item"><label>Institui��o</label><span>${esc(p.institution||'�')}</span></div>
                     <div class="proc-detail-item"><label>Valor</label><span>R$ ${fmt(p.value||0)}</span></div>
-                    <div class="proc-detail-item"><label>Data de Criação</label><span>${new Date(p.created_at).toLocaleString('pt-BR')}</span></div>
-                    <div class="proc-detail-item"><label>Última Atualização</label><span>${p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : '-'}</span></div>
-                    ${p.notes ? `<div class="proc-detail-item full"><label>Observações</label><span>${esc(p.notes)}</span></div>` : ''}
+                    <div class="proc-detail-item"><label>Data de Cria��o</label><span>${new Date(p.created_at).toLocaleString('pt-BR')}</span></div>
+                    <div class="proc-detail-item"><label>�ltima Atualiza��o</label><span>${p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : '�'}</span></div>
+                    ${p.notes ? `<div class="proc-detail-item full"><label>Observa��es</label><span>${esc(p.notes)}</span></div>` : ''}
                 </div>`;
             document.getElementById('procDetailModal').style.display = 'flex';
         }
@@ -406,7 +407,7 @@
             if (!confirm('Deseja realmente excluir este processo?')) return;
             const res = await DB.api('DELETE', '/api/admin/processes/' + id);
             if (res && res.success) {
-                Layout.toast('Processo excluído', 'success');
+                Layout.toast('Processo exclu�do', 'success');
                 loadProcesses();
             } else {
                 Layout.toast(res?.error || 'Erro ao excluir', 'error');
@@ -415,7 +416,7 @@
 
         function exportProc() {
             const typeLabels = { limpa_nome: 'Limpa Nome', bacen: 'Bacen', cnpj: 'CNPJ' };
-            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Conclu�do', cancelado: 'Cancelado' };
             const statusColors = { pendente: '#f59e0b', em_andamento: '#3b82f6', concluido: '#10b981', cancelado: '#ef4444' };
             const settings = DB.getSettings();
             const pc = settings.primaryColor || '#6366f1';
@@ -431,10 +432,10 @@
                 const sc = statusColors[p.status] || '#666';
                 return `<tr>
                     <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#374151">${p.id}</td>
-                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#111827;font-weight:600">${p.name|| '-'}</td>
-                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151;font-family:monospace">${p.cpf|| '-'}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#111827;font-weight:600">${p.name||'�'}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151;font-family:monospace">${p.cpf||'�'}</td>
                     <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#374151">${typeLabels[p.type]||p.type}</td>
-                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151">${p.institution|| '-'}</td>
+                    <td style="border:1px solid #d1d5db;padding:8px 12px;font-size:12px;color:#374151">${p.institution||'�'}</td>
                     <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;font-weight:700;color:${(p.user_names_available||0)>0?'#10b981':'#ef4444'}">${p.user_names_available||0}</td>
                     <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center"><span style="background:${sc}22;color:${sc};padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600">${statusLabels[p.status]||p.status}</span></td>
                     <td style="border:1px solid #d1d5db;padding:8px 12px;text-align:center;font-size:12px;color:#374151">${new Date(p.created_at).toLocaleDateString('pt-BR')}</td>
@@ -447,15 +448,15 @@
             </head><body>
             <table style="border-collapse:collapse;width:100%">
                 <tr><td colspan="8" style="padding:20px 16px 4px;font-size:22px;font-weight:800;color:${pc};letter-spacing:1px;font-family:Arial,sans-serif">${companyName}</td></tr>
-                <tr><td colspan="8" style="padding:2px 16px 4px;font-size:11px;color:#6b7280;font-family:Arial,sans-serif">Escritório Virtual — Painel Administrativo</td></tr>
-                <tr><td colspan="8" style="padding:12px 16px 4px;font-size:15px;font-weight:700;color:#1e1b4b;font-family:Arial,sans-serif">Relatório de Processos</td></tr>
-                <tr><td colspan="8" style="padding:2px 16px 16px;font-size:11px;color:#6b7280;font-family:Arial,sans-serif">Gerado em ${date} às ${time} — Nº ${String(Date.now()).slice(-6)}</td></tr>
+                <tr><td colspan="8" style="padding:2px 16px 4px;font-size:11px;color:#6b7280;font-family:Arial,sans-serif">Escrit�rio Virtual � Painel Administrativo</td></tr>
+                <tr><td colspan="8" style="padding:12px 16px 4px;font-size:15px;font-weight:700;color:#1e1b4b;font-family:Arial,sans-serif">Relat�rio de Processos</td></tr>
+                <tr><td colspan="8" style="padding:2px 16px 16px;font-size:11px;color:#6b7280;font-family:Arial,sans-serif">Gerado em ${date} �s ${time} � N� ${String(Date.now()).slice(-6)}</td></tr>
                 <tr>
                     <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">ID</td>
                     <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">Nome</td>
                     <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">CPF</td>
                     <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Tipo</td>
-                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">Instituição</td>
+                    <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;font-family:Arial,sans-serif">Institui��o</td>
                     <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Saldo Nomes</td>
                     <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Status</td>
                     <td style="background:${pc};color:#fff;border:1px solid ${pc};padding:10px 12px;font-weight:700;font-size:11px;text-transform:uppercase;text-align:center;font-family:Arial,sans-serif">Data</td>
@@ -466,10 +467,10 @@
                     <td colspan="2" style="padding:8px 12px;font-size:12px;font-weight:700;color:#1e1b4b;border:1px solid #e5e7eb;background:#f8fafc;font-family:Arial,sans-serif">?? Total: ${counts.total}</td>
                     <td colspan="1" style="padding:8px 12px;font-size:11px;font-weight:600;color:#f59e0b;border:1px solid #e5e7eb;background:#fefce8;text-align:center;font-family:Arial,sans-serif">Pendentes: ${counts.pendente}</td>
                     <td colspan="2" style="padding:8px 12px;font-size:11px;font-weight:600;color:#3b82f6;border:1px solid #e5e7eb;background:#eff6ff;text-align:center;font-family:Arial,sans-serif">Em Andamento: ${counts.em_andamento}</td>
-                    <td colspan="1" style="padding:8px 12px;font-size:11px;font-weight:600;color:#10b981;border:1px solid #e5e7eb;background:#ecfdf5;text-align:center;font-family:Arial,sans-serif">Concluídos: ${counts.concluido}</td>
+                    <td colspan="1" style="padding:8px 12px;font-size:11px;font-weight:600;color:#10b981;border:1px solid #e5e7eb;background:#ecfdf5;text-align:center;font-family:Arial,sans-serif">Conclu�dos: ${counts.concluido}</td>
                     <td colspan="2" style="padding:8px 12px;font-size:11px;font-weight:600;color:#ef4444;border:1px solid #e5e7eb;background:#fef2f2;text-align:center;font-family:Arial,sans-serif">Cancelados: ${counts.cancelado}</td>
                 </tr>
-                <tr><td colspan="8" style="padding:16px 12px 4px;font-size:9px;color:#9ca3af;font-family:Arial,sans-serif">Documento gerado automaticamente pelo sistema ${companyName}. Informações confidenciais.</td></tr>
+                <tr><td colspan="8" style="padding:16px 12px 4px;font-size:9px;color:#9ca3af;font-family:Arial,sans-serif">Documento gerado automaticamente pelo sistema ${companyName}. Informa��es confidenciais.</td></tr>
             </table>
 </body></html>`;
 
@@ -479,49 +480,49 @@
             link.download = 'relatorio_processos_' + new Date().toISOString().slice(0, 10) + '.xls';
             link.click();
             URL.revokeObjectURL(link.href);
-            Layout.toast('Relatório exportado com sucesso!', 'success');
+            Layout.toast('Relat�rio exportado com sucesso!', 'success');
         }
 
         async function exportProcPDF() {
-            Layout.toast('Gerando relatório PDF...', 'info');
+            Layout.toast('Gerando relat�rio PDF...', 'info');
             const statusFilter = document.getElementById('filterStatus').value;
             const typeFilter = document.getElementById('filterType').value;
             const params = new URLSearchParams();
             if (statusFilter) params.set('status', statusFilter);
             if (typeFilter) params.set('type', typeFilter);
             const res = await DB.api('GET', '/api/admin/processes/report?' + params);
-            if (!res || !res.processes) { Layout.toast('Erro ao gerar relatório', 'error'); return; }
+            if (!res || !res.processes) { Layout.toast('Erro ao gerar relat�rio', 'error'); return; }
 
             const typeLabels = { limpa_nome: 'Limpa Nome', bacen: 'Bacen', cnpj: 'CNPJ' };
-            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+            const statusLabels = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Conclu�do', cancelado: 'Cancelado' };
             const headers = ['#', 'Nome', 'CPF/CNPJ', 'Tipo', 'Status', 'Data'];
             const rows = res.processes.map(p => [
                 p.id,
-                (p.name || '-'),
-                (p.cpf || '-'),
+                (p.name || '�'),
+                (p.cpf || '�'),
                 typeLabels[p.type] || p.type,
                 statusLabels[p.status] || p.status,
                 new Date(p.created_at).toLocaleDateString('pt-BR')
             ]);
 
-            // Incluir consultas realizadas no relatório
+            // Incluir consultas realizadas no relat�rio
             const consultations = res.consultations || [];
             if (consultations.length > 0) {
                 rows.push(['', '', '', '', '', '']);
-                rows.push(['', — CONSULTAS REALIZADAS —', '', '', '', '']);
+                rows.push(['', '� CONSULTAS REALIZADAS �', '', '', '', '']);
                 consultations.forEach((c, i) => {
                     rows.push([
                         'C' + (i + 1),
-                        (c.name || c.cpf || '-'),
-                        (c.cpf || '-'),
+                        (c.name || c.cpf || '�'),
+                        (c.cpf || '�'),
                         'Consulta CPF',
-                        c.result ? 'Concluída' : 'Realizada',
+                        c.result ? 'Conclu�da' : 'Realizada',
                         new Date(c.created_at).toLocaleDateString('pt-BR')
                     ]);
                 });
             }
 
-            await ExportPDF.download('Relatorio_de_Processos', 'Relatório de Processos — Limpa Nome', headers, rows);
+            await ExportPDF.download('Relatorio_de_Processos', 'Relat�rio de Processos � Limpa Nome', headers, rows);
         }
 
         function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

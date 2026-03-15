@@ -22,11 +22,11 @@
         </div>
 
         <div class="card">
-            <div class="card-body" style="overflow-x:auto">
-                <table class="table" id="dlTable"><thead><tr>
+            <div class="card-body"><div class="table-wrap">
+                <table class="table wide-table" id="dlTable"><thead><tr>
                     <th>ID</th><th>Título</th><th>Categoria</th><th>Tipo</th><th>Tamanho</th><th>Status</th><th style="width:120px">Ações</th>
                 </tr></thead><tbody id="dlBody"></tbody></table>
-            </div>
+            </div></div>
         </div>
 
         <!-- Modal -->
@@ -40,7 +40,7 @@
                     <input type="hidden" id="dlEditId">
                     <div class="form-group"><label>Título</label><input type="text" id="dlTitle" class="form-control" required></div>
                     <div class="form-group"><label>Descrição</label><textarea id="dlDesc" class="form-control" rows="2"></textarea></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="modal-form-grid">
                         <div class="form-group"><label>Categoria</label>
                             <select id="dlCategory" class="form-control">
                                 <option value="geral">Geral</option>
@@ -63,7 +63,7 @@
                         </div>
                     </div>
                     <div class="form-group"><label>URL do Arquivo</label><input type="text" id="dlFileUrl" class="form-control" required placeholder="https://..."></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="modal-form-grid">
                         <div class="form-group"><label>Tamanho</label><input type="text" id="dlFileSize" class="form-control" placeholder="Ex: 2.3 MB"></div>
                         <div class="form-group"><label>Ordem</label><input type="number" id="dlSortOrder" class="form-control" value="0"></div>
                     </div>

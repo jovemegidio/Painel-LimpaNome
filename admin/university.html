@@ -22,11 +22,11 @@
         </div>
 
         <div class="card">
-            <div class="card-body" style="overflow-x:auto">
-                <table class="table" id="coursesTable"><thead><tr>
+            <div class="card-body"><div class="table-wrap">
+                <table class="table wide-table" id="coursesTable"><thead><tr>
                     <th>ID</th><th>Título</th><th>Categoria</th><th>Duração</th><th>Ordem</th><th>Status</th><th style="width:120px">Ações</th>
                 </tr></thead><tbody></tbody></table>
-            </div>
+            </div></div>
         </div>
 
         <!-- Modal -->
@@ -40,7 +40,7 @@
                     <input type="hidden" id="editId">
                     <div class="form-group"><label>Título</label><input type="text" id="courseTitle" class="form-control" required></div>
                     <div class="form-group"><label>Descrição</label><textarea id="courseDesc" class="form-control" rows="3"></textarea></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="modal-form-grid">
                         <div class="form-group"><label>Categoria</label>
                             <select id="courseCat" class="form-control">
                                 <option value="geral">Geral</option>
@@ -55,7 +55,7 @@
                     </div>
                     <div class="form-group"><label>URL do Vídeo</label><input type="url" id="courseVideo" class="form-control" placeholder="https://youtube.com/..."></div>
                     <div class="form-group"><label>Thumbnail URL</label><input type="url" id="courseThumb" class="form-control" placeholder="https://..."></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="modal-form-grid">
                         <div class="form-group"><label>Ordem</label><input type="number" id="courseOrder" class="form-control" min="0" value="0"></div>
                         <div class="form-group"><label>Status</label>
                             <select id="courseActive" class="form-control">

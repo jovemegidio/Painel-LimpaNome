@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         .tx-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media(max-width:768px){.tx-detail-grid{grid-template-columns:1fr}}
         .tx-detail-item{padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
         .tx-detail-item label{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px}
         .tx-detail-item span{font-size:.9rem;font-weight:600;color:var(--text1)}
@@ -47,27 +48,29 @@
                 <h3>Todas as Transações</h3>
                 <button class="btn btn-outline btn-sm" onclick="exportTx()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
             </div>
-            <div class="card-header" style="border-top:none;padding-top:0;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                <div class="form-group" style="margin:0"><label style="font-size:.75rem">De</label><input type="date" class="form-control" id="dateFrom" onchange="loadTransactions()" style="max-width:160px"></div>
-                <div class="form-group" style="margin:0"><label style="font-size:.75rem">Até</label><input type="date" class="form-control" id="dateTo" onchange="loadTransactions()" style="max-width:160px"></div>
-                <select id="filterType" class="form-control" style="max-width:180px" onchange="loadTransactions()">
+            <div class="card-header responsive-filters" style="border-top:none;padding-top:0">
+                <div class="form-group" style="margin:0;flex:1 1 130px"><label style="font-size:.75rem">De</label><input type="date" class="form-control" id="dateFrom" onchange="loadTransactions()"></div>
+                <div class="form-group" style="margin:0;flex:1 1 130px"><label style="font-size:.75rem">Até</label><input type="date" class="form-control" id="dateTo" onchange="loadTransactions()"></div>
+                <select id="filterType" class="form-control" style="flex:1 1 150px" onchange="loadTransactions()">
                     <option value="">Todos os Tipos</option>
                     <option value="compra">Compra</option><option value="bonus">Bônus</option>
                     <option value="comissao">Comissão</option><option value="saque">Saque</option>
                     <option value="ajuste_admin">Ajuste Admin</option><option value="deposito">Depósito</option>
                 </select>
-                <select id="filterStatus" class="form-control" style="max-width:160px" onchange="loadTransactions()">
+                <select id="filterStatus" class="form-control" style="flex:1 1 130px" onchange="loadTransactions()">
                     <option value="">Todos os Status</option>
                     <option value="creditado">Creditado</option><option value="aprovado">Aprovado</option>
                     <option value="pendente">Pendente</option><option value="cancelado">Cancelado</option>
                 </select>
-                <input type="text" id="searchInput" class="form-control" placeholder="Buscar usuário ou descrição..." style="max-width:240px" oninput="searchDebounce()">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar usuário ou descrição..." style="flex:2 1 200px" oninput="searchDebounce()">
             </div>
-            <div class="card-body" style="overflow-x:auto">
-                <table class="table" id="txTable"><thead><tr>
-                    <th>ID</th><th>Data</th><th>Usuário</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th style="width:140px">Ações</th>
-                </tr></thead><tbody></tbody></table>
-                <div id="txPagination" style="display:flex;justify-content:center;gap:4px;padding:16px"></div>
+            <div class="card-body">
+                <div class="table-wrap">
+                    <table class="table wide-table" id="txTable"><thead><tr>
+                        <th>ID</th><th>Data</th><th>Usuário</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th style="width:140px">Ações</th>
+                    </tr></thead><tbody></tbody></table>
+                </div>
+                <div id="txPagination" style="display:flex;justify-content:center;gap:4px;padding:16px;flex-wrap:wrap"></div>
             </div>
         </div>
 
@@ -93,7 +96,7 @@
                         </div>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                    <div class="modal-form-grid" style="gap:16px">
                         <div class="form-group">
                             <label><i class="fas fa-tag" style="margin-right:4px;opacity:.4"></i>Tipo</label>
                             <select id="txType" class="form-control" required>
@@ -117,7 +120,7 @@
                         <input type="text" id="txDesc" class="form-control" required placeholder="Ex: Comissão de venda do pacote Ouro">
                     </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                    <div class="modal-form-grid" style="gap:16px">
                         <div class="form-group">
                             <label><i class="fas fa-flag" style="margin-right:4px;opacity:.4"></i>Status</label>
                             <select id="txStatus" class="form-control">

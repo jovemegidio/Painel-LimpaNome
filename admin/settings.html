@@ -47,7 +47,7 @@
 
         <!-- APPEARANCE -->
         <div class="settings-section active" id="sec-appearance">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <div class="responsive-grid">
                 <div class="card"><div class="card-header"><h3><i class="fas fa-tag"></i> Identidade</h3></div><div class="card-body">
                     <div class="form-group"><label>Nome do Sistema</label><input type="text" id="siteName" class="form-control" placeholder="Ex: Credbusiness"><div class="form-hint">Aparece na sidebar, header e footer</div></div>
                     <div class="form-group"><label>Título da Aba (Browser)</label><input type="text" id="siteTitle" class="form-control" placeholder="Ex: Credbusiness — Escritório Virtual"></div>
@@ -99,7 +99,7 @@
                 </div>
                 <div id="commPercentFields">
                     <p style="color:var(--text3);font-size:.8rem;margin-bottom:12px"><i class="fas fa-info-circle"></i> Comissão calculada sobre o valor da venda, distribuída em até 3 níveis na rede de patrocínio.</p>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                    <div class="modal-form-grid" style="grid-template-columns:repeat(3,1fr)">
                         <div class="form-group"><label>Nível 1 — Direto (%)</label><input type="number" id="commLevel1" class="form-control" min="0" max="100" step="0.5"></div>
                         <div class="form-group"><label>Nível 2 — Indireto (%)</label><input type="number" id="commLevel2" class="form-control" min="0" max="100" step="0.5"></div>
                         <div class="form-group"><label>Nível 3 — 3º Nível (%)</label><input type="number" id="commLevel3" class="form-control" min="0" max="100" step="0.5"></div>
@@ -123,7 +123,7 @@
         <div class="settings-section" id="sec-pages">
             <div class="card" style="max-width:700px"><div class="card-header"><h3><i class="fas fa-eye-slash"></i> Visibilidade de Páginas</h3></div><div class="card-body">
                 <p style="color:var(--text3);font-size:.85rem;margin-bottom:20px"><i class="fas fa-info-circle"></i> Desmarque as páginas que deseja ocultar do menu do painel. Páginas ocultas não aparecerão para os usuários.</p>
-                <div id="pagesCheckboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+                <div id="pagesCheckboxes" class="modal-form-grid" style="gap:10px"></div>
                 <div style="margin-top:20px"><button class="btn btn-primary" onclick="savePageVisibility()"><i class="fas fa-save"></i> Salvar Visibilidade</button></div>
             </div></div>
         </div>
@@ -268,7 +268,7 @@
 
         function loadPlans() {
             const plans = DB.get('plans') || [];
-            document.getElementById('plansContainer').innerHTML = plans.length ? plans.map((p,i) => '<div class="plan-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h4><i class="fas fa-id-card" style="color:var(--primary);margin-right:6px"></i> '+p.name+'</h4><div style="display:flex;gap:8px"><button class="btn btn-sm btn-outline" onclick="editPlan('+i+')"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-danger" onclick="deletePlan('+i+')"><i class="fas fa-trash"></i></button></div></div><div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;font-size:.85rem"><div><strong>ID:</strong> '+p.id+'</div><div><strong>Preço:</strong> R$ '+fmt(p.price)+'</div><div><strong>Recursos:</strong> '+(p.features||[]).join(', ')+'</div></div></div>').join('') : '<p style="color:var(--text3);text-align:center">Nenhum plano cadastrado</p>';
+            document.getElementById('plansContainer').innerHTML = plans.length ? plans.map((p,i) => '<div class="plan-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h4><i class="fas fa-id-card" style="color:var(--primary);margin-right:6px"></i> '+p.name+'</h4><div style="display:flex;gap:8px"><button class="btn btn-sm btn-outline" onclick="editPlan('+i+')"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-danger" onclick="deletePlan('+i+')"><i class="fas fa-trash"></i></button></div></div><div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;font-size:.85rem" class="modal-form-grid"><div><strong>ID:</strong> '+p.id+'</div><div><strong>Preço:</strong> R$ '+fmt(p.price)+'</div><div><strong>Recursos:</strong> '+(p.features||[]).join(', ')+'</div></div></div>').join('') : '<p style="color:var(--text3);text-align:center">Nenhum plano cadastrado</p>';
         }
 
         function addPlan() {
@@ -289,7 +289,7 @@
 
         function loadDbInfo() {
             const u=(DB.get('users')||[]).length,pk=(DB.get('packages')||[]).length,tx=(DB.get('transactions')||[]).length,pr=(DB.get('limpanome_processes')||[]).length,tk=(DB.get('tickets')||[]).length;
-            document.getElementById('dbInfo').innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><span>Usuários: '+u+'</span><span>Pacotes: '+pk+'</span><span>Transações: '+tx+'</span><span>Processos: '+pr+'</span><span>Tickets: '+tk+'</span><span>Tamanho: ~'+(JSON.stringify(DB.exportAll()).length/1024).toFixed(1)+' KB</span></div>';
+            document.getElementById('dbInfo').innerHTML = '<div class="modal-form-grid" style="grid-template-columns:repeat(3,1fr);gap:8px"><span>Usuários: '+u+'</span><span>Pacotes: '+pk+'</span><span>Transações: '+tx+'</span><span>Processos: '+pr+'</span><span>Tickets: '+tk+'</span><span>Tamanho: ~'+(JSON.stringify(DB.exportAll()).length/1024).toFixed(1)+' KB</span></div>';
         }
 
         function exportData() {

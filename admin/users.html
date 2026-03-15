@@ -25,9 +25,9 @@
         </div>
 
         <div class="card" style="margin-bottom:16px">
-            <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap">
-                <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nome, email ou CPF..." style="max-width:320px" oninput="renderTable()">
-                <select id="filterLevel" class="form-control" style="max-width:160px" onchange="renderTable()">
+            <div class="card-body responsive-filters">
+                <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nome, email ou CPF..." style="flex:2 1 200px" oninput="renderTable()">
+                <select id="filterLevel" class="form-control" style="flex:1 1 140px" onchange="renderTable()">
                     <option value="">Todos os Níveis</option>
                     <option value="start">Start</option>
                     <option value="bronze">Bronze</option>
@@ -35,7 +35,7 @@
                     <option value="ouro">Ouro</option>
                     <option value="diamante">Diamante</option>
                 </select>
-                <select id="filterStatus" class="form-control" style="max-width:160px" onchange="renderTable()">
+                <select id="filterStatus" class="form-control" style="flex:1 1 140px" onchange="renderTable()">
                     <option value="">Todos os Status</option>
                     <option value="ativo">Ativo</option>
                     <option value="inativo">Inativo</option>
@@ -44,10 +44,12 @@
         </div>
 
         <div class="card">
-            <div class="card-body" style="overflow-x:auto">
-                <table class="table" id="usersTable"><thead><tr>
-                    <th>ID</th><th>Nome</th><th>Email</th><th>CPF</th><th>Plano</th><th>Nível</th><th>Pontos</th><th>Saldo</th><th>Status</th><th style="width:120px">Ações</th>
-                </tr></thead><tbody></tbody></table>
+            <div class="card-body">
+                <div class="table-wrap">
+                    <table class="table wide-table" id="usersTable"><thead><tr>
+                        <th>ID</th><th>Nome</th><th>Email</th><th>CPF</th><th>Plano</th><th>Nível</th><th>Pontos</th><th>Saldo</th><th>Status</th><th style="width:120px">Ações</th>
+                    </tr></thead><tbody></tbody></table>
+                </div>
             </div>
         </div>
 
@@ -60,7 +62,7 @@
                 </div>
                 <form id="userForm" onsubmit="saveUser(event)">
                     <input type="hidden" id="editId">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="modal-form-grid">
                         <div class="form-group"><label>Username</label><input type="text" id="fUsername" class="form-control" placeholder="usuario123"></div>
                         <div class="form-group"><label>Nome completo</label><input type="text" id="fName" class="form-control" required></div>
                         <div class="form-group"><label>Email</label><input type="email" id="fEmail" class="form-control" required></div>
