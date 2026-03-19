@@ -65,7 +65,7 @@
             const openTk = data ? data.openTickets : DB.getTickets().filter(t=>t.status!=='fechado').length;
             const pendingProc = data ? data.pendingProcesses : DB.getProcesses().filter(p=>p.status==='pendente'||p.status==='em_andamento').length;
 
-            /* -- Stats --- */
+            /* ── Stats ─── */
             const stats = [
                 { icon: 'fa-users', color: '#007bff', label: 'Total Usuários', value: totalUsers },
                 { icon: 'fa-dollar-sign', color: '#28a745', label: 'Receita Total', value: fmt(totalRevenue) },
@@ -78,7 +78,7 @@
                     <div class="stat-info"><span class="stat-value">${s.value}</span><span class="stat-label">${s.label}</span></div>
                 </div>`).join('');
 
-            /* -- Level Pie Chart -- */
+            /* ── Level Pie Chart ── */
             const users = DB.getAllUsers();
             const levels = { prata: 0, ouro: 0, diamante: 0 };
             if (data && data.usersByLevel) {
@@ -95,7 +95,7 @@
                 options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
             });
 
-            /* -- Growth Bar Chart -- */
+            /* ── Growth Bar Chart ── */
             const months = [];
             const growthData = [];
             const now = new Date();
@@ -116,20 +116,20 @@
                 options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
             });
 
-            /* -- Open Tickets -- */
+            /* ── Open Tickets ── */
             const tickets = data && data.recentTickets ? data.recentTickets : DB.getTickets().filter(t => t.status !== 'fechado').slice(0, 5);
             document.getElementById('openTickets').innerHTML = tickets.length ? `
-                <table class="table"><thead><tr><th>ID</th><th>Assunto</th><th>Usuário</th><th>Status</th></tr></thead><tbody>
-                ${tickets.map(t => `<tr><td>#${t.id}</td><td>${t.subject}</td><td>${t.user_name || '-'}</td><td><span class="badge badge-${t.status === 'aberto' ? 'warning' : 'info'}">${t.status}</span></td></tr>`
-                ).join('')}</tbody></table>` : '<p style="color:#64748b">Nenhum ticket aberto</p>';
+                <div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>Assunto</th><th>Usuário</th><th>Status</th></tr></thead><tbody>
+                ${tickets.map(t => `<tr><td>#${t.id}</td><td>${t.subject}</td><td>${t.user_name || '—'}</td><td><span class="badge badge-${t.status === 'aberto' ? 'warning' : 'info'}">${t.status}</span></td></tr>`
+                ).join('')}</tbody></table></div>` : '<p style="color:#64748b">Nenhum ticket aberto</p>';
 
-            /* -- Recent Processes -- */
+            /* ── Recent Processes ── */
             const processes = data && data.recentProcesses ? data.recentProcesses : DB.getProcesses().slice(-5).reverse();
             const stMap = { pendente:'warning', em_andamento:'info', concluido:'success', cancelado:'danger' };
             document.getElementById('recentProcesses').innerHTML = processes.length ? `
-                <table class="table"><thead><tr><th>ID</th><th>Tipo</th><th>Usuário</th><th>Status</th></tr></thead><tbody>
-                ${processes.map(p => `<tr><td>#${p.id}</td><td>${p.type}</td><td>${p.user_name || '-'}</td><td><span class="badge badge-${stMap[p.status] || 'secondary'}">${(p.status||'').replace('_',' ')}</span></td></tr>`
-                ).join('')}</tbody></table>` : '<p style="color:#64748b">Nenhum processo</p>';
+                <div class="table-wrap"><table class="table"><thead><tr><th>ID</th><th>Tipo</th><th>Usuário</th><th>Status</th></tr></thead><tbody>
+                ${processes.map(p => `<tr><td>#${p.id}</td><td>${p.type}</td><td>${p.user_name || '—'}</td><td><span class="badge badge-${stMap[p.status] || 'secondary'}">${(p.status||'').replace('_',' ')}</span></td></tr>`
+                ).join('')}</tbody></table></div>` : '<p style="color:#64748b">Nenhum processo</p>';
         }
 
         loadDashboard();
