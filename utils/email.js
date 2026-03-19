@@ -40,8 +40,8 @@ function getTransporter() {
 async function sendEmail(to, subject, html) {
     const t = getTransporter();
     if (!t) {
-        console.warn(`📧 [SIMULADO] Para: ${to} | Assunto: ${subject}`);
-        return true; // Simula sucesso se SMTP não configurado
+        console.warn(`📧 [SMTP NÃO CONFIGURADO] Para: ${to} | Assunto: ${subject}`);
+        return false;
     }
 
     try {

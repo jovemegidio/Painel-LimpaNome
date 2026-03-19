@@ -329,14 +329,20 @@ router.post('/contracts/:id/accept', auth, (req, res) => {
 
 router.post('/contracts/:id/send', auth, async (req, res) => {
     const db = getDB();
-    const { email, link, title } = req.body;
+    const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'E-mail é obrigatório' });
     const contract = db.prepare('SELECT id, title FROM contracts WHERE id = ? AND active = 1').get(req.params.id);
     if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
 
-    const contractTitle = title || contract.title;
+    const esc = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const contractTitle = esc(contract.title);
     const user = db.prepare('SELECT name FROM users WHERE id = ?').get(req.user.id);
-    const senderName = user?.name || 'Consultor Credbusiness';
+    const senderName = esc(user?.name || 'Consultor Credbusiness');
+
+    // Generate link server-side using configured domain
+    const domain = process.env.DOMAIN || req.get('host') || 'localhost:3001';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const link = `${protocol}://${domain}/contrato.html?id=${contract.id}`;
 
     const html = `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px">
@@ -352,11 +358,15 @@ router.post('/contracts/:id/send', auth, async (req, res) => {
     `;
 
     try {
-        await sendEmail(email, `Credbusiness — ${contractTitle}`, html);
-        res.json({ success: true });
+        const sent = await sendEmail(email, `Credbusiness — ${contract.title}`, html);
+        if (!sent) {
+            console.error('Falha ao enviar contrato por email para:', email);
+            return res.status(500).json({ error: 'Falha ao enviar e-mail. Verifique a configuração SMTP.' });
+        }
+        res.json({ success: true, message: 'Contrato enviado por e-mail!' });
     } catch (err) {
         console.error('Erro ao enviar contrato por email:', err.message);
-        res.json({ success: true, message: 'Envio registrado' });
+        res.status(500).json({ error: 'Erro ao enviar e-mail. Tente novamente.' });
     }
 });
 

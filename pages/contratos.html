@@ -213,12 +213,13 @@ function sendToClient(id) {
 async function doSendEmail(id) {
     const email = document.getElementById('sendEmail').value;
     if (!email) { Layout.toast('Informe o e-mail', 'error'); return; }
-    const baseUrl = window.location.origin;
-    const link = `${baseUrl}/contrato.html?id=${id}`;
-    const c = allContracts.find(c => c.id === id);
-    const result = await DB.api('POST', '/api/users/contracts/' + id + '/send', { email, link, title: c?.title });
+    const result = await DB.api('POST', '/api/users/contracts/' + id + '/send', { email });
     Layout.closeModal();
-    Layout.toast(result?.success ? 'Contrato enviado por e-mail!' : 'Envio registrado. O cliente receberá o contrato.', 'success');
+    if (result?.success) {
+        Layout.toast('Contrato enviado por e-mail com sucesso!', 'success');
+    } else {
+        Layout.toast(result?.error || 'Erro ao enviar e-mail. Tente novamente.', 'error');
+    }
 }
 
 function doSendWhatsapp(id) {
