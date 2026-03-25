@@ -48,15 +48,15 @@ self.addEventListener('install', (event) => {
 // ── Activate: limpar caches antigos ──
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys
+    caches.keys().then((keys) =>
+      Promise.all([
+        ...keys
           .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      );
-    })
+          .map((key) => caches.delete(key)),
+        self.clients.claim()
+      ])
+    )
   );
-  self.clients.claim();
 });
 
 // ── Fetch: estratégia por tipo de request ──

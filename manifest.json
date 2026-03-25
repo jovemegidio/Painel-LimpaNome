@@ -76,22 +76,6 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/icons/screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Dashboard Limpa Nome — mobile"
-    },
-    {
-      "src": "/icons/screenshot-desktop.png",
-      "sizes": "1280x800",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Escritório Virtual — desktop"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Dashboard",

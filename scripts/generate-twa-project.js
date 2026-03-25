@@ -1,11 +1,22 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
-const bubblewrapCore = require(
-  'C:/Users/Administrator/AppData/Roaming/npm/node_modules/@bubblewrap/cli/node_modules/@bubblewrap/core'
-);
+function resolveBuilblewrapCore() {
+  // 1. Tentar módulo local (devDependency)
+  try { return require('@bubblewrap/core'); } catch (_) {}
+  // 2. Tentar via prefixo global do npm
+  try {
+    const globalRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
+    return require(path.join(globalRoot, '@bubblewrap/cli/node_modules/@bubblewrap/core'));
+  } catch (_) {}
+  throw new Error(
+    'Não foi possível localizar @bubblewrap/core.\n' +
+    'Instale globalmente: npm install -g @bubblewrap/cli'
+  );
+}
 
-const { TwaGenerator, TwaManifest, ConsoleLog } = bubblewrapCore;
+const { TwaGenerator, TwaManifest, ConsoleLog } = resolveBuilblewrapCore();
 
 async function main() {
   const rootDir = path.resolve(__dirname, '..');
@@ -18,13 +29,13 @@ async function main() {
   const normalized = {
     ...raw,
     appVersion: raw.appVersion || raw.appVersionName || '1.0.0',
-    maskableIconUrl: raw.iconUrl,
+    maskableIconUrl: raw.maskableIconUrl || raw.iconUrl,
     splashScreenFadeOutDuration: raw.splashScreenFadeOutDuration || 300,
     signingKey: {
       path: keystorePath,
       alias: (raw.signingKey && raw.signingKey.alias) || 'credbusiness',
     },
-    shortcuts: [],
+    shortcuts: raw.shortcuts || [],
   };
 
   const manifest = new TwaManifest(normalized);
