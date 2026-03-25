@@ -157,20 +157,31 @@
     wrap.className = 'pwa-install-banner-wrap';
     wrap.innerHTML = `
       <div class="pwa-install-inner">
-        <div class="pwa-install-icon">📱</div>
-        <div class="pwa-install-text">
-          <strong>Instalar Credbusiness</strong>
-          <span>Acesse direto da tela inicial · funciona sem internet</span>
+        <img src="/icons/icon-192x192.png" class="pwa-app-icon" alt="Credbusiness" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'pwa-app-icon pwa-app-icon-fallback',textContent:'C'}))">
+        <div class="pwa-install-body">
+          <div class="pwa-install-header">
+            <strong>Credbusiness ERP</strong>
+            <span class="pwa-badge-free">GRÁTIS</span>
+          </div>
+          <div class="pwa-install-sub">Acesse direto da tela inicial · funciona offline</div>
+          <div class="pwa-install-meta">
+            <span class="pwa-stars" aria-hidden="true">★★★★★</span>
+            <span>4.9 &nbsp;·&nbsp; Negócios</span>
+          </div>
         </div>
         <div class="pwa-install-actions">
-          <button class="btn-install" id="pwa-install-btn">Instalar</button>
-          <button class="btn-dismiss" id="pwa-install-dismiss" aria-label="Dispensar">×</button>
+          <button class="btn-install" id="pwa-install-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Instalar
+          </button>
+          <button class="btn-dismiss" id="pwa-install-dismiss" aria-label="Dispensar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
     `;
 
-    // Adicionar CSS inline apenas para o container
-    wrap.style.cssText = `position:fixed;bottom:0;left:0;right:0;z-index:99998;padding:0 16px 16px;pointer-events:none;`;
+    wrap.style.cssText = `position:fixed;bottom:0;left:0;right:0;z-index:99998;padding:0 16px 20px;pointer-events:none;`;
 
     document.body.appendChild(wrap);
 
