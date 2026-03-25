@@ -222,10 +222,17 @@
         }
 
         async function resetPassword(id) {
-            if (!confirm('Resetar a senha desse usuário para o padrão (123456)?')) return;
-            const res = await DB.api('POST', `/api/admin/users/${id}/reset-password`);
+            const password = prompt('Informe a nova senha temporária do usuário. Use pelo menos 8 caracteres, com 1 letra maiúscula e 1 número.');
+            if (password === null) return;
+            const normalizedPassword = password.trim();
+            if (!normalizedPassword) {
+                Layout.toast('Informe uma senha válida', 'error');
+                return;
+            }
+
+            const res = await DB.api('POST', `/api/admin/users/${id}/reset-password`, { password: normalizedPassword });
             if (res && res.success) {
-                Layout.toast('Senha resetada com sucesso!', 'success');
+                Layout.toast('Senha redefinida com sucesso!', 'success');
             } else {
                 Layout.toast(res?.error || 'Erro ao resetar senha', 'error');
             }

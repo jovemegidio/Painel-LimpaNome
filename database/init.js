@@ -576,6 +576,28 @@ function initDatabase() {
         }
     } catch (e) { /* ignora se tabela não existe ainda */ }
 
+    // ── Migração: Natalia Santos da Silva deve ser Diamante (veio pelo credbusiness) ──
+    try {
+        const natalia = d.prepare("SELECT id, level, sponsor_id FROM users WHERE LOWER(name) LIKE '%natalia%santos%silva%'").get();
+        if (natalia && natalia.level !== 'diamante') {
+            const credbiz = d.prepare("SELECT id FROM users WHERE username = 'credbusiness'").get();
+            if (credbiz) {
+                d.prepare("UPDATE users SET level = 'diamante', sponsor_id = ? WHERE id = ?").run(credbiz.id, natalia.id);
+                console.log(`✅ Natalia Santos da Silva corrigida para Diamante (sponsor: credbusiness)`);
+            }
+        }
+    } catch (e) { /* ignora se tabela não existe ainda */ }
+
+    // ── Garantir que o admin sempre exista (independente do seed de usuários) ──
+    try {
+        const adminExists = d.prepare("SELECT id FROM admins WHERE LOWER(username) = 'adm-credbusiness'").get();
+        if (!adminExists) {
+            d.prepare('INSERT OR IGNORE INTO admins (username, password, name, role) VALUES (?,?,?,?)')
+                .run('ADM-CREDBUSINESS', bcrypt.hashSync('credadmin', 10), 'Administrador', 'superadmin');
+            console.log('✅ Admin ADM-CREDBUSINESS recriado');
+        }
+    } catch (e) { /* ignora se tabela não existe ainda */ }
+
     // Seed if empty
     const count = d.prepare('SELECT COUNT(*) as c FROM users').get();
     if (count.c === 0) {

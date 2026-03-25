@@ -3,6 +3,15 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const c = new Client();
+const smokeUserUsername = process.env.SMOKE_USER_USERNAME || 'credbusiness';
+const smokeUserPassword = process.env.SMOKE_USER_PASSWORD;
+const smokeAdminUsername = process.env.SMOKE_ADMIN_USERNAME || 'ADM-CREDBUSINESS';
+const smokeAdminPassword = process.env.SMOKE_ADMIN_PASSWORD;
+
+if (!smokeUserPassword || !smokeAdminPassword) {
+    console.error('❌ Defina SMOKE_USER_PASSWORD e SMOKE_ADMIN_PASSWORD no .env');
+    process.exit(1);
+}
 
 function exec(conn, cmd) {
     return new Promise((resolve, reject) => {
@@ -42,11 +51,11 @@ c.on('ready', async () => {
 
     // 3. Test login with a real user
     console.log('=== TEST LOGIN (curl to local) ===');
-    out = await exec(c, `curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{"username":"credbusiness","password":"Service"}'`);
+    out = await exec(c, `curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{"username":"${smokeUserUsername}","password":"${smokeUserPassword}"}'`);
     console.log('User login:', out);
 
     // 4. Test admin login
-    out = await exec(c, `curl -s -X POST http://localhost:3001/api/auth/admin-login -H 'Content-Type: application/json' -d '{"username":"ADM-CREDBUSINESS","password":"credadmin"}'`);
+    out = await exec(c, `curl -s -X POST http://localhost:3001/api/auth/admin-login -H 'Content-Type: application/json' -d '{"username":"${smokeAdminUsername}","password":"${smokeAdminPassword}"}'`);
     console.log('Admin login:', out.substring(0, 300));
 
     // 5. Test through Nginx (www)

@@ -290,8 +290,7 @@ API_BACEN_KEY=
             console.log('║                                                            ║');
             console.log('║  🌐 http://mkt-credbusiness.vps-kinghost.net               ║');
             console.log('║                                                            ║');
-            console.log('║  Login: credbusiness / Service                              ║');
-            console.log('║  Admin: admin / admin123                                    ║');
+            console.log('║  Credenciais: consulte o .env e o banco do ambiente alvo   ║');
             console.log('╚══════════════════════════════════════════════════════════╝');
 
             conn.end();

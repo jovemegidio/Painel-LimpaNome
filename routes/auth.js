@@ -62,12 +62,16 @@ router.get('/check-sponsor', (req, res) => {
 // ── Login de Usuário ──
 router.post('/login', (req, res) => {
     try {
-        const username = sanitize(req.body.username);
+        const rawLogin = sanitize(req.body.username || req.body.login || req.body.email);
         const password = req.body.password;
-        if (!username || !password) return res.status(400).json({ success: false, error: 'Preencha todos os campos' });
+        if (!rawLogin || !password) return res.status(400).json({ success: false, error: 'Preencha todos os campos' });
 
         const db = getDB();
-        const user = db.prepare('SELECT * FROM users WHERE LOWER(username) = ?').get(username.toLowerCase());
+        const loginValue = rawLogin.toLowerCase();
+        const isEmailLogin = loginValue.includes('@');
+        const user = isEmailLogin
+            ? db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(loginValue)
+            : db.prepare('SELECT * FROM users WHERE LOWER(username) = ?').get(loginValue);
 
         if (!user || !bcrypt.compareSync(password, user.password)) {
             return res.status(401).json({ success: false, error: 'Usuário ou senha inválidos' });
@@ -161,7 +165,7 @@ router.post('/verify-2fa', (req, res) => {
 // ── Login de Admin ──
 router.post('/admin-login', (req, res) => {
     try {
-        const username = sanitize(req.body.username);
+        const username = sanitize(req.body.username || req.body.login);
         const password = req.body.password;
         if (!username || !password) return res.status(400).json({ success: false, error: 'Preencha todos os campos' });
 

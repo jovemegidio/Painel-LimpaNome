@@ -27,6 +27,14 @@ function safeUser(db, user) {
     return u;
 }
 
+function isStrongPassword(password) {
+    return typeof password === 'string'
+        && password.length >= 8
+        && password.length <= 100
+        && /[A-Z]/.test(password)
+        && /\d/.test(password);
+}
+
 // ════════════════════════════════════
 //   DASHBOARD ADMIN
 // ════════════════════════════════════
@@ -102,6 +110,9 @@ router.post('/users', (req, res) => {
         const { username, password, name, email, phone, cpf, level, plan, sponsor_id, active } = req.body;
 
         if (!username || !name || !email) return res.status(400).json({ error: 'Username, nome e email são obrigatórios' });
+        if (!isStrongPassword(password)) {
+            return res.status(400).json({ error: 'A senha deve ter entre 8 e 100 caracteres, com ao menos uma letra maiúscula e um número' });
+        }
 
         // Verificar duplicatas
         if (db.prepare('SELECT id FROM users WHERE LOWER(username) = ?').get(username.toLowerCase())) {
@@ -111,7 +122,7 @@ router.post('/users', (req, res) => {
             return res.status(409).json({ error: 'Email já cadastrado' });
         }
 
-        const hashedPw = bcrypt.hashSync(password || '123456', 10);
+        const hashedPw = bcrypt.hashSync(password, 10);
         const result = db.prepare(`
             INSERT INTO users (username, password, name, email, phone, cpf, level, plan, sponsor_id, active, role, email_verified, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'user', 1, date('now'))
@@ -192,9 +203,13 @@ router.delete('/users/:id', (req, res) => {
 
 router.post('/users/:id/reset-password', (req, res) => {
     const db = getDB();
-    const newPass = req.body.password || '123456';
+    const newPass = String(req.body.password || '');
+    if (!isStrongPassword(newPass)) {
+        return res.status(400).json({ error: 'Informe uma nova senha forte com 8 a 100 caracteres, ao menos uma letra maiúscula e um número' });
+    }
     db.prepare('UPDATE users SET password = ? WHERE id = ?').run(bcrypt.hashSync(newPass, 10), req.params.id);
-    res.json({ success: true, message: `Senha redefinida para: ${newPass}` });
+    logAudit({ userType: 'admin', userId: req.user.id, action: 'admin_reset_user_password', entity: 'user', entityId: Number(req.params.id), ip: getClientIP(req) });
+    res.json({ success: true, message: 'Senha redefinida com sucesso.' });
 });
 
 // Ativar pagamento pendente de um usuário (busca o mais recente)

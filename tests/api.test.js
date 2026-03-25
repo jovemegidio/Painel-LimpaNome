@@ -30,7 +30,7 @@ const testUser = {
     password: 'Test1234!',
     cpf: '12345678901',
     phone: '11999999999',
-    sponsor: ''
+    sponsor: 'credbusiness'
 };
 
 // ═══════════════════════════════════════
@@ -73,7 +73,7 @@ describe('Auth — Admin Login', () => {
     test('POST /api/auth/admin-login com credenciais padrão → 200', async () => {
         const res = await request(app)
             .post('/api/auth/admin-login')
-            .send({ username: 'admin', password: 'admin123' });
+            .send({ username: 'ADM-CREDBUSINESS', password: 'credadmin' });
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('token');
         adminToken = res.body.token;
@@ -106,7 +106,7 @@ describe('Auth — Registro de Usuário', () => {
 });
 
 describe('Auth — Login de Usuário', () => {
-    test('POST /api/auth/login → 200 com token', async () => {
+    test('POST /api/auth/login com login=email → 200 com token', async () => {
         const res = await request(app)
             .post('/api/auth/login')
             .send({ login: testUser.email, password: testUser.password });
@@ -120,6 +120,14 @@ describe('Auth — Login de Usuário', () => {
             .post('/api/auth/login')
             .send({ login: testUser.email, password: 'WrongPass1' });
         expect(res.status).toBe(401);
+    });
+
+    test('POST /api/auth/login com username legado → 200', async () => {
+        const res = await request(app)
+            .post('/api/auth/login')
+            .send({ username: testUser.username, password: testUser.password });
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty('token');
     });
 });
 
@@ -244,7 +252,7 @@ describe('Notifications', () => {
             .get('/api/notifications/count')
             .set('Authorization', `Bearer ${userToken}`);
         expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('count');
+        expect(res.body).toHaveProperty('unread');
     });
 });
 
@@ -255,6 +263,33 @@ describe('Rate Limiting', () => {
     test('Headers de rate limit presentes', async () => {
         const res = await request(app).get('/api/health');
         expect(res.headers).toHaveProperty('ratelimit-limit');
+    });
+});
+
+// ═══════════════════════════════════════
+// SECURITY REGRESSIONS
+// ═══════════════════════════════════════
+describe('Security Regressions', () => {
+    test('Webhook Asaas sem token → 401', async () => {
+        const res = await request(app)
+            .post('/api/payments/webhook')
+            .send({ event: 'PAYMENT_CONFIRMED', payment: { id: 'fake' } });
+        expect(res.status).toBe(401);
+    });
+
+    test('Documentos privados não ficam expostos em /uploads raiz', async () => {
+        const res = await request(app).get('/uploads/teste-privado.pdf');
+        expect(res.status).toBe(404);
+    });
+
+    test('Reset de senha via admin exige senha forte e não expõe a senha na resposta', async () => {
+        const res = await request(app)
+            .post('/api/admin/users/1/reset-password')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ password: 'NovaSenha9' });
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(JSON.stringify(res.body)).not.toContain('NovaSenha9');
     });
 });
 

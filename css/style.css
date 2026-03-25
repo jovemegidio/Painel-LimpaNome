@@ -1723,3 +1723,334 @@ select.form-control { cursor: pointer; }
 @media (prefers-color-scheme: dark) {
     /* Placeholder for future dark mode */
 }
+
+/* ═══════════════════════════════════════════════════
+   PWA — SPLASH SCREEN, INSTALL BANNER, MOBILE APP
+   Estilos específicos para experiência PWA / APK
+   ═══════════════════════════════════════════════════ */
+
+/* ── Tela de carregamento inicial PWA ── */
+#pwa-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    transition: opacity .5s ease, visibility .5s ease;
+}
+#pwa-splash.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+.splash-logo {
+    width: 96px;
+    height: 96px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 16px 48px rgba(99,102,241,.4);
+    animation: splashBounce .8s cubic-bezier(.34,1.56,.64,1) both;
+    letter-spacing: -2px;
+    position: relative;
+}
+.splash-logo::after {
+    content: '';
+    position: absolute;
+    top: -4px; right: -4px;
+    width: 20px; height: 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 50%;
+    border: 3px solid #0f172a;
+}
+@keyframes splashBounce {
+    0%   { opacity: 0; transform: scale(.5) translateY(20px); }
+    60%  { opacity: 1; transform: scale(1.08) translateY(-4px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.splash-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -.3px;
+    animation: fadeInUp .5s .3s ease both;
+}
+.splash-tagline {
+    font-family: 'Inter', sans-serif;
+    font-size: .8rem;
+    color: #7c7c9a;
+    animation: fadeInUp .5s .4s ease both;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+}
+.splash-loader {
+    display: flex;
+    gap: 6px;
+    animation: fadeInUp .5s .5s ease both;
+}
+.splash-loader-dot {
+    width: 8px; height: 8px;
+    background: #6366f1;
+    border-radius: 50%;
+    animation: dotPulse 1.2s ease-in-out infinite;
+}
+.splash-loader-dot:nth-child(2) { animation-delay: .2s; }
+.splash-loader-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes dotPulse {
+    0%, 80%, 100% { transform: scale(.6); opacity: .4; }
+    40%           { transform: scale(1); opacity: 1; }
+}
+
+/* ── Banner de instalação PWA aprimorado ── */
+#pwa-install-banner {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 99998;
+    padding: 0 16px 16px;
+    pointer-events: none;
+}
+.pwa-install-inner {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
+    padding: 16px 20px;
+    border-radius: 16px;
+    box-shadow: 0 -4px 40px rgba(99,102,241,.4), 0 8px 32px rgba(0,0,0,.2);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    pointer-events: auto;
+    animation: slideUpIn .4s cubic-bezier(.4,0,.2,1);
+    max-width: 480px;
+    margin: 0 auto;
+}
+@keyframes slideUpIn {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+.pwa-install-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+}
+.pwa-install-text { flex: 1; min-width: 0; }
+.pwa-install-text strong {
+    display: block;
+    font-size: .9rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+.pwa-install-text span { font-size: .78rem; opacity: .85; }
+.pwa-install-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.pwa-install-actions .btn-install {
+    background: #fff;
+    color: #4f46e5;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-size: .82rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+}
+.pwa-install-actions .btn-install:hover { background: #f5f3ff; transform: scale(1.04); }
+.pwa-install-actions .btn-dismiss {
+    background: rgba(255,255,255,.15);
+    color: rgba(255,255,255,.85);
+    border: none;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: background .2s;
+}
+.pwa-install-actions .btn-dismiss:hover { background: rgba(255,255,255,.25); }
+
+/* ── Badge "instalado" ── */
+.pwa-installed-badge {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid rgba(16,185,129,.2);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: .72rem;
+    font-weight: 600;
+}
+@media (display-mode: standalone) {
+    .pwa-installed-badge { display: inline-flex; }
+    .pwa-install-hint { display: none; }
+}
+
+/* ── Bottom navigation bar (mobile PWA) ── */
+.pwa-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: rgba(255,255,255,.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    z-index: 500;
+    padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+}
+.pwa-bottom-nav-inner {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: space-around;
+    max-width: 480px;
+    margin: 0 auto;
+}
+.pwa-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text3);
+    font-size: .65rem;
+    font-weight: 600;
+    font-family: var(--font);
+    transition: all .2s;
+    min-width: 52px;
+    flex: 1;
+}
+.pwa-nav-item i { font-size: 1.1rem; }
+.pwa-nav-item:hover { color: var(--primary); }
+.pwa-nav-item.active { color: var(--primary); }
+.pwa-nav-item.active i {
+    background: var(--primary-light);
+    width: 40px; height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    font-size: .95rem;
+}
+
+@media (max-width: 768px) {
+    @media (display-mode: standalone), (max-width: 480px) {
+        .pwa-bottom-nav { display: block; }
+        /* Empurrar conteúdo acima da bottom nav */
+        .main-wrapper { padding-bottom: 72px; }
+        /* Esconder sidebar no mobile em modo standalone */
+        @media (display-mode: standalone) {
+            .sidebar { display: none; }
+            .main-wrapper { margin-left: 0; }
+        }
+    }
+}
+
+/* Espaço para bottom nav em dispositivos com notch */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .pwa-bottom-nav {
+        padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
+        height: calc(64px + env(safe-area-inset-bottom));
+    }
+}
+
+/* ── Safe area insets para iPhone X+ ── */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+    .top-header {
+        padding-top: env(safe-area-inset-top);
+    }
+}
+
+/* ── Modo standalone: remover scrollbar browser ── */
+@media (display-mode: standalone) {
+    html {
+        overscroll-behavior: none;
+    }
+    /* Ocultar elementos só relevantes fora do app */
+    .app-download-section,
+    .install-app-cta { display: none !important; }
+}
+
+/* ── Cards mobile otimizados ── */
+@media (max-width: 640px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .stat-card { padding: 16px; }
+    .stat-icon { width: 40px; height: 40px; font-size: 1rem; }
+    .stat-info h3 { font-size: 1.2rem; }
+
+    .card-body { padding: 16px; }
+    .card-header { padding: 14px 16px; }
+
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+
+    /* Toast mobile */
+    .toast-container {
+        left: 12px; right: 12px;
+        top: auto;
+        bottom: 80px; /* acima da bottom nav */
+    }
+    .toast { min-width: 0; }
+
+    .page-header h2 { font-size: 1.2rem; }
+    .content { padding: 16px; }
+    .top-header { padding: 0 16px; }
+}
+
+/* ── Touch targets mínimos 44px (WCAG) ── */
+@media (pointer: coarse) {
+    .btn { min-height: 44px; }
+    .btn-sm { min-height: 36px; }
+    .form-control { min-height: 44px; }
+    .nav-link { min-height: 48px; }
+    .pwa-nav-item { min-height: 48px; }
+    .tab { min-height: 44px; }
+    .header-btn { width: 44px; height: 44px; }
+}
+
+/* ── Pull-to-refresh indicator ── */
+.pull-to-refresh-indicator {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
+    text-align: center;
+    font-size: .8rem;
+    font-weight: 600;
+    padding: 8px;
+    z-index: 1000;
+    transform: translateY(-100%);
+    transition: transform .25s ease;
+}
+.pull-to-refresh-indicator.visible {
+    transform: translateY(0);
+}
+

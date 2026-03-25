@@ -87,6 +87,8 @@ async function checkPendingPayments() {
         const asaas = require('./utils/asaas');
         if (!asaas.isConfigured()) return;
 
+        const allowTimeBasedAutoApproval = process.env.ALLOW_TIME_BASED_PAYMENT_AUTO_APPROVAL === 'true';
+
         const { getDB } = require('./database/init');
         const db = getDB();
 
@@ -114,8 +116,8 @@ async function checkPendingPayments() {
                     }
                 }
 
-                // 2. Auto-ativação por tempo: cartão 5h, boleto 3 dias
-                if (!shouldActivate) {
+                // 2. Auto-ativação por tempo é insegura e fica desabilitada por padrão.
+                if (!shouldActivate && allowTimeBasedAutoApproval) {
                     const createdAt = new Date(p.created_at + (p.created_at.includes('Z') ? '' : 'Z'));
                     const hoursElapsed = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
                     if (p.method === 'credit_card' && hoursElapsed >= 5) {
@@ -443,10 +445,14 @@ publicDirs.forEach(dir => {
     }
 });
 
-// Uploads directory (serve uploaded documents)
+// Uploads directory
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-app.use('/uploads', express.static(uploadsDir));
+
+// Somente avatares ficam publicamente acessíveis.
+const publicAvatarDir = path.join(uploadsDir, 'avatars');
+if (!fs.existsSync(publicAvatarDir)) fs.mkdirSync(publicAvatarDir, { recursive: true });
+app.use('/uploads/avatars', express.static(publicAvatarDir));
 
 // Arquivos HTML na raiz (whitelist explícita)
 const publicFiles = ['index.html', 'login.html', 'register.html', 'password-forgot.html', 'password-reset.html', 'termos-de-uso.html', 'politica-de-privacidade.html', 'contrato.html', 'offline.html', 'manifest.json'];
@@ -462,6 +468,27 @@ app.get('/sw.js', (req, res) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Content-Type', 'application/javascript');
     res.sendFile(path.join(__dirname, 'sw.js'));
+});
+
+// ── Digital Asset Links (TWA / Android APK verification) ──
+app.get('/.well-known/assetlinks.json', (req, res) => {
+    const fingerprint = process.env.TWA_SHA256_FINGERPRINT || '';
+    const packageName = process.env.TWA_PACKAGE_NAME || 'com.credbusiness.app';
+    const links = [];
+    // Sempre incluir o fingerprint do ambiente (pode ser vazio durante setup)
+    if (fingerprint) {
+        links.push({
+            relation: ['delegate_permission/common.handle_all_urls'],
+            target: {
+                namespace: 'android_app',
+                package_name: packageName,
+                sha256_cert_fingerprints: [fingerprint]
+            }
+        });
+    }
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.json(links);
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));

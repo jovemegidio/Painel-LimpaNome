@@ -25,10 +25,11 @@ Acesse a versão online:
 
 ➡️ [https://jovemegidio.github.io/Painel-Marketing-Multinivel/](https://jovemegidio.github.io/Painel-Marketing-Multinivel/)
 
-## 🔑 Credenciais de Teste
+## 🔑 Credenciais
 
-- **Usuário**: `credbusiness`  |  **Senha**: `Service`
-- **Admin**: `admin`  |  **Senha**: `admin123`
+As credenciais operacionais não devem ficar versionadas no repositório.
+
+Para ambientes locais, defina usuários e senhas pelo fluxo de inicialização do banco e pelas variáveis do seu ambiente.
 
 ## 📂 Estrutura do Projeto
 
@@ -65,9 +66,9 @@ Acesse a versão online:
    ```bash
    git clone https://github.com/jovemegidio/Painel-Marketing-Multinivel.git
    ```
-2. Abra o arquivo `index.html` no navegador.
-
-> Não é necessário instalar dependências ou rodar servidores — basta abrir no navegador.
+2. Instale as dependências com `npm install`.
+3. Configure o arquivo `.env` com os segredos do ambiente.
+4. Inicie o servidor com `npm start`.
 
 ## 📞 Contato
 

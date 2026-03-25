@@ -11,3 +11,21 @@ uploads/
 backups/
 *.old.js
 test-local.js
+
+# Android / APK build artifacts
+android-twa/
+*.apk
+*.idsig
+*.aab
+build-apk.ps1
+generate-png-icons.py
+twa-manifest.json
+
+# Android keystore — NEVER commit credentials
+android/*.keystore
+android/*.jks
+android/
+
+# Temp/dev files
+temp_*.js
+C:/temp/

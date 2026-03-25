@@ -3,24 +3,30 @@
    Cache-first para assets, Network-first para API
    ═══════════════════════════════════════════ */
 
-const CACHE_NAME = 'credbusiness-v2';
+const CACHE_NAME = 'credbusiness-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Assets essenciais para cache inicial
 const PRECACHE_ASSETS = [
   '/',
   '/login.html',
+  '/register.html',
   '/offline.html',
   '/css/style.css',
   '/js/components.js',
   '/js/data.js',
   '/js/pwa.js',
-  '/css/logo.png',
-  '/css/logo-footer.png',
   '/manifest.json',
-  '/icons/icon.svg',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-512x512.png',
+  '/icons/icon-maskable-192x192.png',
+  '/icons/icon-maskable-512x512.png',
+  // Páginas principais do app
+  '/pages/dashboard.html',
+  '/pages/limpa-nome-dashboard.html',
+  '/pages/consultas.html',
+  '/pages/financeiro.html',
+  '/pages/configuracoes.html'
 ];
 
 // ── Install: pré-cachear assets essenciais (individual para não falhar tudo) ──
