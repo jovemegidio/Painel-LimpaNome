@@ -500,6 +500,8 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 // ── Download do APK Android ──
 app.get('/download/app', (req, res) => {
     const apkPath = path.join(__dirname, 'uploads', 'app', 'credbusiness-erp.apk');
+    if (!fs.existsSync(apkPath)) {
+        return res.status(404).json({ error: 'APK não encontrado no servidor' });
     }
     const stat = fs.statSync(apkPath);
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
