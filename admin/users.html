@@ -339,11 +339,8 @@
             if (dateTo) params.set('date_to', dateTo);
 
             try {
-                const res = await fetch(`${DB.baseUrl || ''}/api/admin/users/reports/names?${params}`, {
-                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || localStorage.getItem('token')) }
-                });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.error);
+                const data = await DB.api('GET', `/api/admin/users/reports/names?${params}`);
+                if (!data || !data.success) throw new Error(data?.error || 'Sessão expirada. Faça login novamente.');
 
                 // Totais
                 const t = data.totals;
@@ -411,11 +408,8 @@
                 if (dateFrom) params.set('date_from', dateFrom);
                 if (dateTo) params.set('date_to', dateTo);
 
-                const resp = await fetch(`${DB.baseUrl || ''}/api/admin/users/reports/names?${params}`, {
-                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('admin_token') || localStorage.getItem('token')) }
-                });
-                const data = await resp.json();
-                if (!data.success) throw new Error(data.error);
+                const data = await DB.api('GET', `/api/admin/users/reports/names?${params}`);
+                if (!data || !data.success) throw new Error(data?.error || 'Sessão expirada. Faça login novamente.');
 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
