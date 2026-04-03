@@ -115,6 +115,9 @@
                                 <div style="font-size:11px;color:#64748b">Cancelados</div>
                             </div>
                         </div>
+                        <div style="margin-top:12px;text-align:right">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="exportUserReport()" style="background:#6366f1;border-color:#6366f1"><i class="fas fa-file-pdf"></i> Gerar Relatório PDF</button>
+                        </div>
                     </div>
                     <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px">
                         <button type="button" class="btn btn-outline" onclick="closeUserModal()">Cancelar</button>
@@ -432,6 +435,96 @@
                 }).join('') : '<tr><td colspan="14" style="text-align:center;color:#94a3b8">Nenhum processo de limpeza de nome encontrado</td></tr>';
             } catch (err) {
                 Layout.toast('Erro ao carregar relatório: ' + err.message, 'error');
+            }
+        }
+
+        async function exportUserReport() {
+            const userId = document.getElementById('editId').value;
+            if (!userId) return Layout.toast('Nenhum usuário selecionado', 'error');
+            Layout.toast('Gerando PDF do usuário...', 'info');
+            try {
+                const data = await DB.api('GET', `/api/admin/users/reports/names?user_id=${userId}`);
+                if (!data || !data.success) throw new Error(data?.error || 'Erro ao carregar dados');
+                if (!data.report.length) return Layout.toast('Este usuário não possui processos de limpeza de nome', 'warning');
+
+                const u = data.report[0];
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+                const now = new Date();
+                const dataStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+                const pw = doc.internal.pageSize.width;
+
+                // Header
+                doc.setFontSize(18); doc.setTextColor(99,102,241);
+                doc.text('Credbusiness', 14, 18);
+                doc.setFontSize(13); doc.setTextColor(30,41,59);
+                doc.text('Relatório Individual — Limpa Nome', 14, 26);
+                doc.setFontSize(9); doc.setTextColor(100,116,139);
+                doc.text('Gerado em: ' + dataStr, 14, 32);
+
+                // User info
+                doc.setDrawColor(226,232,240); doc.setFillColor(248,250,252);
+                doc.roundedRect(14, 38, pw-28, 30, 3, 3, 'FD');
+                doc.setFontSize(12); doc.setTextColor(30,41,59);
+                doc.text(u.name, 20, 48);
+                doc.setFontSize(9); doc.setTextColor(100,116,139);
+                doc.text(`Email: ${u.email}   |   CPF: ${u.cpf||'-'}   |   Plano: ${u.plan}   |   Nível: ${u.level}`, 20, 55);
+                doc.text(`Créditos disponíveis: ${u.names_available}`, 20, 61);
+
+                // Stats boxes
+                const t = data.totals;
+                const boxes = [
+                    { label: 'Total', value: t.total_nomes, color: [237,233,254], tc: [99,102,241] },
+                    { label: 'Pendentes', value: t.pendentes, color: [254,243,199], tc: [217,119,6] },
+                    { label: 'Em Andamento', value: t.em_andamento, color: [219,234,254], tc: [37,99,235] },
+                    { label: 'Concluídos', value: t.concluidos, color: [209,250,229], tc: [5,150,105] },
+                    { label: 'Cancelados', value: t.cancelados, color: [254,226,226], tc: [220,38,38] }
+                ];
+                const bw = (pw-28-16) / 5, by = 74;
+                boxes.forEach((b, i) => {
+                    const x = 14 + i * (bw + 4);
+                    doc.setFillColor(...b.color);
+                    doc.roundedRect(x, by, bw, 18, 2, 2, 'F');
+                    doc.setFontSize(16); doc.setTextColor(...b.tc);
+                    doc.text(String(b.value), x + bw/2, by + 10, { align: 'center' });
+                    doc.setFontSize(7); doc.setTextColor(100,116,139);
+                    doc.text(b.label, x + bw/2, by + 15, { align: 'center' });
+                });
+
+                // Processes detail table
+                const procs = await DB.api('GET', `/api/admin/processes?user_id=${userId}`);
+                const lnProcs = (procs && Array.isArray(procs) ? procs : (procs?.processes || [])).filter(p => p.type === 'limpa_nome');
+                if (lnProcs.length) {
+                    const fmtDate = d => d ? new Date(d).toLocaleDateString('pt-BR') : '-';
+                    const statusLabel = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
+                    doc.autoTable({
+                        startY: by + 24,
+                        head: [['#','Nome/CPF','Instituição','Status','Valor','Data']],
+                        body: lnProcs.map((p,i) => [
+                            i+1, `${p.name} (${p.cpf})`, p.institution||'-', statusLabel[p.status]||p.status,
+                            'R$ '+(p.value||0).toFixed(2).replace('.',','), fmtDate(p.created_at)
+                        ]),
+                        styles: { fontSize: 8, cellPadding: 3 },
+                        headStyles: { fillColor: [99,102,241], textColor: 255, fontStyle: 'bold' },
+                        alternateRowStyles: { fillColor: [248,250,252] },
+                        margin: { left: 14, right: 14 }
+                    });
+                }
+
+                // Footer
+                const pages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pages; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(7); doc.setTextColor(150);
+                    doc.text('Credbusiness — Relatório Individual — ' + dataStr, 14, doc.internal.pageSize.height - 8);
+                    doc.text('Página ' + i + '/' + pages, pw - 14, doc.internal.pageSize.height - 8, { align: 'right' });
+                }
+
+                const safeName = u.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0,30);
+                doc.save(`relatorio_${safeName}_${now.toISOString().slice(0,10)}.pdf`);
+                Layout.toast('PDF gerado com sucesso!', 'success');
+            } catch (err) {
+                Layout.toast('Erro ao gerar PDF: ' + err.message, 'error');
             }
         }
 

@@ -414,6 +414,7 @@ router.get('/processes', (req, res) => {
     }
     if (status) { where += ' AND p.status = ?'; params.push(status); }
     if (type) { where += ' AND p.type = ?'; params.push(type); }
+    if (req.query.user_id) { where += ' AND p.user_id = ?'; params.push(req.query.user_id); }
 
     const total = db.prepare(`SELECT COUNT(*) as c FROM processes p LEFT JOIN users u ON p.user_id = u.id ${where}`).get(...params).c;
     const processes = db.prepare(`SELECT p.*, u.name as user_name, u.email as user_email, u.cpf as user_cpf, u.names_available as user_names_available FROM processes p LEFT JOIN users u ON p.user_id = u.id ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
