@@ -62,8 +62,8 @@ export function Header({ userName, userEmail, onMenuOpen }: HeaderProps) {
           <Bell className="h-[18px] w-[18px]" />
           {unreadCount > 0 && (
             <span
-              className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white"
-              style={{ boxShadow: "0 0 6px rgba(227,6,19,0.7)" }}
+              className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[9px] font-bold text-white"
+              style={{ boxShadow: "0 0 6px rgba(99,102,241,0.7)" }}
             >
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
@@ -75,8 +75,8 @@ export function Header({ userName, userEmail, onMenuOpen }: HeaderProps) {
           <div
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
             style={{
-              background: "linear-gradient(135deg, #e30613, #ff4d4d)",
-              boxShadow: "0 2px 8px rgba(227,6,19,0.4)",
+              background: "linear-gradient(135deg, #6366f1, #818cf8)",
+              boxShadow: "0 2px 8px rgba(99,102,241,0.4)",
             }}
           >
             {getInitials(userName)}

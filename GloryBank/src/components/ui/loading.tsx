@@ -8,7 +8,7 @@ export function Loading({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   return (
     <div className="flex items-center justify-center">
       <div
-        className={`${sizeClasses[size]} animate-spin rounded-full border-red-500 border-t-transparent`}
+        className={`${sizeClasses[size]} animate-spin rounded-full border-indigo-500 border-t-transparent`}
       />
     </div>
   );
@@ -32,8 +32,8 @@ export function SkeletonBalanceCard() {
     <div
       className="relative overflow-hidden rounded-2xl p-6"
       style={{
-        background: "linear-gradient(135deg,#fff5f5 0%,#fee2e2 50%,#fecaca 100%)",
-        border: "1px solid rgba(227,6,19,0.1)",
+        background: "linear-gradient(135deg,#eef2ff 0%,#c7d2fe 50%,#a5b4fc 100%)",
+        border: "1px solid rgba(99,102,241,0.1)",
       }}
     >
       <div className="flex items-center justify-between mb-6">

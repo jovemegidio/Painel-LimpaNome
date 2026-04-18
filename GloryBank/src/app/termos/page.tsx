@@ -16,12 +16,12 @@ export default function TermsPage() {
           <Link href="/login" className="flex items-center gap-2.5">
             <div
               className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
-              style={{ background: "linear-gradient(135deg, #e30613, #ff4d4d)" }}
+              style={{ background: "linear-gradient(135deg, #6366f1, #818cf8)" }}
             >
               <Landmark className="h-4 w-4" strokeWidth={2} />
             </div>
             <span className="font-bold text-slate-800">
-              Glory<span className="text-red-500">Bank</span>
+              Cred<span className="text-indigo-500">Business</span>
             </span>
           </Link>
           <Link
@@ -37,7 +37,7 @@ export default function TermsPage() {
       {/* Content */}
       <main className="mx-auto max-w-3xl px-6 py-12">
         <div className="mb-8 flex items-center gap-3">
-          <FileText className="h-8 w-8 text-red-500" />
+          <FileText className="h-8 w-8 text-indigo-500" />
           <h1 className="text-3xl font-bold text-slate-800">Termos de Uso</h1>
         </div>
 
@@ -51,7 +51,7 @@ export default function TermsPage() {
             <p>
               Ao criar uma conta ou utilizar os serviços do CredBusiness, você concorda com estes
               Termos de Uso e com nossa{" "}
-              <Link href="/privacidade" className="font-medium text-red-500 hover:underline">
+              <Link href="/privacidade" className="font-medium text-indigo-500 hover:underline">
                 Política de Privacidade
               </Link>
               . Caso não concorde, não utilize o serviço.
@@ -67,7 +67,7 @@ export default function TermsPage() {
                 href="https://www.asaas.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-red-500 hover:underline"
+                className="font-medium text-indigo-500 hover:underline"
               >
                 Asaas Pagamentos S.A.
               </a>
@@ -114,7 +114,7 @@ export default function TermsPage() {
                 href="https://www.asaas.com/tarifas"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-red-500 hover:underline"
+                className="font-medium text-indigo-500 hover:underline"
               >
                 asaas.com/tarifas
               </a>
@@ -126,7 +126,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold text-slate-800">7. Contato e Suporte</h2>
             <p>
               Para suporte ou dúvidas:{" "}
-              <a href="mailto:suporte@credbusiness.com.br" className="font-medium text-red-500 hover:underline">
+              <a href="mailto:suporte@credbusiness.com.br" className="font-medium text-indigo-500 hover:underline">
                 suporte@credbusiness.com.br
               </a>
             </p>

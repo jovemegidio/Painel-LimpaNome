@@ -13,7 +13,7 @@ export default function AuthLayout({
         <div
           className="absolute inset-0"
           style={{
-            background: "linear-gradient(160deg, #bf0010 0%, #e30613 50%, #ff2d3a 100%)",
+            background: "linear-gradient(160deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)",
           }}
         />
         {/* Decorative glows */}
@@ -41,7 +41,7 @@ export default function AuthLayout({
           </div>
 
           <h1 className="mb-2 text-4xl font-bold tracking-tight text-white">
-            Glory<span className="text-white/80">Bank</span>
+            Cred<span className="text-white/80">Business</span>
           </h1>
           <p className="mb-2 text-[13px] font-semibold uppercase tracking-widest text-white/70">
             Internet Banking Digital

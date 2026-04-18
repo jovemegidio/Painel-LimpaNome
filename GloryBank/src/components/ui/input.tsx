@@ -34,7 +34,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             } ${
               error
                 ? "border-red-500/50 focus:border-red-500 focus:ring-red-500/20"
-                : "border-slate-200 focus:border-red-500/50 focus:ring-red-500/20"
+                : "border-slate-200 focus:border-indigo-500/50 focus:ring-indigo-500/20"
             } ${className}`}
             style={{ background: "#ffffff" }}
             {...props}

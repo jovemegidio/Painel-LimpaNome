@@ -61,11 +61,11 @@ export default function RegisterPage() {
       <div>
         {/* Mobile logo */}
         <div className="mb-8 flex items-center gap-3 lg:hidden">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: "rgba(227,6,19,0.06)" }}>
-            <Wallet className="h-5 w-5 text-red-500" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: "rgba(99,102,241,0.06)" }}>
+            <Wallet className="h-5 w-5 text-indigo-500" />
           </div>
           <span className="text-xl font-bold text-slate-800">
-            Glory<span className="text-red-500">Bank</span>
+            Cred<span className="text-indigo-500">Business</span>
           </span>
         </div>
 
@@ -146,7 +146,7 @@ export default function RegisterPage() {
           Já tem uma conta?{" "}
           <Link
             href="/login"
-            className="font-semibold text-red-500 hover:text-red-600 transition-colors"
+            className="font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
           >
             Entrar
           </Link>

@@ -68,7 +68,7 @@ export default function LoginPage() {
             <img src="/favicon.png" alt="CredBusiness" className="h-8 w-8 object-contain" />
           </div>
           <span className="text-xl font-bold text-slate-800">
-            Cred<span className="text-red-500">Business</span>
+            Cred<span className="text-indigo-500">Business</span>
           </span>
         </div>
 
@@ -85,11 +85,11 @@ export default function LoginPage() {
         <div
           className="mb-6 rounded-xl p-4"
           style={{
-            background: "rgba(227,6,19,0.04)",
-            border: "1px solid rgba(227,6,19,0.12)",
+            background: "rgba(99,102,241,0.04)",
+            border: "1px solid rgba(99,102,241,0.12)",
           }}
         >
-          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-red-500">
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-widest text-indigo-500">
             Conta de Demonstração
           </p>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -108,7 +108,7 @@ export default function LoginPage() {
               onClick={loginAsDemo}
               disabled={isLoading}
               className="shrink-0 rounded-lg px-4 py-2 text-[12px] font-semibold text-white transition-all hover:opacity-85 disabled:opacity-50 active:scale-95"
-              style={{ background: "linear-gradient(135deg, #e30613, #ff4d4d)" }}
+              style={{ background: "linear-gradient(135deg, #6366f1, #818cf8)" }}
             >
               Entrar como Demo
             </button>
@@ -150,7 +150,7 @@ export default function LoginPage() {
           Ainda não tem conta?{" "}
           <Link
             href="/register"
-            className="font-semibold text-red-500 hover:text-red-600 transition-colors"
+            className="font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
           >
             Criar conta grátis
           </Link>

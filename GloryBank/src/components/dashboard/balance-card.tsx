@@ -17,9 +17,9 @@ export function BalanceCard({ balance, pending, available }: BalanceCardProps) {
     <div
       className="relative overflow-hidden rounded-2xl fade-in-up"
       style={{
-        background: "linear-gradient(135deg, #cc0511 0%, #e30613 50%, #ff2d3a 100%)",
+        background: "linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)",
         border: "none",
-        boxShadow: "0 8px 40px rgba(227,6,19,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
+        boxShadow: "0 8px 40px rgba(99,102,241,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
       }}
     >
       {/* Background glows */}

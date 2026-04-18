@@ -1,0 +1,79 @@
+{
+  "name": "credbusiness-desktop",
+  "version": "1.0.0",
+  "description": "CredBusiness — Internet Banking Desktop",
+  "author": "CredBusiness <contato@credbusiness.com.br>",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env CREDBUSINESS_URL=http://localhost:3000 electron .",
+    "generate-icons": "node scripts/generate-icons.js",
+    "prebuild": "npm run generate-icons",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "build": "electron-builder --win --mac --linux",
+    "pack": "electron-builder --dir"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
+    "cross-env": "^7.0.3",
+    "sharp": "^0.33.5"
+  },
+  "build": {
+    "appId": "com.credbusiness.desktop",
+      "productName": "CredBusiness",
+      "copyright": "Copyright © 2025 CredBusiness",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "icons/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icons/icon.ico",
+      "artifactName": "CredBusiness-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "icons/icon.ico",
+      "uninstallerIcon": "icons/icon.ico",
+      "installerHeaderIcon": "icons/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CredBusiness"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "icons/icon.icns",
+      "category": "public.app-category.finance",
+      "artifactName": "CredBusiness-${version}.${ext}"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "icons",
+      "category": "Office;Finance",
+      "artifactName": "CredBusiness-${version}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "jovemegidio",
+      "repo": "GloryBank"
+    }
+  }
+}

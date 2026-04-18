@@ -9,9 +9,9 @@ const actions = [
     icon: QrCode,
     label: "PIX",
     sublabel: "Instantâneo",
-    color: "text-red-500",
-    bg: "rgba(227,6,19,0.08)",
-    borderColor: "rgba(227,6,19,0.12)",
+    color: "text-indigo-500",
+    bg: "rgba(99,102,241,0.08)",
+    borderColor: "rgba(99,102,241,0.12)",
   },
   {
     href: "/dashboard/transferir",

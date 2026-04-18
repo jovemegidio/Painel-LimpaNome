@@ -1,0 +1,711 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CredBusiness — Internet Banking Digital</title>
+<meta name="description" content="CredBusiness — Internet Banking digital com PIX, transferências, boletos e cartão virtual. Infraestrutura financeira Asaas BaaS regulada pelo BACEN.">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   CredBusiness LP — Indigo + Gold (Nubank Style)
+   ═══════════════════════════════════════════════ */
+:root{
+  --indigo:#4F46E5;--indigo-dark:#3730A3;--indigo-deeper:#1e1b4b;
+  --indigo-soft:#eef2ff;--indigo-glow:rgba(79,70,229,.14);
+  --gold:#d4a017;--gold-light:#fbbf24;--gold-soft:#fef9c3;--gold-dark:#92710b;
+  --ink:#0f172a;--ink2:#334155;--ink3:#64748b;
+  --line:#e2e8f0;--bg:#fff;--bg2:#f8fafc;
+  --green:#00a650;--green-soft:rgba(0,166,80,.1);
+  --radius:20px;--max:1180px;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"Inter",system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.w{width:min(var(--max),100% - 48px);margin:0 auto}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:100px;font-weight:700;font-size:14px;transition:all .3s var(--ease);cursor:pointer;border:none;letter-spacing:-.01em}
+.btn-lg{min-height:54px;padding:0 32px;font-size:16px}
+.btn-md{min-height:44px;padding:0 22px}
+.btn-indigo{background:var(--indigo);color:#fff;box-shadow:0 4px 20px rgba(79,70,229,.25)}
+.btn-indigo:hover{background:var(--indigo-dark);transform:translateY(-2px);box-shadow:0 8px 32px rgba(79,70,229,.35)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--ink);font-weight:800;box-shadow:0 4px 20px rgba(212,160,23,.25)}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(212,160,23,.35)}
+.btn-white{background:#fff;color:var(--indigo);box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.12)}
+.btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1.5px solid rgba(255,255,255,.18)}
+.btn-ghost:hover{background:rgba(255,255,255,.14)}
+.btn-outline{border:1.5px solid var(--line);color:var(--ink);background:#fff;min-height:42px;padding:0 18px;border-radius:100px}
+.btn-outline:hover{border-color:var(--indigo);color:var(--indigo)}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 4px 16px rgba(0,166,80,.25)}
+.btn-green:hover{transform:translateY(-2px)}
+
+/* ── Header ── */
+.header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid rgba(0,0,0,.04);transition:box-shadow .35s var(--ease)}
+.header.scrolled{box-shadow:0 1px 32px rgba(79,70,229,.06)}
+.header .w{display:flex;align-items:center;justify-content:space-between;min-height:72px;gap:16px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:40px;height:40px;border-radius:12px;overflow:hidden;flex-shrink:0}
+.logo-icon img{width:100%;height:100%;object-fit:contain}
+.logo-text{display:flex;flex-direction:column;line-height:1}
+.logo-text b{font-size:20px;letter-spacing:-.03em;color:var(--ink)}.logo-text b em{font-style:normal;color:var(--indigo)}
+.logo-text span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin-top:3px}
+.nav{display:flex;align-items:center;gap:28px;font-size:14px;font-weight:600;color:var(--ink2)}
+.nav a{position:relative;transition:color .2s}
+.nav a:hover{color:var(--indigo)}
+.nav a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:2px;background:var(--indigo);border-radius:2px;transition:width .3s var(--ease)}
+.nav a:hover::after{width:100%}
+.hdr-btns{display:flex;align-items:center;gap:8px}
+
+/* ── Hero ── */
+.hero{position:relative;background:linear-gradient(160deg,var(--indigo-deeper) 0%,var(--indigo-dark) 35%,var(--indigo) 100%);overflow:hidden;min-height:90vh;display:flex;align-items:center}
+.hero::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat}
+.hero::after{content:"";position:absolute;width:800px;height:800px;border-radius:50%;right:-200px;top:-100px;background:radial-gradient(circle,rgba(212,160,23,.12),transparent 60%);pointer-events:none}
+.hero-glow{position:absolute;width:600px;height:600px;border-radius:50%;left:-200px;bottom:-200px;background:radial-gradient(circle,rgba(79,70,229,.25),transparent 60%);pointer-events:none}
+.hero .w{position:relative;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;padding:80px 0 100px}
+.hero-content{color:#fff;z-index:2}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 18px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:28px;backdrop-filter:blur(8px)}
+.hero-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold)}
+.hero-badge img{width:18px;height:18px;border-radius:4px}
+.hero h1{font-size:clamp(40px,6vw,72px);font-weight:900;line-height:.94;letter-spacing:-.05em;max-width:640px;margin-bottom:24px}
+.hero h1 .gold{background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:19px;line-height:1.7;color:rgba(255,255,255,.72);max-width:520px;margin-bottom:36px}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px}
+.hero-trust{display:flex;align-items:center;gap:20px;font-size:13px;color:rgba(255,255,255,.45);font-weight:500}
+.hero-trust span{display:flex;align-items:center;gap:6px}
+.hero-trust svg{width:14px;height:14px;stroke:var(--gold);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Phone mockup */
+.phone-area{display:grid;place-items:center;position:relative;z-index:2}
+.phone{width:300px;border-radius:44px;background:#000;padding:10px;box-shadow:0 60px 120px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);position:relative}
+.phone::before{content:"";position:absolute;top:12px;left:50%;transform:translateX(-50%);width:100px;height:24px;border-radius:0 0 14px 14px;background:#000;z-index:4}
+.phone-screen{border-radius:36px;overflow:hidden;background:#f8f9fa;min-height:560px}
+.ph-top{background:linear-gradient(180deg,var(--indigo),var(--indigo-dark));color:#fff;padding:18px 20px 22px}
+.ph-status{display:flex;justify-content:space-between;font-size:14px;font-weight:800}
+.ph-greeting{margin-top:22px;font-size:13px;opacity:.8}
+.ph-name{font-size:22px;font-weight:900;letter-spacing:-.03em;margin-top:4px}
+.ph-balance{margin-top:20px}
+.ph-balance small{display:block;font-size:12px;opacity:.7;margin-bottom:6px}
+.ph-balance strong{font-size:34px;font-weight:900;line-height:1;letter-spacing:-.04em}
+.ph-balance span{display:block;margin-top:6px;font-size:12px;opacity:.6}
+.ph-actions{display:flex;justify-content:space-between;gap:8px;margin-top:20px}
+.ph-act{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center;backdrop-filter:blur(8px)}
+.ph-act svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ph-labels{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;font-size:10px;text-align:center;font-weight:600;color:rgba(255,255,255,.8)}
+.ph-body{padding:20px 16px}
+.ph-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.05);margin-bottom:12px}
+.ph-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ph-card b{font-size:14px;letter-spacing:-.02em}
+.ph-card-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--indigo-soft);color:var(--indigo)}
+.ph-card p{font-size:12px;color:var(--ink3);line-height:1.5}
+.ph-tx{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.ph-tx:last-child{border-bottom:none}
+.ph-tx-ico{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+.ph-tx-ico svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ph-tx-info{flex:1}.ph-tx-info b{display:block;font-size:13px;letter-spacing:-.01em}.ph-tx-info span{font-size:11px;color:var(--ink3)}
+.ph-tx-val{font-size:13px;font-weight:700}.ph-tx-val.neg{color:#ef4444}.ph-tx-val.pos{color:var(--green)}
+
+
+.float-badge{position:absolute;right:-12px;top:80px;padding:14px 18px;border-radius:18px;background:rgba(255,255,255,.95);box-shadow:0 16px 40px rgba(0,0,0,.1);backdrop-filter:blur(10px);z-index:3;max-width:200px}
+.float-badge-ico{width:36px;height:36px;border-radius:12px;background:var(--indigo-soft);color:var(--indigo);display:grid;place-items:center;margin-bottom:10px}
+.float-badge-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.float-badge b{display:block;font-size:14px;letter-spacing:-.02em;color:var(--ink);margin-bottom:6px}
+.float-badge p{font-size:11px;color:var(--ink3);line-height:1.5;margin-bottom:8px}
+.float-badge .chip{display:inline-flex;padding:4px 10px;border-radius:999px;background:var(--indigo-soft);color:var(--indigo);font-size:10px;font-weight:800}
+.float-badge-2{position:absolute;left:-16px;bottom:100px;padding:14px 18px;border-radius:18px;background:linear-gradient(135deg,var(--gold),var(--gold-light));box-shadow:0 12px 32px rgba(212,160,23,.2);z-index:3;max-width:180px}
+.float-badge-2-ico{width:32px;height:32px;border-radius:10px;background:rgba(0,0,0,.1);display:grid;place-items:center;margin-bottom:8px}
+.float-badge-2-ico svg{width:16px;height:16px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.float-badge-2 b{display:block;font-size:13px;color:var(--ink);margin-bottom:4px}
+.float-badge-2 p{font-size:11px;color:var(--gold-dark);line-height:1.4}
+
+/* ── Regulatory Strip ── */
+.reg-strip{background:var(--indigo-deeper);border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);padding:16px 0}
+.reg-strip-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.reg-strip-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.reg-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em}
+.reg-asaas-logo{height:14px;width:auto;opacity:.7;transition:opacity .2s}
+.reg-asaas-logo:hover{opacity:1}
+.reg-sep{color:rgba(255,255,255,.12);font-weight:200}
+.reg-text{font-size:11px;color:rgba(255,255,255,.3);font-weight:500}
+.reg-strip-tags{display:flex;gap:6px}
+.reg-tag{padding:3px 10px;border-radius:4px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.3);font-size:10px;font-weight:700;letter-spacing:.06em}
+
+/* ── Stats ── */
+.stats{position:relative;z-index:4;padding:64px 0;background:var(--bg2);border-bottom:1px solid var(--line)}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.stat-card{background:#fff;border-radius:20px;padding:32px 28px;box-shadow:0 2px 12px rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.05);transition:all .35s var(--ease)}
+.stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(79,70,229,.08)}
+.stat-num{font-size:34px;font-weight:900;line-height:1;letter-spacing:-.04em;margin-bottom:10px;background:linear-gradient(135deg,var(--indigo),var(--indigo-dark));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-card p{font-size:13px;color:var(--ink3);line-height:1.55}
+
+/* ── Sections ── */
+.section{padding:clamp(72px,10vw,120px) 0}
+.section-alt{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.section-dark{background:var(--indigo-deeper);color:#fff}
+.tag-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--indigo);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+.tag-label .tag-dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.sec-title{font-size:clamp(32px,4.5vw,52px);font-weight:900;line-height:1;letter-spacing:-.045em;margin-bottom:16px;max-width:700px}
+.sec-desc{font-size:17px;color:var(--ink2);line-height:1.7;max-width:560px}
+
+/* ── Conta Digital (split) ── */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.split-visual{position:relative;min-height:380px;border-radius:32px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:32px;gap:16px}
+.split-visual.gold-accent{background:linear-gradient(160deg,#1e1b4b,#312e81);border:1px solid rgba(212,160,23,.12)}
+.split-visual::after{content:"";position:absolute;right:-40px;top:-40px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(212,160,23,.15),transparent 60%);pointer-events:none}
+.split-visual::before{content:"";position:absolute;left:-60px;bottom:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.2),transparent 60%);pointer-events:none}
+.vis-chip{display:inline-flex;align-items:center;min-height:32px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);font-size:11px;font-weight:700;color:rgba(255,255,255,.8);width:fit-content;margin-bottom:16px;position:relative;z-index:1}
+.vis-card{position:relative;z-index:1;border-radius:24px;padding:24px;color:#fff;background:linear-gradient(150deg,var(--indigo),var(--indigo-dark));box-shadow:0 20px 48px rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06)}
+.vis-card small{display:block;opacity:.7;margin-bottom:6px;font-size:13px}
+.vis-card strong{display:block;font-size:36px;line-height:1;letter-spacing:-.04em;margin-bottom:10px}
+.vis-card-pills{display:flex;gap:8px;margin-top:12px}
+.vis-card-pills span{padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-size:11px;font-weight:700}
+.split-info h3{font-size:clamp(28px,3.4vw,42px);font-weight:900;line-height:1.04;letter-spacing:-.04em;margin-bottom:16px}
+.split-info>p{font-size:16px;color:var(--ink2);line-height:1.7;margin-bottom:28px}
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.feat-item{padding:18px;border-radius:18px;background:var(--indigo-soft);border:1px solid rgba(79,70,229,.06)}
+.feat-item b{display:block;font-size:15px;letter-spacing:-.02em;margin-bottom:4px;color:var(--ink)}
+.feat-item p{font-size:12px;color:var(--ink3);line-height:1.5}
+
+/* ── Products ── */
+.prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.prod-card{background:#fff;border:1px solid rgba(79,70,229,.06);box-shadow:0 4px 20px rgba(0,0,0,.03);border-radius:24px;padding:32px 28px;position:relative;overflow:hidden;transition:all .35s var(--ease)}
+.prod-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(79,70,229,.1)}
+.prod-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--indigo),var(--gold))}
+.prod-icon{width:48px;height:48px;border-radius:16px;background:var(--indigo-soft);color:var(--indigo);display:grid;place-items:center;margin-bottom:20px}
+.prod-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.prod-card h4{font-size:18px;font-weight:800;letter-spacing:-.03em;margin-bottom:10px}
+.prod-card p{font-size:14px;color:var(--ink3);line-height:1.65}
+.prod-tag{display:inline-flex;margin-top:18px;padding:4px 12px;border-radius:999px;background:var(--gold-soft);color:var(--gold-dark);font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+.prod-asaas{display:inline-flex;align-items:center;gap:4px;margin-top:8px;margin-left:6px;padding:4px 10px;border-radius:999px;background:var(--green-soft);color:var(--green);font-size:10px;font-weight:700}
+.prod-asaas img{width:12px;height:12px;border-radius:2px}
+
+/* ── Benefits ── */
+.ben-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.ben-card{padding:32px 28px;border-radius:24px;background:#fff;border:1px solid rgba(79,70,229,.06);box-shadow:0 4px 20px rgba(0,0,0,.03);position:relative;overflow:hidden;transition:all .35s var(--ease)}
+.ben-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(79,70,229,.08)}
+.ben-card .bar{width:100%;height:6px;border-radius:999px;background:linear-gradient(90deg,var(--indigo-soft),var(--indigo-glow),var(--indigo));margin-bottom:22px}
+.ben-card h4{font-size:18px;font-weight:800;letter-spacing:-.03em;margin-bottom:10px}
+.ben-card p{font-size:14px;color:var(--ink3);line-height:1.65}
+
+/* ── Showcase ── */
+.showcase{display:grid;grid-template-columns:1.1fr .9fr;gap:0;border-radius:32px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.06);border:1px solid rgba(79,70,229,.06)}
+.show-left{padding:40px;background:#fff}
+.show-left h3{font-size:clamp(26px,3vw,38px);font-weight:900;line-height:1.04;letter-spacing:-.04em;margin-bottom:14px}
+.show-left>p{font-size:15px;color:var(--ink2);line-height:1.7;margin-bottom:28px}
+.show-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.show-metric{padding:18px;border-radius:18px;background:var(--bg2)}
+.show-metric b{display:block;font-size:28px;line-height:1;letter-spacing:-.05em;margin-bottom:6px;color:var(--indigo)}
+.show-metric span{font-size:12px;color:var(--ink3);line-height:1.5}
+.show-right{padding:40px;background:linear-gradient(180deg,var(--indigo),var(--indigo-dark));color:#fff;position:relative;overflow:hidden}
+.show-right::after{content:"";position:absolute;right:-60px;top:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(212,160,23,.15),transparent 60%)}
+.show-right h3{font-size:28px;font-weight:900;line-height:1.04;letter-spacing:-.04em;margin-bottom:12px;position:relative;z-index:1}
+.show-right>p{color:rgba(255,255,255,.7);font-size:14px;line-height:1.7;margin-bottom:24px;position:relative;z-index:1}
+.show-features{display:grid;grid-template-columns:1fr 1fr;gap:12px;position:relative;z-index:1}
+.show-feat{border-radius:20px;padding:20px;background:rgba(255,255,255,.06);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.08)}
+.show-feat-ico{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.08);display:grid;place-items:center;margin-bottom:12px}
+.show-feat-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.show-feat b{display:block;font-size:14px;margin-bottom:6px}
+.show-feat p{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5}
+
+/* ── Security ── */
+.sec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.sec-card{background:#fff;border:1px solid rgba(79,70,229,.06);box-shadow:0 4px 20px rgba(0,0,0,.03);border-radius:24px;padding:32px 28px;position:relative;overflow:hidden;transition:all .35s var(--ease)}
+.sec-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(79,70,229,.08)}
+.sec-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--indigo),var(--gold))}
+.sec-badge{display:inline-flex;align-items:center;min-height:28px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:800;margin-bottom:16px}
+.sec-badge.purple{background:var(--indigo-soft);color:var(--indigo)}
+.sec-badge.amber{background:var(--gold-soft);color:var(--gold-dark)}
+.sec-badge.green{background:var(--green-soft);color:var(--green)}
+.sec-card h4{font-size:17px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+.sec-card p{font-size:14px;color:var(--ink3);line-height:1.65}
+
+/* ── Access ── */
+.access{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.access-left h2{font-size:clamp(28px,3.4vw,44px);font-weight:900;line-height:1.02;letter-spacing:-.045em;margin-bottom:16px}
+.access-left>p{font-size:16px;color:var(--ink2);line-height:1.7;max-width:480px}
+.access-pills{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.access-pill{flex:1 1 130px;padding:16px;border-radius:18px;background:var(--indigo-soft);border:1px solid rgba(79,70,229,.06)}
+.access-pill b{display:block;font-size:14px;margin-bottom:3px;letter-spacing:-.02em}
+.access-pill span{font-size:12px;color:var(--ink3)}
+.access-box{background:#fff;border-radius:28px;padding:36px;box-shadow:0 20px 60px rgba(79,70,229,.08);border:1px solid rgba(79,70,229,.06)}
+.access-hdr{display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.access-mark{width:40px;height:40px;border-radius:14px;background:linear-gradient(135deg,var(--indigo),var(--indigo-dark));display:grid;place-items:center;color:#fff}
+.access-mark svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.access-hdr b{font-size:17px;letter-spacing:-.02em}
+.access-cta{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border-radius:100px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--indigo),var(--indigo-dark));box-shadow:0 8px 28px rgba(79,70,229,.22);transition:all .3s var(--ease)}
+.access-cta:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(79,70,229,.3)}
+.access-reg{text-align:center;margin-top:16px;font-size:14px;color:var(--ink3)}
+.access-reg a{color:var(--indigo);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.access-foot{margin-top:16px;padding-top:16px;border-top:1px solid rgba(0,0,0,.05);font-size:11px;color:var(--ink3);line-height:1.7}
+.access-foot a{color:var(--green);font-weight:700}
+.access-foot img{display:inline;width:14px;height:14px;vertical-align:middle;margin:0 2px;border-radius:2px}
+
+/* ── CTA ── */
+.cta-band{background:linear-gradient(145deg,var(--indigo-dark),var(--indigo));color:#fff;border-radius:32px;padding:48px;display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;box-shadow:0 24px 60px rgba(79,70,229,.18);position:relative;overflow:hidden}
+.cta-band::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat}
+.cta-band::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(212,160,23,.18),transparent 55%)}
+.cta-band h2{font-size:clamp(26px,3.2vw,40px);font-weight:900;line-height:1.04;letter-spacing:-.04em;margin-bottom:12px;position:relative;z-index:1}
+.cta-band p{color:rgba(255,255,255,.75);font-size:16px;line-height:1.7;max-width:560px;position:relative;z-index:1}
+.cta-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;position:relative;z-index:1}
+
+/* ── Footer ── */
+.footer{background:var(--indigo-deeper);color:rgba(255,255,255,.65);padding:60px 0 0}
+.footer-top{display:grid;grid-template-columns:auto 1fr;gap:60px;align-items:start;padding-bottom:40px;border-bottom:1px solid rgba(255,255,255,.06)}
+.footer .logo-text b,.footer .logo-text b em{color:#fff}
+.footer .logo-text span{color:rgba(255,255,255,.35)}
+.footer-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.footer-col{display:flex;flex-direction:column;gap:8px}
+.footer-col h5{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:4px}
+.footer-col a{font-size:13px;color:rgba(255,255,255,.5);transition:color .2s}
+.footer-col a:hover{color:#fff}
+.footer-reg{display:flex;align-items:center;padding:24px 0;border-bottom:1px solid rgba(255,255,255,.06);gap:20px;flex-wrap:wrap}
+.footer-reg-left{display:flex;align-items:flex-start;gap:14px}
+.footer-asaas-logo{height:14px;width:auto;opacity:.5;margin-top:3px;flex-shrink:0}
+.footer-reg p{font-size:11px;color:rgba(255,255,255,.25);line-height:1.6;max-width:600px}
+.footer-reg p strong{color:rgba(255,255,255,.4)}
+.footer-bottom{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 0;font-size:11px;color:rgba(255,255,255,.2)}
+.footer-bacen{font-weight:600;letter-spacing:.04em}
+
+/* ── Responsive ── */
+@media(max-width:1120px){
+  .hero .w,.split,.showcase,.access,.dl-grid,.cta-band{grid-template-columns:1fr}
+  .cta-actions{justify-content:flex-start}
+  .hero .w{padding:60px 0 80px}
+  .phone-area{margin-top:40px}
+  .float-badge,.float-badge-2{position:static;max-width:100%;margin-top:14px;display:flex;gap:14px;align-items:center}
+  .float-badge-ico,.float-badge-2-ico{margin-bottom:0;flex-shrink:0}
+  .float-badge b,.float-badge-2 b{margin-bottom:2px}
+  .float-badge p,.float-badge-2 p{margin-bottom:0}
+}
+@media(max-width:880px){
+  .nav{display:none}
+  .stats-row,.prod-grid,.ben-grid,.sec-grid,.show-metrics,.show-features,.feat-grid,.footer-cols{grid-template-columns:1fr}
+  .footer-top{grid-template-columns:1fr}
+  .reg-strip-inner{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:720px){
+  .hero{min-height:auto}
+  .hero .w{padding:40px 0 60px}
+  .hero h1{font-size:38px}
+  .phone{width:min(100%,280px)}
+  .phone-screen{min-height:480px}
+  .show-left,.show-right,.cta-band{padding:28px}
+  .access-box{padding:28px}
+  .hero-trust{flex-direction:column;align-items:flex-start;gap:8px}
+}
+@media(max-width:520px){
+  .w{width:min(var(--max),100% - 24px)}
+  .hero-actions{flex-direction:column}
+  .hero-actions .btn{width:100%}
+  .access-pills{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="header" id="topo">
+  <div class="w">
+    <a class="logo" href="#topo">
+      <div class="logo-icon"><img src="favicon.png" alt="CredBusiness"></div>
+      <div class="logo-text"><b>Cred<em>Business</em></b><span>Internet Banking</span></div>
+    </a>
+    <nav class="nav">
+      <a href="#contas">Conta</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#beneficios">Benefícios</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="#beneficios">Benefícios</a>
+    </nav>
+    <div class="hdr-btns">
+      <a class="btn btn-md btn-indigo" href="#" onclick="goToApp('/login');return false">Acessar conta</a>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="w">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+       
+        Infraestrutura BaaS — Regulado pelo Banco Central
+      </div>
+      <h1>Sua conta digital com a <span class="gold">solidez</span> que você merece.</h1>
+      <p class="hero-sub">Gerencie PIX, transferências, boletos e cartão virtual em uma plataforma segura com infraestrutura financeira regulada pelo Banco Central do Brasil.</p>
+      <div class="hero-actions">
+        <a class="btn btn-lg btn-gold" href="#acesso">Abrir minha conta ›</a>
+        <a class="btn btn-lg btn-ghost" href="#contas">Conhecer mais</a>
+      </div>
+      <div class="hero-trust">
+        <span><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>Regulado pelo BACEN</span>
+        <span><svg viewBox="0 0 24 24"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>2FA ativo</span>
+        <span><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 6.5A4 4 0 0 0 13 4h-2a4 4 0 0 0 0 8h2a4 4 0 0 1 0 8H9a4 4 0 0 1-4-2.5"/></svg>PIX 24h</span>
+      </div>
+    </div>
+
+    <div class="phone-area">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="ph-top">
+            <div class="ph-status"><span>9:41</span><span>5G ●●●</span></div>
+            <p class="ph-greeting">Olá,</p>
+            <p class="ph-name">Egidio</p>
+            <div class="ph-balance">
+              <small>Saldo disponível</small>
+              <strong>R$ 13.989,21</strong>
+              <span>Limite: R$ 20.000,00</span>
+            </div>
+            <div class="ph-actions">
+              <div class="ph-act"><svg viewBox="0 0 24 24"><path d="m9 3 6 6-6 6-6-6 6-6Z"/><path d="m15 9 6 6-6 6-6-6"/></svg></div>
+              <div class="ph-act"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 12h14"/></svg></div>
+              <div class="ph-act"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 6.5a4 4 0 0 0-4-2.5h-2a4 4 0 0 0 0 8h2a4 4 0 0 1 0 8H9a4 4 0 0 1-4-2.5"/></svg></div>
+              <div class="ph-act"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></div>
+            </div>
+            <div class="ph-labels"><span>Pix</span><span>Transferir</span><span>Pagar</span><span>Agenda</span></div>
+          </div>
+          <div class="ph-body">
+            <div class="ph-card">
+              <div class="ph-card-top"><b>Última movimentação</b><span class="ph-card-tag">Hoje</span></div>
+              <div class="ph-tx">
+                <div class="ph-tx-ico" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="m5 10 7-7 7 7"/></svg></div>
+                <div class="ph-tx-info"><b>PIX recebido</b><span>João Silva</span></div>
+                <span class="ph-tx-val pos">+R$ 2.500</span>
+              </div>
+              <div class="ph-tx">
+                <div class="ph-tx-ico" style="background:#fef2f2;color:#ef4444"><svg viewBox="0 0 24 24"><path d="M12 21V3"/><path d="m5 14 7 7 7-7"/></svg></div>
+                <div class="ph-tx-info"><b>Boleto pago</b><span>Energia elétrica</span></div>
+                <span class="ph-tx-val neg">-R$ 189,50</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="float-badge">
+        <div class="float-badge-ico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg></div>
+        <div>
+          <b>Banking premium</b>
+          <p>Experiência completa de internet banking no seu bolso.</p>
+          <span class="chip">CredBusiness App</span>
+        </div>
+      </div>
+      <div class="float-badge-2">
+        <div class="float-badge-2-ico"><svg viewBox="0 0 24 24"><path d="m9 3 6 6-6 6-6-6 6-6Z"/><path d="m15 9 6 6-6 6-6-6"/></svg></div>
+        <div>
+          <b>PIX sem limites</b>
+          <p>Envie e receba 24h, todos os dias.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ REGULATORY STRIP ═══ -->
+<div class="reg-strip">
+  <div class="w">
+    <div class="reg-strip-inner">
+      <div class="reg-strip-left">
+        <span class="reg-label">Operado por</span>
+        <img src="asaas-logo.svg" alt="Asaas Pagamentos S.A." class="reg-asaas-logo">
+        <span class="reg-sep">|</span>
+        <span class="reg-text">Instituição de Pagamento autorizada pelo Banco Central do Brasil</span>
+      </div>
+      <div class="reg-strip-tags">
+        <span class="reg-tag">BACEN</span>
+        <span class="reg-tag">BaaS</span>
+        <span class="reg-tag">PIX</span>
+        <span class="reg-tag">TED</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STATS ═══ -->
+<section class="stats">
+  <div class="w">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">24h</div><p>Disponibilidade total. PIX, saldo e extrato a qualquer momento.</p></div>
+      <div class="stat-card"><div class="stat-num">100%</div><p>Digital. Sem filas, sem papel, sem agência física.</p></div>
+      <div class="stat-card"><div class="stat-num">2FA</div><p>Autenticação em dois fatores ativa em todas as operações.</p></div>
+      <div class="stat-card"><div class="stat-num">BaaS</div><p>Infraestrutura Asaas regulada pelo Banco Central.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CONTA DIGITAL ═══ -->
+<section class="section" id="contas">
+  <div class="w">
+    <div style="margin-bottom:48px">
+      <span class="tag-label"><span class="tag-dot"></span>Conta digital</span>
+      <h2 class="sec-title">Tudo que você precisa em um internet banking.</h2>
+      <p class="sec-desc">Gerencie todas as suas finanças em uma plataforma única — simples, rápida e segura, sem burocracia.</p>
+    </div>
+    <div class="split">
+      <div class="split-info">
+        <h3>Controle total das suas finanças na palma da mão.</h3>
+        <p>Saldo, extrato, PIX, transferências, boletos e cartão virtual. Gerencie tudo em tempo real com a mesma experiência dos grandes bancos.</p>
+        <div class="feat-grid">
+          <div class="feat-item"><b>PIX Instantâneo</b><p>Envie e receba em segundos, 24 horas por dia.</p></div>
+          <div class="feat-item"><b>Extrato em tempo real</b><p>Acompanhe cada movimentação na hora.</p></div>
+          <div class="feat-item"><b>Boletos e TED</b><p>Gere e pague boletos online.</p></div>
+          <div class="feat-item"><b>Cartão Virtual</b><p>Segurança extra para compras online.</p></div>
+        </div>
+      </div>
+      <div class="split-visual gold-accent">
+        <div class="vis-chip">Saldo atualizado em tempo real</div>
+        <div class="vis-card">
+          <small>Conta principal</small>
+          <strong>R$ 12.450,00</strong>
+          <p style="font-size:13px;opacity:.7;max-width:240px">Gerencie PIX, transferências e boletos de forma centralizada.</p>
+          <div class="vis-card-pills"><span>Pix</span><span>Transferir</span><span>Extrato</span></div>
+        </div>
+        <div style="display:flex;gap:8px;position:relative;z-index:1">
+          <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:11px;font-weight:700;color:rgba(255,255,255,.5)"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>2FA ativo</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:999px;background:rgba(212,160,23,.12);border:1px solid rgba(212,160,23,.15);font-size:11px;font-weight:700;color:var(--gold-light)"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="m13 2-2 10h5l-6 10 2-10H7l6-10Z"/></svg>PIX 24h</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SERVIÇOS ═══ -->
+<section class="section section-alt" id="servicos">
+  <div class="w">
+    <div style="margin-bottom:48px">
+      <span class="tag-label"><span class="tag-dot"></span>Serviços</span>
+      <h2 class="sec-title">Funcionalidades pensadas para o seu dia a dia financeiro.</h2>
+      <p class="sec-desc">Cada funcionalidade integrada com a infraestrutura Asaas para máxima agilidade e segurança.</p>
+    </div>
+    <div class="prod-grid">
+      <article class="prod-card">
+        <div class="prod-icon"><svg viewBox="0 0 24 24"><path d="m9 3 6 6-6 6-6-6 6-6Z"/><path d="m15 9 6 6-6 6-6-6"/></svg></div>
+        <h4>PIX Instantâneo</h4>
+        <p>Transfira e receba dinheiro em segundos. Disponível 24 horas, 7 dias por semana, sem taxas extras.</p>
+        <span class="prod-tag">Disponível 24h</span>
+        <span class="prod-asaas">via Asaas</span>
+      </article>
+      <article class="prod-card">
+        <div class="prod-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+        <h4>Cartão Virtual</h4>
+        <p>Gere cartões virtuais para compras online com total segurança. Bloqueie e desbloqueie quando quiser.</p>
+        <span class="prod-tag">Segurança extra</span>
+        <span class="prod-asaas">via Asaas</span>
+      </article>
+      <article class="prod-card">
+        <div class="prod-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <h4>Boletos e TED</h4>
+        <p>Gere boletos de cobrança e realize TEDs em poucos cliques. Tudo rastreável no extrato.</p>
+        <span class="prod-tag">Praticidade</span>
+        <span class="prod-asaas">via Asaas</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BENEFÍCIOS ═══ -->
+<section class="section" id="beneficios">
+  <div class="w">
+    <div style="margin-bottom:48px">
+      <span class="tag-label"><span class="tag-dot"></span>Benefícios</span>
+      <h2 class="sec-title">Por que escolher o CredBusiness?</h2>
+      <p class="sec-desc">Tecnologia bancária de ponta, segurança institucional e experiência pensada para o seu dia a dia.</p>
+    </div>
+    <div class="ben-grid">
+      <article class="ben-card"><div class="bar"></div><h4>Conta em minutos</h4><p>Abertura 100% digital, sem burocracia. Sem agência física, sem papelada.</p></article>
+      <article class="ben-card"><div class="bar"></div><h4>Operações com segurança</h4><p>Todas as transações protegidas com autenticação em dois fatores e criptografia de ponta.</p></article>
+      <article class="ben-card"><div class="bar"></div><h4>Acesse de qualquer lugar</h4><p>Disponível no celular, tablet e computador. Gerencie suas finanças onde estiver.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SHOWCASE ═══ -->
+<section class="section section-alt">
+  <div class="w">
+    <div class="showcase">
+      <div class="show-left">
+        <span class="tag-label"><span class="tag-dot"></span>Experiência</span>
+        <h3>Tudo o que você espera de um banco digital.</h3>
+        <p>Simplicidade, rapidez e transparência em cada operação financeira.</p>
+        <div class="show-metrics">
+          <div class="show-metric"><b>24/7</b><span>Operações disponíveis a qualquer hora, todos os dias.</span></div>
+          <div class="show-metric"><b>Tempo real</b><span>Saldo e extrato atualizados instantaneamente.</span></div>
+          <div class="show-metric"><b>Regulado</b><span>Infraestrutura autorizada pelo Banco Central.</span></div>
+          <div class="show-metric"><b>Multiplataforma</b><span>Acesse pelo celular, tablet ou computador.</span></div>
+        </div>
+      </div>
+      <div class="show-right">
+        <h3>Seu banco sempre ao seu alcance.</h3>
+        <p>Gerencie saldo, extrato, PIX e transferências de qualquer dispositivo com total segurança.</p>
+        <div class="show-features">
+          <div class="show-feat">
+            <div class="show-feat-ico"><svg viewBox="0 0 24 24"><path d="m3 12 7-7 4 4 7-7"/><path d="M14 2h7v7"/></svg></div>
+            <b>PIX e Transferências</b><p>Envie e receba em segundos, sem limites de horário.</p>
+          </div>
+          <div class="show-feat">
+            <div class="show-feat-ico"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 6.5A4 4 0 0 0 13 4h-2a4 4 0 0 0 0 8h2a4 4 0 0 1 0 8H9a4 4 0 0 1-4-2.5"/></svg></div>
+            <b>Extrato detalhado</b><p>Histórico completo com filtros e categorias.</p>
+          </div>
+          <div class="show-feat">
+            <div class="show-feat-ico"><svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="5" y="10" width="14" height="11" rx="2"/></svg></div>
+            <b>Segurança avançada</b><p>Autenticação em dois fatores e criptografia.</p>
+          </div>
+          <div class="show-feat">
+            <div class="show-feat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="16" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>
+            <b>Multidispositivo</b><p>Uma conta, qualquer tela — celular, tablet ou PC.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SEGURANÇA ═══ -->
+<section class="section" id="seguranca">
+  <div class="w">
+    <div style="margin-bottom:48px">
+      <span class="tag-label"><span class="tag-dot"></span>Segurança</span>
+      <h2 class="sec-title">Sua segurança é a nossa prioridade absoluta.</h2>
+      <p class="sec-desc">Infraestrutura de segurança robusta com camadas de proteção em todas as operações.</p>
+    </div>
+    <div class="sec-grid">
+      <article class="sec-card">
+        <span class="sec-badge purple">Proteção</span>
+        <h4>Autenticação em duas etapas (2FA)</h4>
+        <p>TOTP com Google Authenticator ou Authy (RFC 6238). Cookies HTTPOnly, controle de sessão e audit log completo.</p>
+      </article>
+      <article class="sec-card">
+        <span class="sec-badge amber">Operação via Asaas</span>
+        <h4>Fluxos financeiros via Asaas BaaS</h4>
+        <p>PIX, boletos, TED e extrato integrados via API Asaas com registro de auditoria por operação.</p>
+      </article>
+      <article class="sec-card">
+        <span class="sec-badge green">Conformidade</span>
+        <h4>Infraestrutura regulada pelo BACEN</h4>
+        <p>Serviços financeiros pela <a href="https://www.asaas.com" target="_blank" rel="noopener" style="color:var(--indigo);font-weight:700">Asaas Pagamentos S.A.</a>, instituição de pagamento autorizada pelo Banco Central.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ACESSO ═══ -->
+<section class="section section-alt" id="acesso">
+  <div class="w">
+    <div class="access">
+      <div class="access-left">
+        <span class="tag-label"><span class="tag-dot"></span>Internet Banking</span>
+        <h2>Acesse sua conta digital.</h2>
+        <p>Gerencie suas finanças, faça PIX, transferências e gere boletos diretamente pelo Internet Banking CredBusiness.</p>
+        <div class="access-pills">
+          <div class="access-pill"><b>PIX Instantâneo</b><span>Envie e receba em segundos</span></div>
+          <div class="access-pill"><b>Extrato completo</b><span>Histórico em tempo real</span></div>
+          <div class="access-pill"><b>Boletos e TED</b><span>Gere e pague online</span></div>
+        </div>
+      </div>
+      <div class="access-box">
+        <div class="access-hdr">
+          <div class="access-mark"><svg viewBox="0 0 24 24"><path d="M3 22h18"/><path d="M5 10h14"/><path d="M7 10v8"/><path d="M12 10v8"/><path d="M17 10v8"/><path d="M12 2 4 6v4h16V6Z"/></svg></div>
+          <b>CredBusiness Internet Banking</b>
+        </div>
+        <a class="access-cta" href="#" onclick="goToApp('/login');return false">Entrar na conta →</a>
+        <p class="access-reg">Não tem conta? <a href="#" onclick="goToApp('/register');return false">Criar conta grátis</a></p>
+        <div class="access-foot">Serviços financeiros por <a href="https://www.asaas.com" target="_blank" rel="noopener">Asaas Pagamentos S.A.</a> — Instituição de Pagamento autorizada pelo BACEN (BaaS).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="section">
+  <div class="w">
+    <div class="cta-band">
+      <div>
+        <h2>Pronto para uma experiência bancária de verdade?</h2>
+        <p>Abra sua conta CredBusiness e tenha acesso a PIX, transferências, boletos e cartão virtual — tudo com a infraestrutura Asaas regulada pelo BACEN.</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn btn-lg btn-ghost" href="#topo">Voltar ao topo</a>
+        <a class="btn btn-lg btn-gold" href="#" onclick="goToApp('/login');return false">Acessar Internet Banking ›</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="w">
+    <div class="footer-top">
+      <a class="logo" href="#topo">
+        <div class="logo-icon"><img src="favicon.png" alt="CredBusiness"></div>
+        <div class="logo-text"><b>Cred<em>Business</em></b><span>Internet Banking</span></div>
+      </a>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h5>Produtos</h5>
+          <a href="#contas">Conta Digital</a>
+          <a href="#servicos">PIX Instantâneo</a>
+          <a href="#servicos">Cartão Virtual</a>
+          <a href="#servicos">Boletos e TED</a>
+        </div>
+        <div class="footer-col">
+          <h5>Institucional</h5>
+          <a href="#seguranca">Segurança</a>
+          <a href="#beneficios">Benefícios</a>
+          <a href="#acesso">Internet Banking</a>
+        </div>
+        <div class="footer-col">
+          <h5>Legal</h5>
+          <a href="https://credbusiness.vercel.app/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>
+          <a href="https://credbusiness.vercel.app/termos" target="_blank" rel="noopener">Termos de Uso</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-reg">
+      <div class="footer-reg-left">
+        <img src="asaas-logo.svg" alt="Asaas" class="footer-asaas-logo">
+        <p>Serviços financeiros operados por <strong>Asaas Pagamentos S.A.</strong> — Instituição de Pagamento autorizada pelo Banco Central do Brasil. CNPJ: 19.540.550/0001-21</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 CredBusiness. Todos os direitos reservados.</span>
+      <span class="footer-bacen">Regulado pelo Banco Central do Brasil</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+var CREDBUSINESS_APP_URL="https://credbusiness.vercel.app";
+function goToApp(p){
+  var h=location.hostname;
+  if(h==="localhost"||h==="127.0.0.1")window.location.href=location.origin+p;
+  else window.location.href=CREDBUSINESS_APP_URL+p;
+}
+
+var deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredPrompt=e});
+
+// Header scroll shadow
+var hdr=document.querySelector(".header");
+window.addEventListener("scroll",function(){hdr.classList.toggle("scrolled",window.scrollY>10)},{passive:true});
+
+// Smooth reveal on scroll
+(function(){
+  var cards=document.querySelectorAll('.prod-card,.ben-card,.sec-card,.stat-card,.feat-item');
+  if(!('IntersectionObserver' in window))return;
+  cards.forEach(function(c){c.style.opacity='0';c.style.transform='translateY(24px)';c.style.transition='opacity .6s var(--ease),transform .6s var(--ease)'});
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';obs.unobserve(e.target)}})
+  },{threshold:.15,rootMargin:'0px 0px -40px 0px'});
+  cards.forEach(function(c){obs.observe(c)});
+})();
+</script>
+</body>
+</html>

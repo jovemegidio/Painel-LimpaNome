@@ -1,9 +1,9 @@
 ﻿@import "tailwindcss";
 
 :root {
-  --gb-primary: #e30613;
-  --gb-primary-dark: #bf0010;
-  --gb-primary-light: #ff4d4d;
+  --gb-primary: #6366f1;
+  --gb-primary-dark: #4f46e5;
+  --gb-primary-light: #818cf8;
   --gb-gold: #D97706;
   --gb-gold-light: #F59E0B;
   --gb-dark: #f5f6f8;
@@ -69,14 +69,14 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #e30613, #ff4d4d);
+  background: linear-gradient(135deg, #6366f1, #818cf8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 /* Focus ring */
-*:focus-visible { outline: 2px solid #e30613; outline-offset: 2px; }
+*:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
 
 /* Entrance animations */
 @keyframes fadeInUp {
@@ -99,7 +99,7 @@ body {
 }
 
 /* Selection */
-::selection { background: rgba(124, 58, 237, 0.3); color: #f1f5f9; }
+::selection { background: rgba(99, 102, 241, 0.3); color: #f1f5f9; }
 
 /* Smooth page transitions */
 .page-enter              { opacity: 0; transform: translateY(8px); }

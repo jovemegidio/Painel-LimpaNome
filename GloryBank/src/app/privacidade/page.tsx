@@ -16,12 +16,12 @@ export default function PrivacyPage() {
           <Link href="/login" className="flex items-center gap-2.5">
             <div
               className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
-              style={{ background: "linear-gradient(135deg, #e30613, #ff4d4d)" }}
+              style={{ background: "linear-gradient(135deg, #6366f1, #818cf8)" }}
             >
               <Landmark className="h-4 w-4" strokeWidth={2} />
             </div>
             <span className="font-bold text-slate-800">
-              Glory<span className="text-red-500">Bank</span>
+              Cred<span className="text-indigo-500">Business</span>
             </span>
           </Link>
           <Link
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
       {/* Content */}
       <main className="mx-auto max-w-3xl px-6 py-12">
         <div className="mb-8 flex items-center gap-3">
-          <ShieldCheck className="h-8 w-8 text-red-500" />
+          <ShieldCheck className="h-8 w-8 text-indigo-500" />
           <h1 className="text-3xl font-bold text-slate-800">Política de Privacidade</h1>
         </div>
 
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
                 href="https://www.asaas.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-red-500 hover:underline"
+                className="font-medium text-indigo-500 hover:underline"
               >
                 Asaas Pagamentos S.A.
               </a>
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
                 href="https://www.asaas.com/politica-privacidade"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-red-500 hover:underline"
+                className="font-medium text-indigo-500 hover:underline"
               >
                 asaas.com/politica-privacidade
               </a>
@@ -120,7 +120,7 @@ export default function PrivacyPage() {
               Nos termos da Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você tem direito a
               acessar, corrigir, portar ou solicitar a exclusão dos seus dados. Para exercer esses
               direitos, entre em contato pelo e-mail:{" "}
-              <a href="mailto:privacidade@credbusiness.com.br" className="font-medium text-red-500 hover:underline">
+              <a href="mailto:privacidade@credbusiness.com.br" className="font-medium text-indigo-500 hover:underline">
                 privacidade@credbusiness.com.br
               </a>
               .
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-slate-800">7. Contato</h2>
             <p>
               Dúvidas sobre esta política podem ser enviadas para{" "}
-              <a href="mailto:privacidade@credbusiness.com.br" className="font-medium text-red-500 hover:underline">
+              <a href="mailto:privacidade@credbusiness.com.br" className="font-medium text-indigo-500 hover:underline">
                 privacidade@credbusiness.com.br
               </a>
               .

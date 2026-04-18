@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description:
     "CredBusiness — Internet Banking digital completo. PIX instantâneo, boletos, transferências e gestão financeira com segurança AES-256.",
   keywords: ["internet banking", "pix", "boleto", "transferência", "banco digital"],
-  themeColor: "#e30613",
+  themeColor: "#6366f1",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   manifest: "/banco/manifest.json",
   robots: { index: false, follow: false },

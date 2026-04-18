@@ -129,8 +129,8 @@ export default function CartaoPage() {
               <div
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
                 style={{
-                  background: "linear-gradient(135deg, #e30613, #ff4d4d)",
-                  boxShadow: "0 4px 12px rgba(227,6,19,0.2)",
+                  background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                  boxShadow: "0 4px 12px rgba(99,102,241,0.2)",
                 }}
               >
                 <Wallet className="h-5 w-5 text-white" />
@@ -181,11 +181,11 @@ export default function CartaoPage() {
                       background:
                         card.cardType === "VIRTUAL"
                           ? "linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 50%, #1a1a2e 100%)"
-                          : "linear-gradient(135deg, #cc0511 0%, #e30613 50%, #ff2d3a 100%)",
+                          : "linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)",
                       boxShadow:
                         card.cardType === "VIRTUAL"
                           ? "0 8px 32px rgba(45,27,78,0.4)"
-                          : "0 8px 32px rgba(227,6,19,0.3)",
+                          : "0 8px 32px rgba(99,102,241,0.3)",
                       minHeight: "200px",
                     }}
                     onClick={() => viewCard(card)}

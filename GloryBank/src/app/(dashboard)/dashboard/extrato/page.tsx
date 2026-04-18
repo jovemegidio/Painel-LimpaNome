@@ -140,8 +140,8 @@ export default function ExtratoPage() {
       .join("");
     printWin.document.write(`<!DOCTYPE html><html><head><title>Extrato CredBusiness</title>
       <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:24px;color:#1e293b}
-      .header{text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #e30613}
-      .header h1{color:#e30613;font-size:22px}.header p{color:#64748b;font-size:12px;margin-top:4px}
+      .header{text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #6366f1}
+      .header h1{color:#6366f1;font-size:22px}.header p{color:#64748b;font-size:12px;margin-top:4px}
       table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#f8fafc;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;text-align:left;padding:8px 12px;border-bottom:2px solid #e2e8f0}
       td{padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px}tr:hover{background:#fafafa}
       .footer{text-align:center;margin-top:24px;padding-top:16px;border-top:1px dashed #cbd5e1;color:#94a3b8;font-size:10px}

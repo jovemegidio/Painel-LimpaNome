@@ -1,452 +1,603 @@
 import Link from "next/link";
-import {
-  ShieldCheck,
-  Zap,
-  Clock,
-  QrCode,
-  ArrowUpDown,
-  FileText,
-  Lock,
-  Smartphone,
-  ChevronRight,
-  CreditCard,
-  Building2,
-  BadgeCheck,
-  TrendingUp,
-} from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white text-slate-800" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-      {/* ─── TOPBAR ─── */}
-      <div className="hidden md:block" style={{ background: "#111", color: "rgba(255,255,255,0.82)", fontSize: "12px" }}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2">
-          <div className="flex items-center gap-5">
-            <span>Conta digital</span>
-            <span>Cartões</span>
-            <span>Segurança</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "2px 10px", borderRadius: "999px", background: "rgba(0,166,80,0.18)", color: "#5dda9a", fontSize: "11px", fontWeight: 800 }}>
-              BaaS por Asaas
-            </span>
-          </div>
-        </div>
-      </div>
+    <>
+      <style>{`
+        .lp{--indigo:#6366f1;--indigo-dark:#4f46e5;--indigo-deeper:#1e1b4b;--indigo-soft:#eef2ff;--indigo-glow:rgba(99,102,241,.14);--gold:#d4a017;--gold-light:#fbbf24;--gold-soft:#fef9c3;--gold-dark:#92710b;--ink:#0f172a;--ink2:#334155;--ink3:#64748b;--line:#e2e8f0;--lp-bg:#fff;--bg2:#f8fafc;--green:#00a650;--green-soft:rgba(0,166,80,.1);--radius:20px;--max:1180px;--ease:cubic-bezier(.4,0,.2,1)}
+        .lp *,.lp *::before,.lp *::after{box-sizing:border-box;margin:0;padding:0}
+        .lp{font-family:"Inter",var(--font-geist-sans),system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--lp-bg);-webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden}
+        .lp a{color:inherit;text-decoration:none}
+        .lp img{max-width:100%;display:block}
+        .w{width:min(var(--max),100% - 48px);margin:0 auto}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:100px;font-weight:700;font-size:14px;transition:all .3s var(--ease);cursor:pointer;border:none;letter-spacing:-.01em}
+        .btn-lg{min-height:54px;padding:0 32px;font-size:16px}
+        .btn-md{min-height:44px;padding:0 22px}
+        .btn-indigo{background:var(--indigo);color:#fff;box-shadow:0 4px 20px rgba(99,102,241,.25)}
+        .btn-indigo:hover{background:var(--indigo-dark);transform:translateY(-2px);box-shadow:0 8px 32px rgba(99,102,241,.35)}
+        .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--ink);font-weight:800;box-shadow:0 4px 20px rgba(212,160,23,.25)}
+        .btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(212,160,23,.35)}
+        .btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1.5px solid rgba(255,255,255,.18)}
+        .btn-ghost:hover{background:rgba(255,255,255,.14)}
+        .btn-outline{border:1.5px solid var(--line);color:var(--ink);background:#fff;min-height:42px;padding:0 18px;border-radius:100px}
+        .btn-outline:hover{border-color:var(--indigo);color:var(--indigo)}
+        .lp-header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid rgba(0,0,0,.04);transition:box-shadow .35s var(--ease)}
+        .lp-header .w{display:flex;align-items:center;justify-content:space-between;min-height:72px;gap:16px}
+        .logo{display:flex;align-items:center;gap:12px}
+        .logo-icon{width:40px;height:40px;border-radius:12px;overflow:hidden;flex-shrink:0}
+        .logo-icon img{width:100%;height:100%;object-fit:contain}
+        .logo-text{display:flex;flex-direction:column;line-height:1}
+        .logo-text b{font-size:20px;letter-spacing:-.03em;color:var(--ink)}.logo-text b em{font-style:normal;color:var(--indigo)}
+        .logo-text span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin-top:3px}
+        .nav{display:flex;align-items:center;gap:28px;font-size:14px;font-weight:600;color:var(--ink2)}
+        .nav a{position:relative;transition:color .2s}
+        .nav a:hover{color:var(--indigo)}
+        .hdr-btns{display:flex;align-items:center;gap:8px}
+        .hero{position:relative;background:linear-gradient(160deg,var(--indigo-deeper) 0%,var(--indigo-dark) 35%,var(--indigo) 100%);overflow:hidden;min-height:90vh;display:flex;align-items:center}
+        .hero::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat}
+        .hero::after{content:"";position:absolute;width:800px;height:800px;border-radius:50%;right:-200px;top:-100px;background:radial-gradient(circle,rgba(212,160,23,.12),transparent 60%);pointer-events:none}
+        .hero-glow{position:absolute;width:600px;height:600px;border-radius:50%;left:-200px;bottom:-200px;background:radial-gradient(circle,rgba(99,102,241,.25),transparent 60%);pointer-events:none}
+        .hero .w{position:relative;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;padding:80px 0 100px}
+        .hero-content{color:#fff;z-index:2}
+        .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 18px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:28px;backdrop-filter:blur(8px)}
+        .hero-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold)}
+        .hero h1{font-size:clamp(40px,6vw,72px);font-weight:900;line-height:.94;letter-spacing:-.05em;max-width:640px;margin-bottom:24px}
+        .hero h1 .gold{background:linear-gradient(135deg,var(--gold-light),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .hero-sub{font-size:19px;line-height:1.7;color:rgba(255,255,255,.72);max-width:520px;margin-bottom:36px}
+        .hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px}
+        .hero-trust{display:flex;align-items:center;gap:20px;font-size:13px;color:rgba(255,255,255,.45);font-weight:500}
+        .hero-trust span{display:flex;align-items:center;gap:6px}
+        .hero-trust svg{width:14px;height:14px;stroke:var(--gold);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+        .phone-area{display:grid;place-items:center;position:relative;z-index:2}
+        .phone{width:300px;border-radius:44px;background:#000;padding:10px;box-shadow:0 60px 120px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);position:relative}
+        .phone::before{content:"";position:absolute;top:12px;left:50%;transform:translateX(-50%);width:100px;height:24px;border-radius:0 0 14px 14px;background:#000;z-index:3}
+        .phone-screen{border-radius:36px;overflow:hidden;background:#f8f9fa;min-height:560px}
+        .ph-top{background:linear-gradient(180deg,var(--indigo),var(--indigo-dark));color:#fff;padding:18px 20px 22px}
+        .ph-status{display:flex;justify-content:space-between;font-size:14px;font-weight:800}
+        .ph-greeting{margin-top:22px;font-size:13px;opacity:.8}
+        .ph-name{font-size:22px;font-weight:900;letter-spacing:-.03em;margin-top:4px}
+        .ph-balance{margin-top:20px}
+        .ph-balance small{display:block;font-size:12px;opacity:.7;margin-bottom:6px}
+        .ph-balance strong{font-size:34px;font-weight:900;line-height:1;letter-spacing:-.04em}
+        .ph-balance span{display:block;margin-top:6px;font-size:12px;opacity:.6}
+        .ph-actions{display:flex;justify-content:space-between;gap:8px;margin-top:20px}
+        .ph-act{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center;backdrop-filter:blur(8px)}
+        .ph-act svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .ph-labels{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;font-size:10px;text-align:center;font-weight:600;color:rgba(255,255,255,.8)}
+        .ph-body{padding:20px 16px}
+        .ph-card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.05);margin-bottom:12px}
+        .ph-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+        .ph-card b{font-size:14px;letter-spacing:-.02em}
+        .ph-card-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--indigo-soft);color:var(--indigo)}
+        .ph-tx{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+        .ph-tx:last-child{border-bottom:none}
+        .ph-tx-ico{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+        .ph-tx-ico svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .ph-tx-info{flex:1}.ph-tx-info b{display:block;font-size:13px;letter-spacing:-.01em}.ph-tx-info span{font-size:11px;color:var(--ink3)}
+        .ph-tx-val{font-size:13px;font-weight:700}.ph-tx-val.neg{color:#ef4444}.ph-tx-val.pos{color:var(--green)}
+        .float-badge{position:absolute;right:-12px;top:80px;padding:14px 18px;border-radius:18px;background:rgba(255,255,255,.95);box-shadow:0 16px 40px rgba(0,0,0,.1);backdrop-filter:blur(10px);z-index:3;max-width:200px}
+        .float-badge-ico{width:36px;height:36px;border-radius:12px;background:var(--indigo-soft);color:var(--indigo);display:grid;place-items:center;margin-bottom:10px}
+        .float-badge-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .float-badge b{display:block;font-size:14px;letter-spacing:-.02em;color:var(--ink);margin-bottom:6px}
+        .float-badge p{font-size:11px;color:var(--ink3);line-height:1.5;margin-bottom:8px}
+        .float-badge .chip{display:inline-flex;padding:4px 10px;border-radius:999px;background:var(--indigo-soft);color:var(--indigo);font-size:10px;font-weight:800}
+        .float-badge-2{position:absolute;left:-16px;bottom:100px;padding:14px 18px;border-radius:18px;background:linear-gradient(135deg,var(--gold),var(--gold-light));box-shadow:0 12px 32px rgba(212,160,23,.2);z-index:3;max-width:180px}
+        .float-badge-2-ico{width:32px;height:32px;border-radius:10px;background:rgba(0,0,0,.1);display:grid;place-items:center;margin-bottom:8px}
+        .float-badge-2-ico svg{width:16px;height:16px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .float-badge-2 b{display:block;font-size:13px;color:var(--ink);margin-bottom:4px}
+        .float-badge-2 p{font-size:11px;color:var(--gold-dark);line-height:1.4}
+        .reg-strip{background:var(--indigo-deeper);border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);padding:16px 0}
+        .reg-strip-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+        .reg-strip-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .reg-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em}
+        .reg-asaas-logo{height:14px;width:auto;opacity:.7;transition:opacity .2s}
+        .reg-sep{color:rgba(255,255,255,.1);font-weight:200}
+        .reg-text{font-size:11px;color:rgba(255,255,255,.3);font-weight:500}
+        .reg-strip-tags{display:flex;gap:6px}
+        .reg-tag{padding:3px 10px;border-radius:4px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.3);font-size:10px;font-weight:700;letter-spacing:.06em}
+        .stats{position:relative;z-index:4;padding:64px 0;background:var(--bg2);border-bottom:1px solid var(--line)}
+        .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+        .stat-card{background:#fff;border-radius:20px;padding:32px 28px;box-shadow:0 2px 12px rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.05);transition:all .35s var(--ease)}
+        .stat-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(99,102,241,.08)}
+        .stat-num{font-size:34px;font-weight:900;line-height:1;letter-spacing:-.04em;margin-bottom:10px;background:linear-gradient(135deg,var(--indigo),var(--indigo-dark));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .stat-card p{font-size:13px;color:var(--ink3);line-height:1.55}
+        .section{padding:clamp(72px,10vw,120px) 0}
+        .section-alt{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+        .tag-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--indigo);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+        .tag-label .tag-dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+        .sec-title{font-size:clamp(32px,4.5vw,52px);font-weight:900;line-height:1;letter-spacing:-.045em;margin-bottom:16px;max-width:700px}
+        .sec-desc{font-size:17px;color:var(--ink2);line-height:1.7;max-width:560px}
+        .split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+        .split-visual{position:relative;min-height:380px;border-radius:32px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:32px;gap:16px}
+        .split-visual.gold-accent{background:linear-gradient(160deg,#1e1b4b,#312e81);border:1px solid rgba(212,160,23,.12)}
+        .split-visual::after{content:"";position:absolute;right:-40px;top:-40px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(212,160,23,.15),transparent 60%);pointer-events:none}
+        .split-visual::before{content:"";position:absolute;left:-60px;bottom:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.2),transparent 60%);pointer-events:none}
+        .vis-chip{display:inline-flex;align-items:center;min-height:32px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);font-size:11px;font-weight:700;color:rgba(255,255,255,.8);width:fit-content;margin-bottom:16px;position:relative;z-index:1}
+        .vis-card{position:relative;z-index:1;border-radius:24px;padding:24px;color:#fff;background:linear-gradient(150deg,var(--indigo),var(--indigo-dark));box-shadow:0 20px 48px rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06)}
+        .vis-card small{display:block;opacity:.7;margin-bottom:6px;font-size:13px}
+        .vis-card strong{display:block;font-size:36px;line-height:1;letter-spacing:-.04em;margin-bottom:10px}
+        .vis-card-pills{display:flex;gap:8px;margin-top:12px}
+        .vis-card-pills span{padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-size:11px;font-weight:700}
+        .split-info h3{font-size:clamp(28px,3.4vw,42px);font-weight:900;line-height:1.04;letter-spacing:-.04em;margin-bottom:16px}
+        .split-info>p{font-size:16px;color:var(--ink2);line-height:1.7;margin-bottom:28px}
+        .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .feat-item{padding:18px;border-radius:18px;background:var(--indigo-soft);border:1px solid rgba(99,102,241,.06)}
+        .feat-item b{display:block;font-size:15px;letter-spacing:-.02em;margin-bottom:4px;color:var(--ink)}
+        .feat-item p{font-size:12px;color:var(--ink3);line-height:1.5}
+        .prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+        .prod-card{background:#fff;border:1px solid rgba(99,102,241,.06);box-shadow:0 4px 20px rgba(0,0,0,.03);border-radius:24px;padding:32px 28px;position:relative;overflow:hidden;transition:all .35s var(--ease)}
+        .prod-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(99,102,241,.1)}
+        .prod-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--indigo),var(--gold))}
+        .prod-icon{width:48px;height:48px;border-radius:16px;background:var(--indigo-soft);color:var(--indigo);display:grid;place-items:center;margin-bottom:20px}
+        .prod-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .prod-card h4{font-size:18px;font-weight:800;letter-spacing:-.03em;margin-bottom:10px}
+        .prod-card p{font-size:14px;color:var(--ink3);line-height:1.65}
+        .prod-tag{display:inline-flex;margin-top:18px;padding:4px 12px;border-radius:999px;background:var(--gold-soft);color:var(--gold-dark);font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+        .prod-asaas{display:inline-flex;align-items:center;gap:4px;margin-top:8px;margin-left:6px;padding:4px 10px;border-radius:999px;background:var(--green-soft);color:var(--green);font-size:10px;font-weight:700}
+        .ben-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+        .ben-card{padding:32px 28px;border-radius:24px;background:#fff;border:1px solid rgba(99,102,241,.06);box-shadow:0 4px 20px rgba(0,0,0,.03);position:relative;overflow:hidden;transition:all .35s var(--ease)}
+        .ben-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(99,102,241,.08)}
+        .ben-card .bar{width:100%;height:6px;border-radius:999px;background:linear-gradient(90deg,var(--indigo-soft),var(--indigo-glow),var(--indigo));margin-bottom:22px}
+        .ben-card h4{font-size:18px;font-weight:800;letter-spacing:-.03em;margin-bottom:10px}
+        .ben-card p{font-size:14px;color:var(--ink3);line-height:1.65}
+        .showcase{display:grid;grid-template-columns:1.1fr .9fr;gap:0;border-radius:32px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.06);border:1px solid rgba(99,102,241,.06)}
+        .show-left{padding:40px;background:#fff}
+        .show-left h3{font-size:clamp(26px,3vw,38px);font-weight:900;line-height:1.04;letter-spacing:-.04em;margin-bottom:14px}
+        .show-left>p{font-size:15px;color:var(--ink2);line-height:1.7;margin-bottom:28px}
+        .show-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .show-metric{padding:18px;border-radius:18px;background:var(--bg2)}
+        .show-metric b{display:block;font-size:28px;line-height:1;letter-spacing:-.05em;margin-bottom:6px;color:var(--indigo)}
+        .show-metric span{font-size:12px;color:var(--ink3);line-height:1.5}
+        .show-right{padding:40px;background:linear-gradient(180deg,var(--indigo),var(--indigo-dark));color:#fff;position:relative;overflow:hidden}
+        .show-right::after{content:"";position:absolute;right:-60px;top:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(212,160,23,.15),transparent 60%)}
+        .show-right h3{font-size:28px;font-weight:900;line-height:1.04;letter-spacing:-.04em;margin-bottom:12px;position:relative;z-index:1}
+        .show-right>p{color:rgba(255,255,255,.7);font-size:14px;line-height:1.7;margin-bottom:24px;position:relative;z-index:1}
+        .show-features{display:grid;grid-template-columns:1fr 1fr;gap:12px;position:relative;z-index:1}
+        .show-feat{border-radius:20px;padding:20px;background:rgba(255,255,255,.06);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.08)}
+        .show-feat-ico{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.08);display:grid;place-items:center;margin-bottom:12px}
+        .show-feat-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .show-feat b{display:block;font-size:14px;margin-bottom:6px}
+        .show-feat p{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5}
+        .sec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+        .sec-card{background:#fff;border:1px solid rgba(99,102,241,.06);box-shadow:0 4px 20px rgba(0,0,0,.03);border-radius:24px;padding:32px 28px;position:relative;overflow:hidden;transition:all .35s var(--ease)}
+        .sec-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(99,102,241,.08)}
+        .sec-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--indigo),var(--gold))}
+        .sec-badge{display:inline-flex;align-items:center;min-height:28px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:800;margin-bottom:16px}
+        .sec-badge.purple{background:var(--indigo-soft);color:var(--indigo)}
+        .sec-badge.amber{background:var(--gold-soft);color:var(--gold-dark)}
+        .sec-badge.lp-green{background:var(--green-soft);color:var(--green)}
+        .sec-card h4{font-size:17px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+        .sec-card p{font-size:14px;color:var(--ink3);line-height:1.65}
+        .access{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+        .access-left h2{font-size:clamp(28px,3.4vw,44px);font-weight:900;line-height:1.02;letter-spacing:-.045em;margin-bottom:16px}
+        .access-left>p{font-size:16px;color:var(--ink2);line-height:1.7;max-width:480px}
+        .access-pills{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+        .access-pill{flex:1 1 130px;padding:16px;border-radius:18px;background:var(--indigo-soft);border:1px solid rgba(99,102,241,.06)}
+        .access-pill b{display:block;font-size:14px;margin-bottom:3px;letter-spacing:-.02em}
+        .access-pill span{font-size:12px;color:var(--ink3)}
+        .access-box{background:#fff;border-radius:28px;padding:36px;box-shadow:0 20px 60px rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.06)}
+        .access-hdr{display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+        .access-mark{width:40px;height:40px;border-radius:14px;background:linear-gradient(135deg,var(--indigo),var(--indigo-dark));display:grid;place-items:center;color:#fff}
+        .access-mark svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+        .access-hdr b{font-size:17px;letter-spacing:-.02em}
+        .access-cta{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border-radius:100px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--indigo),var(--indigo-dark));box-shadow:0 8px 28px rgba(99,102,241,.22);transition:all .3s var(--ease)}
+        .access-cta:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(99,102,241,.3)}
+        .access-reg{text-align:center;margin-top:16px;font-size:14px;color:var(--ink3)}
+        .access-reg a{color:var(--indigo);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+        .access-foot{margin-top:16px;padding-top:16px;border-top:1px solid rgba(0,0,0,.05);font-size:11px;color:var(--ink3);line-height:1.7}
+        .access-foot a{color:var(--green);font-weight:700}
+        .cta-band{background:linear-gradient(145deg,var(--indigo-dark),var(--indigo));color:#fff;border-radius:32px;padding:48px;display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;box-shadow:0 24px 60px rgba(99,102,241,.18);position:relative;overflow:hidden}
+        .cta-band::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat}
+        .cta-band::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(212,160,23,.18),transparent 55%)}
+        .cta-band h2{font-size:clamp(26px,3.2vw,40px);font-weight:900;line-height:1.04;letter-spacing:-.04em;margin-bottom:12px;position:relative;z-index:1}
+        .cta-band p{color:rgba(255,255,255,.75);font-size:16px;line-height:1.7;max-width:560px;position:relative;z-index:1}
+        .cta-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;position:relative;z-index:1}
+        .lp-footer{background:var(--indigo-deeper);color:rgba(255,255,255,.65);padding:60px 0 0}
+        .footer-top{display:grid;grid-template-columns:auto 1fr;gap:60px;align-items:start;padding-bottom:40px;border-bottom:1px solid rgba(255,255,255,.06)}
+        .lp-footer .logo-text b,.lp-footer .logo-text b em{color:#fff}
+        .lp-footer .logo-text span{color:rgba(255,255,255,.35)}
+        .footer-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+        .footer-col{display:flex;flex-direction:column;gap:8px}
+        .footer-col h5{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:4px}
+        .footer-col a{font-size:13px;color:rgba(255,255,255,.5);transition:color .2s}
+        .footer-col a:hover{color:#fff}
+        .footer-reg{display:flex;align-items:center;padding:24px 0;border-bottom:1px solid rgba(255,255,255,.06);gap:20px;flex-wrap:wrap}
+        .footer-reg-left{display:flex;align-items:flex-start;gap:14px}
+        .footer-asaas-logo{height:14px;width:auto;opacity:.5;margin-top:3px;flex-shrink:0}
+        .footer-reg p{font-size:11px;color:rgba(255,255,255,.25);line-height:1.6;max-width:600px}
+        .footer-reg p strong{color:rgba(255,255,255,.4)}
+        .footer-bottom{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 0;font-size:11px;color:rgba(255,255,255,.2)}
+        .footer-bacen{font-weight:600;letter-spacing:.04em}
+        @media(max-width:1120px){.hero .w,.split,.showcase,.access,.cta-band{grid-template-columns:1fr}.cta-actions{justify-content:flex-start}.hero .w{padding:60px 0 80px}.phone-area{margin-top:40px}.float-badge,.float-badge-2{position:static;max-width:100%;margin-top:14px;display:flex;gap:14px;align-items:center}.float-badge-ico,.float-badge-2-ico{margin-bottom:0;flex-shrink:0}.float-badge b,.float-badge-2 b{margin-bottom:2px}.float-badge p,.float-badge-2 p{margin-bottom:0}}
+        @media(max-width:880px){.nav{display:none}.stats-row,.prod-grid,.ben-grid,.sec-grid,.show-metrics,.show-features,.feat-grid,.footer-cols{grid-template-columns:1fr}.footer-top{grid-template-columns:1fr}.reg-strip-inner{flex-direction:column;align-items:flex-start}}
+        @media(max-width:720px){.hero{min-height:auto}.hero .w{padding:40px 0 60px}.hero h1{font-size:38px}.phone{width:min(100%,280px)}.phone-screen{min-height:480px}.show-left,.show-right,.cta-band{padding:28px}.access-box{padding:28px}.hero-trust{flex-direction:column;align-items:flex-start;gap:8px}}
+        @media(max-width:520px){.w{width:min(var(--max),100% - 24px)}.hero-actions{flex-direction:column}.hero-actions .btn{width:100%}.access-pills{flex-direction:column}}
+      `}</style>
 
-      {/* ─── HEADER ─── */}
-      <header
-        className="sticky top-0 z-50"
-        style={{
-          background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(18px)",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
-        }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 h-[72px]">
-          <Link href="/" className="flex items-center gap-3">
-            <img src="/favicon.png" alt="CredBusiness" className="h-10 w-10 object-contain" />
-            <div className="flex flex-col leading-none">
-              <span className="text-[20px] font-extrabold tracking-tight text-slate-800">
-                Cred<span className="text-red-600">Business</span>
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 mt-1">
-                Internet Banking
-              </span>
-            </div>
-          </Link>
-
-          <nav className="hidden lg:flex items-center gap-7 text-[14px] font-semibold text-slate-600">
-            <a href="#funcionalidades" className="hover:text-slate-900 transition-colors">Funcionalidades</a>
-            <a href="#seguranca" className="hover:text-slate-900 transition-colors">Segurança</a>
-            <a href="#baas" className="hover:text-slate-900 transition-colors">BaaS</a>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="rounded-xl border border-slate-200 px-5 py-2.5 text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
-            >
-              Entrar
+      <div className="lp">
+        {/* HEADER */}
+        <header className="lp-header">
+          <div className="w">
+            <Link className="logo" href="/">
+              <div className="logo-icon"><img src="/banco/favicon.png" alt="CredBusiness" /></div>
+              <div className="logo-text"><b>Cred<em>Business</em></b><span>Internet Banking</span></div>
             </Link>
-            <Link
-              href="/register"
-              className="rounded-xl px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #cc0511, #e30613)", boxShadow: "0 4px 16px rgba(227,6,19,0.2)" }}
-            >
-              Abrir conta
-            </Link>
+            <nav className="nav">
+              <a href="#contas">Conta</a>
+              <a href="#servicos">Serviços</a>
+              <a href="#beneficios">Benefícios</a>
+              <a href="#seguranca">Segurança</a>
+            </nav>
+            <div className="hdr-btns">
+              <Link className="btn btn-md btn-indigo" href="/login">Acessar conta</Link>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* ─── HERO ─── */}
-      <section
-        className="relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #d90012 0%, #e30613 46%, #ff2b2b 100%)",
-          padding: "clamp(60px, 8vw, 100px) 0 clamp(80px, 10vw, 120px)",
-        }}
-      >
-        <div className="pointer-events-none absolute right-[-120px] top-[70px] w-[420px] h-[420px] rounded-full" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 64%)" }} />
-
-        <div className="relative mx-auto max-w-7xl px-6">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Copy */}
-            <div className="text-white">
-              <div className="inline-flex items-center gap-2.5 rounded-full px-4 py-2 mb-8" style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.18)" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "0 8px", minHeight: "20px", borderRadius: "999px", background: "rgba(0,166,80,0.22)", color: "#7eeab4", fontSize: "10px", fontWeight: 900, letterSpacing: "0.08em" }}>
-                  BAAS
-                </span>
-                <span className="text-[12px] font-extrabold uppercase tracking-wider">
-                  Infraestrutura financeira por <strong className="text-green-300">Asaas</strong>
-                </span>
+        {/* HERO */}
+        <section className="hero">
+          <div className="hero-glow" />
+          <div className="w">
+            <div className="hero-content">
+              <div className="hero-badge">
+                <span className="dot" />
+                Infraestrutura BaaS — Regulado pelo Banco Central
               </div>
-
-              <h1 className="text-[clamp(36px,5.5vw,64px)] font-extrabold leading-[0.98] tracking-[-0.04em] mb-6 max-w-[600px]">
-                O digital com a solidez de um grande banco.
-              </h1>
-
-              <p className="text-[18px] leading-[1.72] text-white/80 mb-8 max-w-[520px]">
-                Gerencie suas finanças com PIX instantâneo, transferências, boletos e cartão virtual.
-                Tudo em uma plataforma segura, completa e disponível 24 horas.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <Link
-                  href="/register"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-[15px] font-bold text-red-600 bg-white transition-all hover:scale-[1.02]"
-                  style={{ boxShadow: "0 16px 36px rgba(0,0,0,0.15)" }}
-                >
-                  Abrir minha conta
-                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-[15px] font-semibold text-white transition-all hover:bg-white/10"
-                  style={{ border: "1px solid rgba(255,255,255,0.26)" }}
-                >
-                  Acessar conta
-                </Link>
+              <h1>Sua conta digital com a <span className="gold">solidez</span> que você merece.</h1>
+              <p className="hero-sub">Gerencie PIX, transferências, boletos e cartão virtual em uma plataforma segura com infraestrutura financeira regulada pelo Banco Central do Brasil.</p>
+              <div className="hero-actions">
+                <Link className="btn btn-lg btn-gold" href="/register">Abrir minha conta ›</Link>
+                <a className="btn btn-lg btn-ghost" href="#contas">Conhecer mais</a>
               </div>
-
-              <p className="text-[13px] font-semibold text-white/60">
-                Sem filas, sem burocracia. Abra sua conta em minutos.
-              </p>
+              <div className="hero-trust">
+                <span><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>Regulado pelo BACEN</span>
+                <span><svg viewBox="0 0 24 24"><path d="m9 12 2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>2FA ativo</span>
+                <span><svg viewBox="0 0 24 24"><path d="M12 2v20" /><path d="M17 6.5A4 4 0 0 0 13 4h-2a4 4 0 0 0 0 8h2a4 4 0 0 1 0 8H9a4 4 0 0 1-4-2.5" /></svg>PIX 24h</span>
+              </div>
             </div>
 
-            {/* Demo card */}
-            <div className="hidden lg:block">
-              <div
-                className="rounded-3xl p-8 backdrop-blur-md"
-                style={{
-                  background: "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  boxShadow: "0 32px 64px rgba(0,0,0,0.15)",
-                }}
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <img src="/favicon.png" alt="" className="h-10 w-10 object-contain" aria-hidden="true" />
-                  <div>
-                    <p className="text-[16px] font-bold text-white">CredBusiness Internet Banking</p>
-                    <p className="text-[12px] text-white/50">Conta Corrente Digital</p>
+            <div className="phone-area">
+              <div className="phone">
+                <div className="phone-screen">
+                  <div className="ph-top">
+                    <div className="ph-status"><span>9:41</span><span>5G ●●●</span></div>
+                    <p className="ph-greeting">Olá,</p>
+                    <p className="ph-name">Egidio</p>
+                    <div className="ph-balance">
+                      <small>Saldo disponível</small>
+                      <strong>R$ 13.989,21</strong>
+                      <span>Limite: R$ 20.000,00</span>
+                    </div>
+                    <div className="ph-actions">
+                      <div className="ph-act"><svg viewBox="0 0 24 24"><path d="m9 3 6 6-6 6-6-6 6-6Z" /><path d="m15 9 6 6-6 6-6-6" /></svg></div>
+                      <div className="ph-act"><svg viewBox="0 0 24 24"><path d="M12 3v18" /><path d="M5 12h14" /></svg></div>
+                      <div className="ph-act"><svg viewBox="0 0 24 24"><path d="M12 2v20" /><path d="M17 6.5a4 4 0 0 0-4-2.5h-2a4 4 0 0 0 0 8h2a4 4 0 0 1 0 8H9a4 4 0 0 1-4-2.5" /></svg></div>
+                      <div className="ph-act"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" /></svg></div>
+                    </div>
+                    <div className="ph-labels"><span>Pix</span><span>Transferir</span><span>Pagar</span><span>Agenda</span></div>
                   </div>
-                </div>
-
-                <div className="rounded-2xl p-5 mb-5" style={{ background: "rgba(0,0,0,0.15)" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-2">Saldo disponível</p>
-                  <p className="text-[36px] font-bold text-white tracking-tight leading-none">R$ 13.989,21</p>
-                  <p className="text-[12px] text-white/50 mt-2">Saldo + limite: R$ 33.989,21</p>
-                </div>
-
-                <div className="grid grid-cols-4 gap-3 mb-5">
-                  {[
-                    { icon: QrCode, label: "Pix" },
-                    { icon: ArrowUpDown, label: "Transferir" },
-                    { icon: FileText, label: "Boleto" },
-                    { icon: CreditCard, label: "Cartão" },
-                  ].map((item) => (
-                    <div key={item.label} className="flex flex-col items-center gap-2">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-red-600" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-                        <item.icon className="h-5 w-5" />
+                  <div className="ph-body">
+                    <div className="ph-card">
+                      <div className="ph-card-top"><b>Última movimentação</b><span className="ph-card-tag">Hoje</span></div>
+                      <div className="ph-tx">
+                        <div className="ph-tx-ico" style={{ background: "var(--green-soft)", color: "var(--green)" }}>
+                          <svg viewBox="0 0 24 24"><path d="M12 3v18" /><path d="m5 10 7-7 7 7" /></svg>
+                        </div>
+                        <div className="ph-tx-info"><b>PIX recebido</b><span>João Silva</span></div>
+                        <span className="ph-tx-val pos">+R$ 2.500</span>
                       </div>
-                      <span className="text-[11px] text-white/70">{item.label}</span>
+                      <div className="ph-tx">
+                        <div className="ph-tx-ico" style={{ background: "#fef2f2", color: "#ef4444" }}>
+                          <svg viewBox="0 0 24 24"><path d="M12 21V3" /><path d="m5 14 7 7 7-7" /></svg>
+                        </div>
+                        <div className="ph-tx-info"><b>Boleto pago</b><span>Energia elétrica</span></div>
+                        <span className="ph-tx-val neg">-R$ 189,50</span>
+                      </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
+              </div>
+              <div className="float-badge">
+                <div className="float-badge-ico">
+                  <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>
+                </div>
+                <div>
+                  <b>Banking premium</b>
+                  <p>Experiência completa de internet banking no seu bolso.</p>
+                  <span className="chip">CredBusiness App</span>
+                </div>
+              </div>
+              <div className="float-badge-2">
+                <div className="float-badge-2-ico">
+                  <svg viewBox="0 0 24 24"><path d="m9 3 6 6-6 6-6-6 6-6Z" /><path d="m15 9 6 6-6 6-6-6" /></svg>
+                </div>
+                <div>
+                  <b>PIX sem limites</b>
+                  <p>Envie e receba 24h, todos os dias.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-                {/* Demo credentials */}
-                <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-green-300 mb-2">🧪 Demonstração</p>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <p className="text-[12px] text-white/70">
-                        <span className="text-white/40">Login: </span>
-                        <span className="font-mono text-white">demo@credbusiness.com</span>
-                      </p>
-                      <p className="text-[12px] text-white/70">
-                        <span className="text-white/40">Senha: </span>
-                        <span className="font-mono text-white">Demo@123456</span>
-                      </p>
-                    </div>
-                    <Link
-                      href="/login"
-                      className="shrink-0 rounded-lg px-4 py-2 text-[12px] font-bold text-red-600 bg-white transition-opacity hover:opacity-80"
-                    >
-                      Entrar
-                    </Link>
+        {/* REGULATORY STRIP */}
+        <div className="reg-strip">
+          <div className="w">
+            <div className="reg-strip-inner">
+              <div className="reg-strip-left">
+                <span className="reg-label">Operado por</span>
+                <img src="/banco/asaas-logo.svg" alt="Asaas Pagamentos S.A." className="reg-asaas-logo" style={{ height: 14 }} />
+                <span className="reg-sep">|</span>
+                <span className="reg-text">Instituição de Pagamento autorizada pelo Banco Central do Brasil</span>
+              </div>
+              <div className="reg-strip-tags">
+                <span className="reg-tag">BACEN</span>
+                <span className="reg-tag">BaaS</span>
+                <span className="reg-tag">PIX</span>
+                <span className="reg-tag">TED</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* STATS */}
+        <section className="stats">
+          <div className="w">
+            <div className="stats-row">
+              <div className="stat-card"><div className="stat-num">24h</div><p>Disponibilidade total. PIX, saldo e extrato a qualquer momento.</p></div>
+              <div className="stat-card"><div className="stat-num">100%</div><p>Digital. Sem filas, sem papel, sem agência física.</p></div>
+              <div className="stat-card"><div className="stat-num">2FA</div><p>Autenticação em dois fatores ativa em todas as operações.</p></div>
+              <div className="stat-card"><div className="stat-num">BaaS</div><p>Infraestrutura Asaas regulada pelo Banco Central.</p></div>
+            </div>
+          </div>
+        </section>
+
+        {/* CONTA DIGITAL */}
+        <section className="section" id="contas">
+          <div className="w">
+            <div style={{ marginBottom: 48 }}>
+              <span className="tag-label"><span className="tag-dot" />Conta digital</span>
+              <h2 className="sec-title">Tudo que você precisa em um internet banking.</h2>
+              <p className="sec-desc">Gerencie todas as suas finanças em uma plataforma única — simples, rápida e segura, sem burocracia.</p>
+            </div>
+            <div className="split">
+              <div className="split-info">
+                <h3>Controle total das suas finanças na palma da mão.</h3>
+                <p>Saldo, extrato, PIX, transferências, boletos e cartão virtual. Gerencie tudo em tempo real com a mesma experiência dos grandes bancos.</p>
+                <div className="feat-grid">
+                  <div className="feat-item"><b>PIX Instantâneo</b><p>Envie e receba em segundos, 24 horas por dia.</p></div>
+                  <div className="feat-item"><b>Extrato em tempo real</b><p>Acompanhe cada movimentação na hora.</p></div>
+                  <div className="feat-item"><b>Boletos e TED</b><p>Gere e pague boletos online.</p></div>
+                  <div className="feat-item"><b>Cartão Virtual</b><p>Segurança extra para compras online.</p></div>
+                </div>
+              </div>
+              <div className="split-visual gold-accent">
+                <div className="vis-chip">Saldo atualizado em tempo real</div>
+                <div className="vis-card">
+                  <small>Conta principal</small>
+                  <strong>R$ 12.450,00</strong>
+                  <p style={{ fontSize: 13, opacity: .7, maxWidth: 240 }}>Gerencie PIX, transferências e boletos de forma centralizada.</p>
+                  <div className="vis-card-pills"><span>Pix</span><span>Transferir</span><span>Extrato</span></div>
+                </div>
+                <div style={{ display: "flex", gap: 8, position: "relative", zIndex: 1 }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 14px", borderRadius: 999, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.08)", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)" }}>
+                    <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, stroke: "currentColor", fill: "none", strokeWidth: 2.5, strokeLinecap: "round", strokeLinejoin: "round" }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>2FA ativo
+                  </span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 14px", borderRadius: 999, background: "rgba(212,160,23,.12)", border: "1px solid rgba(212,160,23,.15)", fontSize: 11, fontWeight: 700, color: "var(--gold-light)" }}>
+                    <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, stroke: "currentColor", fill: "none", strokeWidth: 2.5, strokeLinecap: "round", strokeLinejoin: "round" }}><path d="m13 2-2 10h5l-6 10 2-10H7l6-10Z" /></svg>PIX 24h
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SERVIÇOS */}
+        <section className="section section-alt" id="servicos">
+          <div className="w">
+            <div style={{ marginBottom: 48 }}>
+              <span className="tag-label"><span className="tag-dot" />Serviços</span>
+              <h2 className="sec-title">Funcionalidades pensadas para o seu dia a dia financeiro.</h2>
+              <p className="sec-desc">Cada funcionalidade integrada com a infraestrutura Asaas para máxima agilidade e segurança.</p>
+            </div>
+            <div className="prod-grid">
+              <article className="prod-card">
+                <div className="prod-icon"><svg viewBox="0 0 24 24"><path d="m9 3 6 6-6 6-6-6 6-6Z" /><path d="m15 9 6 6-6 6-6-6" /></svg></div>
+                <h4>PIX Instantâneo</h4>
+                <p>Transfira e receba dinheiro em segundos. Disponível 24 horas, 7 dias por semana, sem taxas extras.</p>
+                <span className="prod-tag">Disponível 24h</span>
+                <span className="prod-asaas">via Asaas</span>
+              </article>
+              <article className="prod-card">
+                <div className="prod-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg></div>
+                <h4>Cartão Virtual</h4>
+                <p>Gere cartões virtuais para compras online com total segurança. Bloqueie e desbloqueie quando quiser.</p>
+                <span className="prod-tag">Segurança extra</span>
+                <span className="prod-asaas">via Asaas</span>
+              </article>
+              <article className="prod-card">
+                <div className="prod-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg></div>
+                <h4>Boletos e TED</h4>
+                <p>Gere boletos de cobrança e realize TEDs em poucos cliques. Tudo rastreável no extrato.</p>
+                <span className="prod-tag">Praticidade</span>
+                <span className="prod-asaas">via Asaas</span>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* BENEFÍCIOS */}
+        <section className="section" id="beneficios">
+          <div className="w">
+            <div style={{ marginBottom: 48 }}>
+              <span className="tag-label"><span className="tag-dot" />Benefícios</span>
+              <h2 className="sec-title">Por que escolher o CredBusiness?</h2>
+              <p className="sec-desc">Tecnologia bancária de ponta, segurança institucional e experiência pensada para o seu dia a dia.</p>
+            </div>
+            <div className="ben-grid">
+              <article className="ben-card"><div className="bar" /><h4>Conta em minutos</h4><p>Abertura 100% digital, sem burocracia. Sem agência física, sem papelada.</p></article>
+              <article className="ben-card"><div className="bar" /><h4>Operações com segurança</h4><p>Todas as transações protegidas com autenticação em dois fatores e criptografia de ponta.</p></article>
+              <article className="ben-card"><div className="bar" /><h4>Acesse de qualquer lugar</h4><p>Disponível no celular, tablet e computador. Gerencie suas finanças onde estiver.</p></article>
+            </div>
+          </div>
+        </section>
+
+        {/* SHOWCASE */}
+        <section className="section section-alt">
+          <div className="w">
+            <div className="showcase">
+              <div className="show-left">
+                <span className="tag-label"><span className="tag-dot" />Experiência</span>
+                <h3>Tudo o que você espera de um banco digital.</h3>
+                <p>Simplicidade, rapidez e transparência em cada operação financeira.</p>
+                <div className="show-metrics">
+                  <div className="show-metric"><b>24/7</b><span>Operações disponíveis a qualquer hora, todos os dias.</span></div>
+                  <div className="show-metric"><b>Tempo real</b><span>Saldo e extrato atualizados instantaneamente.</span></div>
+                  <div className="show-metric"><b>Regulado</b><span>Infraestrutura autorizada pelo Banco Central.</span></div>
+                  <div className="show-metric"><b>Multiplataforma</b><span>Acesse pelo celular, tablet ou computador.</span></div>
+                </div>
+              </div>
+              <div className="show-right">
+                <h3>Seu banco sempre ao seu alcance.</h3>
+                <p>Gerencie saldo, extrato, PIX e transferências de qualquer dispositivo com total segurança.</p>
+                <div className="show-features">
+                  <div className="show-feat">
+                    <div className="show-feat-ico"><svg viewBox="0 0 24 24"><path d="m3 12 7-7 4 4 7-7" /><path d="M14 2h7v7" /></svg></div>
+                    <b>PIX e Transferências</b><p>Envie e receba em segundos, sem limites de horário.</p>
+                  </div>
+                  <div className="show-feat">
+                    <div className="show-feat-ico"><svg viewBox="0 0 24 24"><path d="M12 2v20" /><path d="M17 6.5A4 4 0 0 0 13 4h-2a4 4 0 0 0 0 8h2a4 4 0 0 1 0 8H9a4 4 0 0 1-4-2.5" /></svg></div>
+                    <b>Extrato detalhado</b><p>Histórico completo com filtros e categorias.</p>
+                  </div>
+                  <div className="show-feat">
+                    <div className="show-feat-ico"><svg viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3" /><rect x="5" y="10" width="14" height="11" rx="2" /></svg></div>
+                    <b>Segurança avançada</b><p>Autenticação em dois fatores e criptografia.</p>
+                  </div>
+                  <div className="show-feat">
+                    <div className="show-feat-ico"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="16" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /></svg></div>
+                    <b>Multidispositivo</b><p>Uma conta, qualquer tela — celular, tablet ou PC.</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── MOBILE DEMO BANNER ─── */}
-      <div className="lg:hidden px-6 -mt-6 relative z-10 mb-8">
-        <div
-          className="rounded-2xl p-5"
-          style={{
-            background: "white",
-            border: "1px solid rgba(0,0,0,0.06)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-          }}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-widest text-red-500 mb-2">🧪 Acesso Demonstração</p>
-          <div className="flex items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <p className="text-[12px] text-slate-500">
-                <span className="font-mono text-slate-700">demo@credbusiness.com</span>
-                {" · "}
-                <span className="font-mono text-slate-700">Demo@123456</span>
-              </p>
+        {/* SEGURANÇA */}
+        <section className="section" id="seguranca">
+          <div className="w">
+            <div style={{ marginBottom: 48 }}>
+              <span className="tag-label"><span className="tag-dot" />Segurança</span>
+              <h2 className="sec-title">Sua segurança é a nossa prioridade absoluta.</h2>
+              <p className="sec-desc">Infraestrutura de segurança robusta com camadas de proteção em todas as operações.</p>
             </div>
-            <Link
-              href="/login"
-              className="shrink-0 rounded-lg px-4 py-2 text-[12px] font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #e30613, #ff4d4d)" }}
-            >
-              Acessar
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── STATS ─── */}
-      <section className="py-14 px-6">
-        <div className="mx-auto max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { value: "PIX", label: "Instantâneo", icon: Zap },
-            { value: "24/7", label: "Disponível", icon: Clock },
-            { value: "2FA", label: "Autenticação", icon: ShieldCheck },
-            { value: "AES-256", label: "Criptografia", icon: Lock },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="text-center rounded-2xl py-7 px-5"
-              style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}
-            >
-              <stat.icon className="h-5 w-5 text-red-500 mx-auto mb-3" />
-              <p className="text-2xl font-extrabold text-slate-800 mb-1">{stat.value}</p>
-              <p className="text-[12px] font-medium text-slate-400">{stat.label}</p>
+            <div className="sec-grid">
+              <article className="sec-card">
+                <span className="sec-badge purple">Proteção</span>
+                <h4>Autenticação em duas etapas (2FA)</h4>
+                <p>TOTP com Google Authenticator ou Authy (RFC 6238). Cookies HTTPOnly, controle de sessão e audit log completo.</p>
+              </article>
+              <article className="sec-card">
+                <span className="sec-badge amber">Operação via Asaas</span>
+                <h4>Fluxos financeiros via Asaas BaaS</h4>
+                <p>PIX, boletos, TED e extrato integrados via API Asaas com registro de auditoria por operação.</p>
+              </article>
+              <article className="sec-card">
+                <span className="sec-badge lp-green">Conformidade</span>
+                <h4>Infraestrutura regulada pelo BACEN</h4>
+                <p>Serviços financeiros pela <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--indigo)", fontWeight: 700 }}>Asaas Pagamentos S.A.</a>, instituição de pagamento autorizada pelo Banco Central.</p>
+              </article>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── FEATURES ─── */}
-      <section className="py-20 px-6" id="funcionalidades" style={{ background: "#f5f6f8" }}>
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-14">
-            <span className="inline-block text-[12px] font-extrabold uppercase tracking-[0.1em] text-red-500 mb-3">
-              Funcionalidades
-            </span>
-            <h2 className="text-[clamp(28px,4vw,44px)] font-extrabold text-slate-800 tracking-tight mb-4">
-              Tudo que um banco digital precisa ter.
-            </h2>
-            <p className="text-[17px] text-slate-500 max-w-xl mx-auto leading-relaxed">
-              Funcionalidades completas para gerenciar suas finanças pessoais e empresariais, com infraestrutura Asaas BaaS.
-            </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { icon: QrCode, title: "PIX Instantâneo", desc: "Envie e receba pagamentos via PIX em segundos. Transferências 24h, todos os dias, com confirmação imediata.", color: "#e30613", bg: "rgba(227,6,19,0.08)" },
-              { icon: ArrowUpDown, title: "Transferências TED/PIX", desc: "Realize transferências entre contas de forma rápida e segura. PIX gratuito para pessoas físicas.", color: "#3b82f6", bg: "rgba(59,130,246,0.08)" },
-              { icon: FileText, title: "Boletos Bancários", desc: "Gere boletos registrados com código de barras e QR Code. Acompanhe pagamentos em tempo real.", color: "#8b5cf6", bg: "rgba(139,92,246,0.08)" },
-              { icon: CreditCard, title: "Cartão Virtual", desc: "Emita seu cartão virtual para compras online com total segurança e controle de limite.", color: "#ec4899", bg: "rgba(236,72,153,0.08)" },
-              { icon: TrendingUp, title: "Extrato Completo", desc: "Histórico detalhado de todas as movimentações com filtros por período, tipo e valor.", color: "#f59e0b", bg: "rgba(245,158,11,0.08)" },
-              { icon: Smartphone, title: "100% Responsivo", desc: "Acesse sua conta de qualquer dispositivo. Interface adaptada para desktop, tablet e celular.", color: "#06b6d4", bg: "rgba(6,182,212,0.08)" },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="rounded-2xl p-7 transition-all duration-200 hover:translate-y-[-2px]"
-                style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}
-              >
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl mb-5"
-                  style={{ background: f.bg, color: f.color }}
-                >
-                  <f.icon className="h-5 w-5" />
-                </div>
-                <h3 className="text-[16px] font-bold text-slate-800 mb-2">{f.title}</h3>
-                <p className="text-[14px] text-slate-500 leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── SECURITY ─── */}
-      <section className="py-20 px-6" id="seguranca">
-        <div className="mx-auto max-w-5xl">
-          <div
-            className="rounded-3xl p-10 md:p-14 text-center relative overflow-hidden"
-            style={{ background: "linear-gradient(135deg, #e30613 0%, #cc0511 100%)" }}
-          >
-            <div className="absolute top-0 right-0 w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)" }} />
-            <div className="relative">
-              <div className="flex justify-center mb-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}>
-                  <ShieldCheck className="h-8 w-8 text-white" />
+        {/* ACESSO */}
+        <section className="section section-alt" id="acesso">
+          <div className="w">
+            <div className="access">
+              <div className="access-left">
+                <span className="tag-label"><span className="tag-dot" />Internet Banking</span>
+                <h2>Acesse sua conta digital.</h2>
+                <p>Gerencie suas finanças, faça PIX, transferências e gere boletos diretamente pelo Internet Banking CredBusiness.</p>
+                <div className="access-pills">
+                  <div className="access-pill"><b>PIX Instantâneo</b><span>Envie e receba em segundos</span></div>
+                  <div className="access-pill"><b>Extrato completo</b><span>Histórico em tempo real</span></div>
+                  <div className="access-pill"><b>Boletos e TED</b><span>Gere e pague online</span></div>
                 </div>
               </div>
-              <h2 className="text-[clamp(24px,3.5vw,36px)] font-extrabold text-white mb-4 tracking-tight">
-                Segurança de Nível Bancário
-              </h2>
-              <p className="text-[16px] text-white/70 max-w-lg mx-auto mb-10 leading-relaxed">
-                Infraestrutura Asaas regulada pelo BACEN, com criptografia de ponta a ponta,
-                autenticação 2FA (TOTP), audit logs e as melhores práticas OWASP.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-4 text-[13px]">
-                {["Criptografia AES-256", "2FA TOTP (RFC 6238)", "JWT HttpOnly", "Rate Limiting", "OWASP Top 10", "Audit Log"].map((item) => (
-                  <div key={item} className="flex items-center gap-2 rounded-full px-4 py-2 text-white/90 font-semibold" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                    <BadgeCheck className="h-3.5 w-3.5" />
-                    {item}
+              <div className="access-box">
+                <div className="access-hdr">
+                  <div className="access-mark">
+                    <svg viewBox="0 0 24 24"><path d="M3 22h18" /><path d="M5 10h14" /><path d="M7 10v8" /><path d="M12 10v8" /><path d="M17 10v8" /><path d="M12 2 4 6v4h16V6Z" /></svg>
                   </div>
-                ))}
+                  <b>CredBusiness Internet Banking</b>
+                </div>
+                <Link className="access-cta" href="/login">Entrar na conta →</Link>
+                <p className="access-reg">Não tem conta? <Link href="/register">Criar conta grátis</Link></p>
+                <div className="access-foot">Serviços financeiros por <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer">Asaas Pagamentos S.A.</a> — Instituição de Pagamento autorizada pelo BACEN (BaaS).</div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── ASAAS BAAS BANNER ─── */}
-      <section
-        className="py-10"
-        id="baas"
-        style={{
-          background: "linear-gradient(135deg, #05221a 0%, #0a3327 100%)",
-          borderTop: "1px solid rgba(0,166,80,0.2)",
-          borderBottom: "1px solid rgba(0,166,80,0.2)",
-        }}
-      >
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl text-[22px] font-black text-white flex-shrink-0"
-                style={{ background: "#00a650", boxShadow: "0 8px 24px rgba(0,166,80,0.35)" }}
-              >
-                A
-              </div>
+        {/* CTA */}
+        <section className="section">
+          <div className="w">
+            <div className="cta-band">
               <div>
-                <p className="text-[18px] font-extrabold text-white tracking-tight mb-1">
-                  Operado por Asaas Pagamentos S.A.
-                </p>
-                <p className="text-[13px] text-white/50 leading-relaxed max-w-lg">
-                  Infraestrutura financeira regulada pelo Banco Central do Brasil.
-                  PIX, boletos, TED e cartão virtual no modelo Banking as a Service.
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {["Regulado BACEN", "Instituição de Pagamento", "BaaS Certificado", "PIX + Boleto + TED"].map((attr) => (
-                    <span key={attr} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold" style={{ border: "1px solid rgba(0,166,80,0.25)", color: "#5dda9a" }}>
-                      ✓ {attr}
-                    </span>
-                  ))}
+                <h2>Pronto para uma experiência bancária de verdade?</h2>
+                <p>Abra sua conta CredBusiness e tenha acesso a PIX, transferências, boletos e cartão virtual — tudo com a infraestrutura Asaas regulada pelo BACEN.</p>
+              </div>
+              <div className="cta-actions">
+                <a className="btn btn-lg btn-ghost" href="#topo">Voltar ao topo</a>
+                <Link className="btn btn-lg btn-gold" href="/login">Acessar Internet Banking ›</Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="lp-footer">
+          <div className="w">
+            <div className="footer-top">
+              <Link className="logo" href="/">
+                <div className="logo-icon"><img src="/banco/favicon.png" alt="CredBusiness" /></div>
+                <div className="logo-text"><b>Cred<em>Business</em></b><span>Internet Banking</span></div>
+              </Link>
+              <div className="footer-cols">
+                <div className="footer-col">
+                  <h5>Produtos</h5>
+                  <a href="#contas">Conta Digital</a>
+                  <a href="#servicos">PIX Instantâneo</a>
+                  <a href="#servicos">Cartão Virtual</a>
+                  <a href="#servicos">Boletos e TED</a>
+                </div>
+                <div className="footer-col">
+                  <h5>Institucional</h5>
+                  <a href="#seguranca">Segurança</a>
+                  <a href="#beneficios">Benefícios</a>
+                  <a href="#acesso">Internet Banking</a>
+                </div>
+                <div className="footer-col">
+                  <h5>Legal</h5>
+                  <Link href="/privacidade">Política de Privacidade</Link>
+                  <Link href="/termos">Termos de Uso</Link>
                 </div>
               </div>
             </div>
-            <a
-              href="https://www.asaas.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13px] font-bold text-white transition-all hover:translate-y-[-1px] shrink-0"
-              style={{ background: "#00a650", boxShadow: "0 8px 24px rgba(0,166,80,0.3)" }}
-            >
-              <Building2 className="h-4 w-4" />
-              Conheça a Asaas
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── CTA ─── */}
-      <section className="py-20 px-6 text-center" style={{ background: "#f5f6f8" }}>
-        <h2 className="text-[clamp(28px,4vw,40px)] font-extrabold text-slate-800 tracking-tight mb-4">
-          Pronto para começar?
-        </h2>
-        <p className="text-[17px] text-slate-500 mb-10 max-w-md mx-auto leading-relaxed">
-          Abra sua conta em poucos minutos e comece a usar todas as funcionalidades do seu banco digital.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/register"
-            className="group inline-flex items-center gap-2 rounded-full px-10 py-4 text-[15px] font-bold text-white transition-all hover:opacity-90 hover:scale-[1.02]"
-            style={{ background: "linear-gradient(135deg, #cc0511, #e30613)", boxShadow: "0 12px 36px rgba(227,6,19,0.25)" }}
-          >
-            Criar minha conta grátis
-            <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-8 py-4 text-[15px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
-          >
-            Já tenho conta
-          </Link>
-        </div>
-      </section>
-
-      {/* ─── FOOTER ─── */}
-      <footer style={{ background: "#111", color: "rgba(255,255,255,0.7)" }}>
-        <div className="mx-auto max-w-6xl px-6 py-12">
-          <div className="flex flex-col md:flex-row items-start justify-between gap-8 mb-10">
-            <div className="flex items-center gap-3">
-              <img src="/favicon.png" alt="CredBusiness" className="h-9 w-9 object-contain" />
-              <div className="flex flex-col leading-none">
-                <span className="text-[18px] font-extrabold text-white">
-                  Cred<span className="text-red-400">Business</span>
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/40 mt-1">
-                  Internet Banking
-                </span>
+            <div className="footer-reg">
+              <div className="footer-reg-left">
+                <img src="/banco/asaas-logo.svg" alt="Asaas" className="footer-asaas-logo" />
+                <p>Serviços financeiros operados por <strong>Asaas Pagamentos S.A.</strong> — Instituição de Pagamento autorizada pelo Banco Central do Brasil. CNPJ: 19.540.550/0001-21</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-6 text-[13px]">
-              <Link href="/login" className="hover:text-white transition-colors">Acessar conta</Link>
-              <Link href="/register" className="hover:text-white transition-colors">Abrir conta</Link>
-              <Link href="/privacidade" className="hover:text-white transition-colors">Privacidade</Link>
-              <Link href="/termos" className="hover:text-white transition-colors">Termos de Uso</Link>
+            <div className="footer-bottom">
+              <span>© {new Date().getFullYear()} CredBusiness. Todos os direitos reservados.</span>
+              <span className="footer-bacen">Regulado pelo Banco Central do Brasil</span>
             </div>
           </div>
-
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-[12px] text-white/35 leading-relaxed max-w-xl">
-              © {new Date().getFullYear()} CredBusiness. Os serviços financeiros são prestados pela{" "}
-              <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer" className="text-white/50 underline">
-                Asaas Pagamentos S.A.
-              </a>
-              , Instituição de Pagamento autorizada pelo Banco Central do Brasil (BACEN), operando no modelo Banking as a Service (BaaS).
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md text-[10px] font-black text-white" style={{ background: "#00a650" }}>
-                A
-              </div>
-              <span className="text-[11px] font-bold text-white/40">Powered by Asaas</span>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </>
   );
 }
