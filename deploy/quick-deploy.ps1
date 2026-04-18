@@ -31,7 +31,7 @@ $files = @(
 # Also upload all pages, js, css, admin, routes, utils, middleware, database
 $folders = @("pages", "js", "css", "admin", "routes", "utils", "middleware", "database")
 
-Write-Host "📤 Uploading files to VPS..."
+Write-Host "Uploading files to VPS..."
 
 foreach ($folder in $folders) {
     $localFolder = Join-Path $LOCAL_DIR $folder
@@ -58,13 +58,13 @@ foreach ($f in $rootFiles) {
 }
 
 Write-Host ""
-Write-Host "🔄 Restarting application..."
-ssh -p $VPS_PORT -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" "cd $APP_DIR && npm install --production 2>&1 && pm2 restart credbusiness 2>&1 || pm2 start server.js --name credbusiness 2>&1"
+Write-Host "Restarting application..."
+ssh -p $VPS_PORT -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" "cd /var/www/credbusiness ; npm install --production ; pm2 restart credbusiness"
 
 Write-Host ""
-Write-Host "🔍 Checking status..."
-ssh -p $VPS_PORT -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" "pm2 status && echo '---' && curl -s -o /dev/null -w 'HTTP Status: %{http_code}\n' http://localhost:3001/api/content/settings"
+Write-Host "Checking status..."
+ssh -p $VPS_PORT -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" "pm2 status"
 
 Write-Host ""
-Write-Host "✅ Deploy complete!"
-Write-Host "🌐 http://mkt-credbusiness.vps-kinghost.net"
+Write-Host "Deploy complete!"
+Write-Host "URL: http://mkt-credbusiness.vps-kinghost.net"
