@@ -1,16 +1,16 @@
 /// <reference lib="webworker" />
 
 const CACHE_NAME = 'credbusiness-v1';
-const OFFLINE_URL = '/login';
+const OFFLINE_URL = '/banco/login';
 
 // Assets to pre-cache
 const PRECACHE_ASSETS = [
-  '/',
-  '/login',
-  '/dashboard',
-  '/manifest.json',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg',
+  '/banco/',
+  '/banco/login',
+  '/banco/dashboard',
+  '/banco/manifest.json',
+  '/banco/icons/icon-192.svg',
+  '/banco/icons/icon-512.svg',
 ];
 
 self.addEventListener('install', (event) => {
@@ -43,7 +43,7 @@ self.addEventListener('fetch', (event) => {
 
   // Skip API and auth routes - always go to network
   const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/api/')) return;
+  if (url.pathname.startsWith('/banco/api/') || url.pathname.startsWith('/api/')) return;
 
   event.respondWith(
     fetch(event.request)

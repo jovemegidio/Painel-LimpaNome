@@ -2,34 +2,34 @@
   "name": "CredBusiness — Internet Banking Digital",
   "short_name": "CredBusiness",
   "description": "Internet Banking digital completo com PIX, boletos, transferências e gestão financeira.",
-  "start_url": "/dashboard",
+  "start_url": "/banco/dashboard",
   "display": "standalone",
   "background_color": "#f5f6f8",
   "theme_color": "#e30613",
   "orientation": "any",
-  "scope": "/",
+  "scope": "/banco/",
   "categories": ["finance", "business"],
   "icons": [
     {
-      "src": "/icons/icon-192.svg",
+      "src": "/banco/icons/icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.svg",
+      "src": "/banco/icons/icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-maskable-192.svg",
+      "src": "/banco/icons/icon-maskable-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-maskable-512.svg",
+      "src": "/banco/icons/icon-maskable-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
@@ -40,19 +40,19 @@
     {
       "name": "PIX",
       "short_name": "PIX",
-      "url": "/dashboard/pix",
+      "url": "/banco/dashboard/pix",
       "icons": []
     },
     {
       "name": "Transferir",
       "short_name": "Transferir",
-      "url": "/dashboard/transferir",
+      "url": "/banco/dashboard/transferir",
       "icons": []
     },
     {
       "name": "Extrato",
       "short_name": "Extrato",
-      "url": "/dashboard/extrato",
+      "url": "/banco/dashboard/extrato",
       "icons": []
     }
   ]
