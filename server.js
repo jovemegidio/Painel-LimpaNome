@@ -15,6 +15,7 @@ const fs = require('fs');
 
 const { initDatabase } = require('./database/init');
 const { addClient, clientCount } = require('./utils/sse');
+const { releaseMonthlyFee } = require('./utils/monthly-fee');
 const jwt = require('jsonwebtoken');
 
 // ── Iniciar banco de dados ──
@@ -208,11 +209,10 @@ async function checkPendingPayments() {
                             .run(p.user_id, p.amount, p.id);
                     }
                     if (p.type === 'monthly_fee') {
-                        const now = new Date();
-                        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-                        const paidUntilStr = nextMonth.toISOString().slice(0, 10);
-                        db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0 WHERE id = ?')
-                            .run(paidUntilStr, p.user_id);
+                        const { paidUntil: paidUntilStr } = releaseMonthlyFee(db, p.user_id, {
+                            amount: p.amount,
+                            paymentId: p.id
+                        });
                         createNotification(p.user_id, 'success', 'Mensalidade paga!',
                             `Sua mensalidade foi confirmada. Acesso liberado até ${paidUntilStr}.`);
                     }

@@ -38,6 +38,7 @@ const filesToUpload = [
     { local: 'utils/audit.js', remote: `${APP_DIR}/utils/audit.js` },
     { local: 'utils/notifications.js', remote: `${APP_DIR}/utils/notifications.js` },
     { local: 'utils/asaas.js', remote: `${APP_DIR}/utils/asaas.js` },
+    { local: 'utils/monthly-fee.js', remote: `${APP_DIR}/utils/monthly-fee.js` },
     { local: '.gitignore', remote: `${APP_DIR}/.gitignore` },
     { local: 'package.json', remote: `${APP_DIR}/package.json` },
     { local: 'utils/email.js', remote: `${APP_DIR}/utils/email.js` },

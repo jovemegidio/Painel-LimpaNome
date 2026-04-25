@@ -13,6 +13,7 @@ const { logAudit, getClientIP } = require('../utils/audit');
 const { createNotification, notifyAllUsers } = require('../utils/notifications');
 const { sendNotificationEmail } = require('../utils/email');
 const { broadcast, sendToUser } = require('../utils/sse');
+const { getMonthlyFeeValue, releaseMonthlyFee } = require('../utils/monthly-fee');
 
 const router = express.Router();
 router.use(auth, adminOnly);
@@ -33,6 +34,34 @@ function isStrongPassword(password) {
         && password.length <= 100
         && /[A-Z]/.test(password)
         && /\d/.test(password);
+}
+
+function confirmMonthlyFeeAsAdmin(db, userId, payment) {
+    const monthlyFee = getMonthlyFeeValue(db);
+    let paymentId = payment?.id || null;
+    const amount = Number(payment?.amount) > 0 ? Number(payment.amount) : monthlyFee;
+
+    if (paymentId) {
+        db.prepare("UPDATE payments SET status = 'pago', paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now') WHERE id = ? AND status != 'pago'")
+            .run(paymentId);
+    } else {
+        const result = db.prepare(`
+            INSERT INTO payments (user_id, type, amount, method, status, external_reference, paid_at, updated_at, created_at)
+            VALUES (?, 'monthly_fee', ?, 'manual', 'pago', ?, datetime('now'), datetime('now'), datetime('now'))
+        `).run(userId, amount, `monthly_fee_admin_user_${userId}_${Date.now()}`);
+        paymentId = result.lastInsertRowid;
+    }
+
+    const { paidUntil } = releaseMonthlyFee(db, userId, {
+        amount,
+        paymentId,
+        description: 'Mensalidade mensal (admin)'
+    });
+
+    createNotification(userId, 'success', 'Mensalidade paga!',
+        `Sua mensalidade de R$ ${amount.toFixed(2)} foi confirmada pelo administrador. Acesso liberado até ${paidUntil}.`);
+
+    return { paymentId, paidUntil, amount };
 }
 
 // ════════════════════════════════════
@@ -319,6 +348,36 @@ router.post('/users/:id/reset-password', (req, res) => {
     res.json({ success: true, message: 'Senha redefinida com sucesso.' });
 });
 
+// Liberar mensalidade manualmente pelo admin
+router.post('/users/:id/release-monthly-fee', (req, res) => {
+    try {
+        const db = getDB();
+        const userId = Number(req.params.id);
+        const user = db.prepare('SELECT id, name, has_package FROM users WHERE id = ?').get(userId);
+        if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+        if (!user.has_package) return res.status(400).json({ error: 'Usuário ainda não possui pacote ativo para mensalidade.' });
+
+        const pendingPayment = db.prepare(`
+            SELECT * FROM payments
+            WHERE user_id = ? AND type = 'monthly_fee' AND status IN ('pendente', 'processando')
+            ORDER BY created_at DESC
+            LIMIT 1
+        `).get(userId);
+
+        const release = confirmMonthlyFeeAsAdmin(db, userId, pendingPayment);
+
+        logAudit({ userType: 'admin', userId: req.user.id, action: 'admin_release_monthly_fee', entity: 'user',
+            entityId: userId, details: { paymentId: release.paymentId, amount: release.amount, paidUntil: release.paidUntil }, ip: getClientIP(req) });
+        sendToUser(userId, 'user_updated', { id: userId });
+        broadcast('users', { action: 'updated', id: userId });
+
+        res.json({ success: true, message: `Mensalidade liberada até ${release.paidUntil} para ${user.name}`, paidUntil: release.paidUntil });
+    } catch (err) {
+        console.error('Erro liberar mensalidade:', err.message);
+        res.status(500).json({ error: 'Erro ao liberar mensalidade' });
+    }
+});
+
 // Ativar pagamento pendente de um usuário (busca o mais recente)
 router.post('/users/:id/activate-payment', (req, res) => {
     try {
@@ -375,6 +434,12 @@ router.post('/users/:id/activate-payment', (req, res) => {
                 createNotification(userId, 'plan', 'Plano ativado!', 'Seu plano foi ativado pelo administrador.');
             }
         }
+
+        let monthlyRelease = null;
+        if (payment.type === 'monthly_fee') {
+            monthlyRelease = confirmMonthlyFeeAsAdmin(db, userId, payment);
+        }
+
         if (payment.type !== 'deposit' && payment.type !== 'monthly_fee') {
             db.prepare(`INSERT OR IGNORE INTO transactions (user_id, type, amount, description, reference_type, reference_id, date, status)
                 VALUES (?, 'pagamento', ?, ?, 'payment', ?, date('now'), 'concluido')`)
@@ -385,7 +450,10 @@ router.post('/users/:id/activate-payment', (req, res) => {
             entityId: userId, details: { paymentId: payment.id, type: payment.type, amount: payment.amount }, ip: getClientIP(req) });
         broadcast('users', { action: 'updated', id: userId });
 
-        res.json({ success: true, message: `Pagamento #${payment.id} ativado para ${user.name}` });
+        const message = monthlyRelease
+            ? `Mensalidade liberada até ${monthlyRelease.paidUntil} para ${user.name}`
+            : `Pagamento #${payment.id} ativado para ${user.name}`;
+        res.json({ success: true, message, paidUntil: monthlyRelease?.paidUntil });
     } catch (err) {
         console.error('Erro ativar pagamento usuário:', err.message);
         res.status(500).json({ error: 'Erro ao ativar pagamento' });
@@ -1358,11 +1426,7 @@ router.post('/payments/:id/activate', (req, res) => {
 
         // Mensalidade
         if (payment.type === 'monthly_fee') {
-            const now = new Date();
-            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-            db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0 WHERE id = ?')
-                .run(nextMonth.toISOString().slice(0, 10), payment.user_id);
-            createNotification(payment.user_id, 'success', 'Mensalidade paga!', 'Sua mensalidade foi confirmada pelo administrador.');
+            confirmMonthlyFeeAsAdmin(db, payment.user_id, payment);
         }
 
         // Registrar transação

@@ -10,6 +10,7 @@ const { getDB } = require('../database/init');
 const asaas = require('../utils/asaas');
 const { logAudit } = require('../utils/audit');
 const { createNotification } = require('../utils/notifications');
+const { getMonthlyFeeStatus, getMonthlyFeeValue, releaseMonthlyFee } = require('../utils/monthly-fee');
 
 // Utility
 function getClientIP(req) { return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip; }
@@ -474,18 +475,12 @@ router.get('/monthly-fee/status', auth, (req, res) => {
             return res.json({ success: true, isPaid: true, paidUntil: null, daysUntilDue: null, accessBlocked: false, monthlyFeeValue: 0, noPackage: true });
         }
 
-        const settings = {};
-        db.prepare('SELECT * FROM settings').all().forEach(s => { settings[s.key] = s.value; });
-        const monthlyFee = Number(settings.monthlyFee) || 95;
-
-        const now = new Date();
-        const paidUntil = user.monthly_fee_paid_until ? new Date(user.monthly_fee_paid_until) : null;
-        const isPaid = paidUntil && paidUntil >= now;
-        const daysUntilDue = paidUntil ? Math.ceil((paidUntil - now) / (1000 * 60 * 60 * 24)) : null;
+        const monthlyFee = getMonthlyFeeValue(db);
+        const { isPaid, daysUntilDue } = getMonthlyFeeStatus(user);
 
         // Se o usuário tem pacote mas está sem data de mensalidade (NULL), considerar como não pago
         // para exibir opção de pagamento
-        const needsPayment = user.access_blocked || !isPaid || !paidUntil;
+        const needsPayment = user.access_blocked || !isPaid || !user.monthly_fee_paid_until;
 
         // Buscar pagamento pendente de mensalidade para mostrar QR code ao usuário bloqueado
         let pendingPayment = null;
@@ -537,9 +532,7 @@ router.post('/monthly-fee/pay', auth, async (req, res) => {
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
         if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
-        const settings = {};
-        db.prepare('SELECT * FROM settings').all().forEach(s => { settings[s.key] = s.value; });
-        const monthlyFee = Number(settings.monthlyFee) || 95;
+        const monthlyFee = getMonthlyFeeValue(db);
 
         // Verificar se já há pagamento de mensalidade pendente recente
         const now = new Date();
@@ -557,7 +550,7 @@ router.post('/monthly-fee/pay', auth, async (req, res) => {
                         const mapped = asaas.mapPaymentStatus(asaasStatus.status);
                         if (mapped === 'pago') {
                             // Pagamento já confirmado no Asaas — ativar e retornar
-                            db.prepare("UPDATE payments SET status = 'pago', paid_at = datetime('now') WHERE id = ?").run(pendingFee.id);
+                            db.prepare("UPDATE payments SET status = 'pago', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(pendingFee.id);
                             processPaymentConfirmed(db, pendingFee);
                             return res.json({ success: true, approved: true, message: 'Mensalidade confirmada! Acesso liberado.' });
                         }
@@ -616,18 +609,14 @@ router.post('/monthly-fee/pay', auth, async (req, res) => {
 
         if (!asaas.isConfigured()) {
             // Modo fallback — ativar diretamente (dev/sandbox)
-            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-            const paidUntilStr = nextMonth.toISOString().slice(0, 10);
-            db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0 WHERE id = ?')
-                .run(paidUntilStr, user.id);
+            const result = db.prepare(`INSERT INTO payments (user_id, type, amount, method, status, external_reference, paid_at, updated_at, created_at)
+                VALUES (?, 'monthly_fee', ?, ?, 'pago', ?, datetime('now'), datetime('now'), datetime('now'))`)
+                .run(user.id, monthlyFee, method, `monthly_fee_user_${user.id}_${Date.now()}`);
 
-            db.prepare(`INSERT INTO payments (user_id, type, amount, method, status, external_reference, created_at)
-                VALUES (?, 'monthly_fee', ?, ?, 'pago', ?, datetime('now'))`)
-                .run(user.id, monthlyFee, method, `monthly_fee_user_${user.id}`);
-
-            db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status)
-                VALUES (?, 'mensalidade', ?, 'Mensalidade mensal', date('now'), 'concluido')`)
-                .run(user.id, -monthlyFee);
+            const { paidUntil: paidUntilStr } = releaseMonthlyFee(db, user.id, {
+                amount: monthlyFee,
+                paymentId: result.lastInsertRowid
+            });
 
             createNotification(user.id, 'success', 'Mensalidade paga!',
                 `Sua mensalidade de R$ ${monthlyFee.toFixed(2)} foi confirmada. Acesso liberado até ${paidUntilStr}.`);
@@ -671,11 +660,23 @@ router.post('/monthly-fee/pay', auth, async (req, res) => {
 
         const payment = await asaas.createPayment(paymentParams);
 
-        db.prepare(`INSERT INTO payments (user_id, asaas_payment_id, asaas_customer_id, type, amount, method, status, invoice_url, external_reference, due_date, created_at)
+        const insert = db.prepare(`INSERT INTO payments (user_id, asaas_payment_id, asaas_customer_id, type, amount, method, status, invoice_url, external_reference, due_date, created_at)
             VALUES (?, ?, ?, 'monthly_fee', ?, ?, 'pendente', ?, ?, ?, datetime('now'))`)
             .run(user.id, payment.id, customer.id, monthlyFee, method, payment.invoiceUrl || '', paymentParams.externalReference, payment.dueDate);
 
         const response = { success: true, paymentId: payment.id, status: payment.status, invoiceUrl: payment.invoiceUrl, value: payment.value, dueDate: payment.dueDate, method };
+
+        if (asaas.mapPaymentStatus(payment.status) === 'pago') {
+            db.prepare("UPDATE payments SET status = 'pago', paid_at = datetime('now'), updated_at = datetime('now') WHERE id = ? AND status != 'pago'")
+                .run(insert.lastInsertRowid);
+            const { paidUntil } = releaseMonthlyFee(db, user.id, {
+                amount: monthlyFee,
+                paymentId: insert.lastInsertRowid
+            });
+            createNotification(user.id, 'success', 'Mensalidade paga!',
+                `Sua mensalidade de R$ ${monthlyFee.toFixed(2)} foi confirmada. Acesso liberado até ${paidUntil}.`);
+            return res.json({ ...response, approved: true, paidUntil, message: 'Mensalidade paga com sucesso! Acesso liberado.' });
+        }
 
         if (method === 'pix') {
             try {
@@ -923,15 +924,10 @@ function processPaymentConfirmed(db, localPayment) {
 
     if (localPayment.type === 'monthly_fee') {
         // Ativar acesso — mensalidade paga por mais 30 dias
-        const now = new Date();
-        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-        const paidUntilStr = nextMonth.toISOString().slice(0, 10);
-        db.prepare('UPDATE users SET monthly_fee_paid_until = ?, access_blocked = 0 WHERE id = ?')
-            .run(paidUntilStr, localPayment.user_id);
-
-        db.prepare(`INSERT INTO transactions (user_id, type, amount, description, date, status)
-            VALUES (?, 'mensalidade', ?, 'Mensalidade mensal', date('now'), 'concluido')`)
-            .run(localPayment.user_id, -localPayment.amount);
+        const { paidUntil: paidUntilStr } = releaseMonthlyFee(db, localPayment.user_id, {
+            amount: localPayment.amount,
+            paymentId: localPayment.id
+        });
 
         createNotification(localPayment.user_id, 'success', 'Mensalidade paga!',
             `Sua mensalidade de R$ ${localPayment.amount.toFixed(2)} foi confirmada. Acesso liberado até ${paidUntilStr}.`);

@@ -50,7 +50,7 @@
             <div class="card-body">
                 <div class="table-wrap">
                     <table class="table wide-table" id="usersTable"><thead><tr>
-                        <th>ID</th><th>Nome</th><th>Email</th><th>CPF</th><th>Plano</th><th>Nível</th><th>Pontos</th><th>Saldo</th><th>Status</th><th style="width:120px">Ações</th>
+                        <th>ID</th><th>Nome</th><th>Email</th><th>CPF</th><th>Plano</th><th>Nível</th><th>Pontos</th><th>Saldo</th><th>Mensalidade</th><th>Status</th><th style="width:170px">Ações</th>
                     </tr></thead><tbody></tbody></table>
                 </div>
             </div>
@@ -177,6 +177,18 @@
     <script>
         Layout.init({ basePath: '../', page: 'admin-users', title: 'Usuários', admin: true });
 
+        function monthlyStatusBadge(u) {
+            if (!u.has_package) return '<span class="badge badge-secondary">Sem pacote</span>';
+            if (u.access_blocked) return '<span class="badge badge-danger">Bloqueada</span>';
+            if (!u.monthly_fee_paid_until) return '<span class="badge badge-warning">Pendente</span>';
+            const due = new Date(`${u.monthly_fee_paid_until}T00:00:00`);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const days = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+            const cls = days <= 5 ? 'warning' : 'success';
+            return `<span class="badge badge-${cls}">Até ${due.toLocaleDateString('pt-BR')}</span>`;
+        }
+
         function renderTable() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const level = document.getElementById('filterLevel').value;
@@ -201,15 +213,17 @@
                 <td><span class="badge badge-${u.level === 'diamante' ? 'purple' : u.level === 'ouro' ? 'warning' : 'secondary'}">${lvl.name || u.level}</span></td>
                 <td>${u.points}</td>
                 <td style="font-weight:600;color:${(u.balance||0) > 0 ? '#10b981' : '#64748b'}">R$ ${(u.balance||0).toFixed(2).replace('.',',')}</td>
+                <td>${monthlyStatusBadge(u)}</td>
                 <td><span class="badge badge-${u.active ? 'success' : 'danger'}">${st}</span></td>
                 <td>
                     <button class="btn btn-sm btn-outline" onclick="openModal('edit',${u.id})" title="Editar"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-success" onclick="activatePayment(${u.id})" title="Ativar Pagamento Pendente"><i class="fas fa-bolt"></i></button>
+                    <button class="btn btn-sm btn-primary" onclick="releaseMonthlyFee(${u.id})" title="Liberar Mensalidade"><i class="fas fa-calendar-check"></i></button>
                     <button class="btn btn-sm btn-warning" onclick="resetPassword(${u.id})" title="Resetar Senha"><i class="fas fa-key"></i></button>
                     <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" title="Excluir"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
-                }).join('') : '<tr><td colspan="10" style="text-align:center;color:#64748b">Nenhum usuário encontrado</td></tr>';
+                }).join('') : '<tr><td colspan="11" style="text-align:center;color:#64748b">Nenhum usuário encontrado</td></tr>';
             });
         }
         renderTable();
@@ -360,6 +374,23 @@
                 Layout.toast(res?.error || 'Erro ao ativar pagamento', 'error');
             }
         }
+        async function releaseMonthlyFee(userId) {
+            const u = DB.getUser(Number(userId));
+            const settings = DB.get('settings') || {};
+            const monthlyFee = Number(settings.monthlyFee) || 95;
+            const name = u ? u.name : `usuário #${userId}`;
+            if (!confirm(`Liberar mensalidade de R$ ${fmt(monthlyFee)} para ${name}?`)) return;
+
+            const res = await DB.api('POST', `/api/admin/users/${userId}/release-monthly-fee`);
+            if (res && res.success) {
+                Layout.toast(res.message || 'Mensalidade liberada!', 'success');
+                await DB.syncData();
+                renderTable();
+            } else {
+                Layout.toast(res?.error || 'Erro ao liberar mensalidade', 'error');
+            }
+        }
+
         // ══════ Relatório de Nomes ══════
         function openReportModal() {
             document.getElementById('reportModal').style.display = 'flex';

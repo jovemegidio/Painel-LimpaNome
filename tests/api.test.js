@@ -20,6 +20,7 @@ try { fs.unlinkSync(testDbPath + '-shm'); } catch {}
 try { fs.unlinkSync(testDbPath + '-wal'); } catch {}
 
 const app = require('../server');
+const { getDB } = require('../database/init');
 
 let adminToken = '';
 let userToken = '';
@@ -200,6 +201,31 @@ describe('Admin Routes', () => {
             .set('Authorization', `Bearer ${adminToken}`);
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body.users || res.body)).toBe(true);
+    });
+
+    test('POST /api/admin/users/:id/release-monthly-fee libera mensalidade', async () => {
+        const db = getDB();
+        const user = db.prepare('SELECT id FROM users WHERE username = ?').get(testUser.username);
+        expect(user).toBeTruthy();
+
+        db.prepare("UPDATE users SET has_package = 1, access_blocked = 1, monthly_fee_paid_until = '2024-01-01' WHERE id = ?")
+            .run(user.id);
+
+        const res = await request(app)
+            .post(`/api/admin/users/${user.id}/release-monthly-fee`)
+            .set('Authorization', `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body).toHaveProperty('paidUntil');
+
+        const updated = db.prepare('SELECT access_blocked, monthly_fee_paid_until FROM users WHERE id = ?').get(user.id);
+        expect(updated.access_blocked).toBe(0);
+        expect(updated.monthly_fee_paid_until).not.toBe('2024-01-01');
+
+        const payment = db.prepare("SELECT * FROM payments WHERE user_id = ? AND type = 'monthly_fee' AND status = 'pago' ORDER BY id DESC LIMIT 1").get(user.id);
+        expect(payment).toBeTruthy();
+        expect(payment.amount).toBeCloseTo(95);
     });
 
     test('GET /api/admin/settings → configurações', async () => {
